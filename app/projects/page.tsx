@@ -22,16 +22,25 @@ export default function ProjectsPage() {
 
   const fetchProjects = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      
+      console.log('Auth check:', { user: user?.id, authError })
+      
+      if (authError || !user) {
+        console.log('No user, redirecting to login')
         router.push('/login')
         return
       }
 
       // Fetch projects from API
+      console.log('Fetching projects from API...')
       const response = await fetch('/api/projects')
+      
+      console.log('API response status:', response.status)
+      
       if (response.ok) {
         const fetchedProjects = await response.json()
+        console.log('Fetched projects:', fetchedProjects)
         
         // Parse dates from strings to Date objects
         const parsedProjects = fetchedProjects.map((p: any) => ({
@@ -42,11 +51,18 @@ export default function ProjectsPage() {
         
         setProjects(parsedProjects)
       } else {
-        console.error('Failed to fetch projects')
+        const errorData = await response.json()
+        console.error('Failed to fetch projects:', response.status, errorData)
+        
+        // If unauthorized, redirect to login
+        if (response.status === 401) {
+          router.push('/login')
+        }
       }
     } catch (error) {
       console.error('Error fetching projects:', error)
     } finally {
+      console.log('Setting loading to false')
       setLoading(false)
     }
   }

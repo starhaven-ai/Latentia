@@ -28,9 +28,22 @@ export default function ProjectsPage() {
         return
       }
 
-      // TODO: Fetch projects from database
-      // For now, using empty array
-      setProjects([])
+      // Fetch projects from API
+      const response = await fetch('/api/projects')
+      if (response.ok) {
+        const fetchedProjects = await response.json()
+        
+        // Parse dates from strings to Date objects
+        const parsedProjects = fetchedProjects.map((p: any) => ({
+          ...p,
+          createdAt: new Date(p.createdAt),
+          updatedAt: new Date(p.updatedAt),
+        }))
+        
+        setProjects(parsedProjects)
+      } else {
+        console.error('Failed to fetch projects')
+      }
     } catch (error) {
       console.error('Error fetching projects:', error)
     } finally {

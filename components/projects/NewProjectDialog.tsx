@@ -40,23 +40,37 @@ export function NewProjectDialog({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      // TODO: Create project in database via API
-      // For now, creating a mock project
-      const mockProject: Project = {
-        id: Math.random().toString(36).substring(7),
-        name: name.trim(),
-        description: description.trim() || undefined,
-        ownerId: user.id,
-        isShared: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      // Create project via API
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim() || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create project')
       }
 
-      onProjectCreated(mockProject)
+      const project = await response.json()
+      
+      // Parse dates from strings to Date objects
+      const parsedProject = {
+        ...project,
+        createdAt: new Date(project.createdAt),
+        updatedAt: new Date(project.updatedAt),
+      }
+
+      onProjectCreated(parsedProject)
       setName('')
       setDescription('')
     } catch (error) {
       console.error('Error creating project:', error)
+      alert('Failed to create project. Please try again.')
     } finally {
       setLoading(false)
     }

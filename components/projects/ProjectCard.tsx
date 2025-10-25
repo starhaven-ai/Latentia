@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Lock, Users, Globe, User } from 'lucide-react'
+import { Lock, Users, Globe, User, Pencil, Check } from 'lucide-react'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/use-toast'
 import type { Project } from '@/types/project'
 
@@ -16,11 +17,60 @@ export function ProjectCard({ project, currentUserId, onProjectUpdate }: Project
   const router = useRouter()
   const { toast } = useToast()
   const [updating, setUpdating] = useState(false)
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [editedName, setEditedName] = useState(project.name)
 
   const isOwner = currentUserId && project.ownerId === currentUserId
 
   const handleClick = () => {
-    router.push(`/projects/${project.id}`)
+    if (!isEditingName) {
+      router.push(`/projects/${project.id}`)
+    }
+  }
+
+  const handleEditName = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsEditingName(true)
+  }
+
+  const handleSaveName = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!editedName.trim() || editedName === project.name) {
+      setIsEditingName(false)
+      setEditedName(project.name)
+      return
+    }
+
+    setUpdating(true)
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editedName.trim() }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: 'Project renamed',
+          description: `Project renamed to "${editedName.trim()}"`,
+          variant: 'default',
+        })
+        setIsEditingName(false)
+        onProjectUpdate?.()
+      } else {
+        throw new Error('Failed to update name')
+      }
+    } catch (error) {
+      console.error('Error updating name:', error)
+      toast({
+        title: 'Update failed',
+        description: 'Failed to update project name',
+        variant: 'destructive',
+      })
+      setEditedName(project.name)
+    } finally {
+      setUpdating(false)
+    }
   }
 
   const handleTogglePrivacy = async (e: React.MouseEvent) => {
@@ -139,9 +189,49 @@ export function ProjectCard({ project, currentUserId, onProjectUpdate }: Project
         </div>
       </CardContent>
       <CardFooter className="flex flex-col items-start p-4 space-y-1">
-        <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-          {project.name}
-        </h3>
+        {isEditingName ? (
+          <div className="flex items-center gap-2 w-full" onClick={(e) => e.stopPropagation()}>
+            <Input
+              value={editedName}
+              onChange={(e) => setEditedName(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSaveName(e as any)
+                } else if (e.key === 'Escape') {
+                  setIsEditingName(false)
+                  setEditedName(project.name)
+                }
+              }}
+              className="text-lg font-semibold h-9 text-foreground bg-background border-border"
+              autoFocus
+              disabled={updating}
+            />
+            <button
+              onClick={handleSaveName}
+              disabled={updating}
+              className="p-2 hover:bg-primary/10 rounded-lg transition-colors"
+              title="Save name"
+            >
+              <Check className="h-4 w-4 text-primary" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 w-full group/title">
+            <h3 className="font-semibold text-lg group-hover:text-primary transition-colors flex-1">
+              {project.name}
+            </h3>
+            {isOwner && (
+              <button
+                onClick={handleEditName}
+                className="opacity-0 group-hover/title:opacity-100 p-1 hover:bg-muted rounded transition-all"
+                title="Rename project"
+              >
+                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+        )}
         {project.description && (
           <p className="text-sm text-muted-foreground line-clamp-2">
             {project.description}

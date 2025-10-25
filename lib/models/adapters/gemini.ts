@@ -174,14 +174,18 @@ export class GeminiAdapter extends BaseModelAdapter {
     
     const { width, height } = getDimensions(aspectRatio, resolution)
     
-    console.log(`Generating video with Veo 3.1: ${duration}s, ${width}x${height}, ${aspectRatio}`)
+    // Calculate realistic generation time based on video parameters
+    // Formula: base time + (duration * complexity factor) + (resolution factor)
+    const baseTime = 30 // 30 seconds base
+    const durationFactor = duration * 5 // 5 seconds per second of video
+    const resolutionFactor = resolution === 1080 ? 30 : 0 // 30 seconds extra for 1080p
+    const estimatedTime = baseTime + durationFactor + resolutionFactor
+    
+    console.log(`Generating video with Veo 3.1: ${duration}s video, ${width}x${height}, ${aspectRatio}, estimated ${estimatedTime}s`)
 
     // MOCK IMPLEMENTATION FOR TESTING
-    // Using a placeholder video URL for demonstration
-    // Replace this with actual Veo 3.1 API implementation
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // Simulate realistic video generation time
+    await new Promise(resolve => setTimeout(resolve, estimatedTime * 1000))
     
     // Return mock video response
     // Using Big Buck Bunny sample video (open source)
@@ -201,6 +205,7 @@ export class GeminiAdapter extends BaseModelAdapter {
       metadata: {
         model: this.config.id,
         prompt: request.prompt,
+        estimatedTime,
         note: 'MOCK VIDEO - Replace with actual Veo 3.1 API implementation',
       },
     }

@@ -176,6 +176,12 @@ export function GenerationInterface({
                 isGenerating={generateMutation.isPending}
                 pendingCount={generateMutation.isPending ? parameters.numOutputs : 0}
                 pendingAspectRatio={parameters.aspectRatio}
+                pendingEstimatedTime={
+                  generationType === 'video'
+                    ? 30 + (parameters.duration || 8) * 5 + (parameters.resolution === 1080 ? 30 : 0)
+                    : 25
+                }
+                pendingIsVideo={generationType === 'video'}
                 videoSessions={videoSessions}
                 onConvertToVideo={handleConvertToVideo}
                 onCreateVideoSession={onSessionCreate}

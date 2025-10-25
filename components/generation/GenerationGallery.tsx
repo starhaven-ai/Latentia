@@ -16,6 +16,8 @@ interface GenerationGalleryProps {
   pendingCount?: number
   isGenerating?: boolean
   pendingAspectRatio?: string
+  pendingEstimatedTime?: number
+  pendingIsVideo?: boolean
   videoSessions?: Session[]
   onConvertToVideo?: (generation: GenerationWithOutputs, videoSessionId: string, imageUrl?: string) => void
   onCreateVideoSession?: ((type: 'image' | 'video', name: string) => Promise<Session | null>) | undefined
@@ -29,6 +31,8 @@ export function GenerationGallery({
   pendingCount = 0,
   isGenerating = false,
   pendingAspectRatio = '1:1',
+  pendingEstimatedTime = 25,
+  pendingIsVideo = false,
   videoSessions = [],
   onConvertToVideo,
   onCreateVideoSession,
@@ -362,7 +366,12 @@ export function GenerationGallery({
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground/70">Outputs:</span>
-                  <span className="font-medium">{pendingCount} {pendingCount === 1 ? 'image' : 'images'}</span>
+                  <span className="font-medium">
+                    {pendingCount} {pendingCount === 1 
+                      ? (pendingIsVideo ? 'video' : 'image') 
+                      : (pendingIsVideo ? 'videos' : 'images')
+                    }
+                  </span>
                 </div>
               </div>
             </div>
@@ -372,8 +381,9 @@ export function GenerationGallery({
             {Array.from({ length: pendingCount }).map((_, idx) => (
               <GenerationProgress 
                 key={`pending-${idx}`} 
-                estimatedTime={25} 
+                estimatedTime={pendingEstimatedTime} 
                 aspectRatio={pendingAspectRatio}
+                isVideo={pendingIsVideo}
               />
             ))}
           </div>

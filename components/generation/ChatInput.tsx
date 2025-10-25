@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Image as ImageIcon, Wand2, Grid3x3, ImagePlus } from 'lucide-react'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Image as ImageIcon, Wand2, ImagePlus, Ratio } from 'lucide-react'
 import { useModelCapabilities } from '@/hooks/useModelCapabilities'
 import { AspectRatioSelector } from './AspectRatioSelector'
 
@@ -127,71 +128,81 @@ export function ChatInput({
         </Button>
       </div>
 
-      {/* Parameter Controls */}
-      <div className="space-y-3">
-        {/* Aspect Ratio Selector - Visual Icons */}
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-            Aspect Ratio
-          </span>
-          <AspectRatioSelector
-            value={parameters.aspectRatio}
-            onChange={(value) =>
-              onParametersChange({ ...parameters, aspectRatio: value })
-            }
-            options={supportedAspectRatios}
-          />
-        </div>
+      {/* Parameter Controls - Compact Row */}
+      <div className="flex items-center gap-2">
+        {/* Style Transfer Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={generating}
+          className="h-8 text-xs px-3 rounded-lg"
+        >
+          <ImagePlus className="h-3.5 w-3.5 mr-1.5" />
+          Style
+        </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
 
-        {/* Other Controls */}
-        <div className="flex items-center gap-2">
-          {/* Style Transfer Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={generating}
-            className="h-8 text-xs px-3 rounded-lg"
-          >
-            <ImagePlus className="h-3.5 w-3.5 mr-1.5" />
-            Style
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
-
-          {generationType === 'image' && (
-            <Select
-              value={parameters.numOutputs.toString()}
-              onValueChange={(value) =>
-                onParametersChange({ ...parameters, numOutputs: parseInt(value) })
-              }
+        {/* Aspect Ratio Popover */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={generating}
+              className="h-8 text-xs px-3 rounded-lg"
             >
-              <SelectTrigger className="w-[80px] h-8 text-xs rounded-lg border bg-background">
-                <ImageIcon className="h-3.5 w-3.5 mr-1.5" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {outputCountOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value.toString()} className="text-xs">
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+              <Ratio className="h-3.5 w-3.5 mr-1.5" />
+              {parameters.aspectRatio}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-3" align="start">
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Aspect Ratio</p>
+              <AspectRatioSelector
+                value={parameters.aspectRatio}
+                onChange={(value) =>
+                  onParametersChange({ ...parameters, aspectRatio: value })
+                }
+                options={supportedAspectRatios}
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
 
-          {/* Keyboard Shortcut */}
-          <span className="text-xs text-muted-foreground ml-auto hidden lg:inline-flex items-center gap-1">
-            <kbd className="px-2 py-0.5 bg-muted rounded text-[10px] border">⌘</kbd>
-            <span>+</span>
-            <kbd className="px-2 py-0.5 bg-muted rounded text-[10px] border">Enter</kbd>
-          </span>
-        </div>
+        {generationType === 'image' && (
+          <Select
+            value={parameters.numOutputs.toString()}
+            onValueChange={(value) =>
+              onParametersChange({ ...parameters, numOutputs: parseInt(value) })
+            }
+          >
+            <SelectTrigger className="w-[80px] h-8 text-xs rounded-lg border bg-background">
+              <ImageIcon className="h-3.5 w-3.5 mr-1.5" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {outputCountOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value.toString()} className="text-xs">
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Keyboard Shortcut */}
+        <span className="text-xs text-muted-foreground ml-auto hidden lg:inline-flex items-center gap-1">
+          <kbd className="px-2 py-0.5 bg-muted rounded text-[10px] border">⌘</kbd>
+          <span>+</span>
+          <kbd className="px-2 py-0.5 bg-muted rounded text-[10px] border">Enter</kbd>
+        </span>
       </div>
 
       {/* Reference Image Preview */}

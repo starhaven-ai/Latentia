@@ -11,49 +11,51 @@ datasource db {
 }
 
 model Profile {
-  id           String    @id @db.Uuid
-  username     String?   @unique
-  displayName  String?   @map("display_name")
-  avatarUrl    String?   @map("avatar_url")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  
-  projects     Project[]
-  generations  Generation[]
+  id          String   @id @db.Uuid
+  username    String?  @unique
+  displayName String?  @map("display_name")
+  avatarUrl   String?  @map("avatar_url")
+  role        String?  @default("studio") // 'studio', 'art_director', 'creative_director', 'admin'
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  projects       Project[]
+  generations    Generation[]
   projectMembers ProjectMember[]
-  modelPins    UserModelPin[]
-  workflows    Workflow[]
+  modelPins      UserModelPin[]
+  workflows      Workflow[]
+  bookmarks      Bookmark[]
 
   @@map("profiles")
 }
 
 model Project {
-  id             String   @id @default(uuid()) @db.Uuid
-  name           String
-  description    String?
-  coverImageUrl  String?  @map("cover_image_url")
-  ownerId        String   @map("owner_id") @db.Uuid
-  isShared       Boolean  @default(false) @map("is_shared")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  
-  owner          Profile  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  sessions       Session[]
-  members        ProjectMember[]
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String
+  description   String?
+  coverImageUrl String?  @map("cover_image_url")
+  ownerId       String   @map("owner_id") @db.Uuid
+  isShared      Boolean  @default(false) @map("is_shared")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  owner    Profile         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  sessions Session[]
+  members  ProjectMember[]
 
   @@index([ownerId])
   @@map("projects")
 }
 
 model ProjectMember {
-  id         String   @id @default(uuid()) @db.Uuid
-  projectId  String   @map("project_id") @db.Uuid
-  userId     String   @map("user_id") @db.Uuid
-  role       String   // 'viewer', 'editor', 'admin'
-  joinedAt   DateTime @default(now()) @map("joined_at")
-  
-  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user       Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid()) @db.Uuid
+  projectId String   @map("project_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      String // 'viewer', 'editor', 'admin'
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, userId])
   @@index([projectId])
@@ -62,15 +64,16 @@ model ProjectMember {
 }
 
 model Session {
-  id         String   @id @default(uuid()) @db.Uuid
-  projectId  String   @map("project_id") @db.Uuid
-  name       String
-  type       String   // 'image' or 'video'
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  
-  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  generations  Generation[]
+  id        String   @id @default(uuid()) @db.Uuid
+  projectId String   @map("project_id") @db.Uuid
+  name      String
+  type      String // 'image' or 'video'
+  isPrivate Boolean  @default(true) @map("is_private")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  generations Generation[]
 
   @@index([projectId])
   @@map("sessions")
@@ -83,13 +86,13 @@ model Generation {
   modelId        String   @map("model_id")
   prompt         String   @db.Text
   negativePrompt String?  @map("negative_prompt") @db.Text
-  parameters     Json     // Flexible params per model
-  status         String   // 'queued', 'processing', 'completed', 'failed'
+  parameters     Json // Flexible params per model
+  status         String // 'queued', 'processing', 'completed', 'failed'
   createdAt      DateTime @default(now()) @map("created_at")
-  
-  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  user       Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  outputs    Output[]
+
+  session Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outputs Output[]
 
   @@index([sessionId])
   @@index([userId])
@@ -103,11 +106,13 @@ model Output {
   fileType     String   @map("file_type") // 'image' or 'video'
   width        Int?
   height       Int?
-  duration     Float?   // For videos
-  isStarred    Boolean  @default(false) @map("is_starred")
+  duration     Float? // For videos
+  isStarred    Boolean  @default(false) @map("is_starred") // Kept for backward compatibility
+  isApproved   Boolean  @default(false) @map("is_approved") // New approval system (replaces star UI)
   createdAt    DateTime @default(now()) @map("created_at")
-  
+
   generation Generation @relation(fields: [generationId], references: [id], onDelete: Cascade)
+  bookmarks  Bookmark[]
 
   @@index([generationId])
   @@map("outputs")
@@ -118,22 +123,22 @@ model Model {
   name      String
   provider  String
   type      String[] // ['image', 'video']
-  config    Json     // Full model configuration
+  config    Json // Full model configuration
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
-  
-  pins      UserModelPin[]
+
+  pins UserModelPin[]
 
   @@map("models")
 }
 
 model UserModelPin {
-  userId    String @map("user_id") @db.Uuid
-  modelId   String @map("model_id")
-  pinOrder  Int    @map("pin_order")
-  
-  user      Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
-  model     Model   @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  userId   String @map("user_id") @db.Uuid
+  modelId  String @map("model_id")
+  pinOrder Int    @map("pin_order")
+
+  user  Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  model Model   @relation(fields: [modelId], references: [id], onDelete: Cascade)
 
   @@id([userId, modelId])
   @@index([userId])
@@ -149,10 +154,24 @@ model Workflow {
   workflowData Json     @map("workflow_data") // Node graph structure
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
-  
-  user         Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("workflows")
 }
 
+model Bookmark {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  outputId  String   @map("output_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  output Output  @relation(fields: [outputId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, outputId])
+  @@index([userId])
+  @@index([outputId])
+  @@map("bookmarks")
+}

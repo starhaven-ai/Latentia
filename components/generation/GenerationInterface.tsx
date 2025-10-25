@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { GenerationGallery } from './GenerationGallery'
 import { ChatInput } from './ChatInput'
 import { ModelPicker } from './ModelPicker'
@@ -23,6 +23,34 @@ export function GenerationInterface({
     resolution: 1024,
     numOutputs: 4,
   })
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Load generations when session changes
+  useEffect(() => {
+    const loadGenerations = async () => {
+      if (!session) {
+        setGenerations([])
+        return
+      }
+
+      setIsLoading(true)
+      try {
+        const response = await fetch(`/api/generations?sessionId=${session.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setGenerations(data)
+        } else {
+          console.error('Failed to load generations:', await response.text())
+        }
+      } catch (error) {
+        console.error('Error loading generations:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadGenerations()
+  }, [session?.id])
 
   const handleGenerate = async (prompt: string, referenceImage?: File) => {
     if (!session || !prompt.trim()) return
@@ -105,7 +133,14 @@ export function GenerationInterface({
     <div className="flex-1 flex flex-col relative">
       {/* Gallery Area - Always show, even if empty */}
       <div className="flex-1 overflow-y-auto">
-        {generations.length > 0 ? (
+        {isLoading ? (
+          // Loading state
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              <p className="text-lg mb-2">Loading generations...</p>
+            </div>
+          </div>
+        ) : generations.length > 0 ? (
           <div className="p-6">
             <GenerationGallery
               generations={generations}

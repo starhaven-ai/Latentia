@@ -1,16 +1,81 @@
 import { Download, Star, Trash2, RotateCcw, Info } from 'lucide-react'
 import type { GenerationWithOutputs } from '@/types/generation'
+import { useState } from 'react'
 
 interface GenerationGalleryProps {
   generations: GenerationWithOutputs[]
   onReuseParameters: (generation: GenerationWithOutputs) => void
+  onGenerationsUpdate?: (generations: GenerationWithOutputs[]) => void
 }
 
 export function GenerationGallery({
   generations,
   onReuseParameters,
+  onGenerationsUpdate,
 }: GenerationGalleryProps) {
-  if (generations.length === 0) {
+  const [localGenerations, setLocalGenerations] = useState(generations)
+
+  // Update local state when generations prop changes
+  useState(() => {
+    setLocalGenerations(generations)
+  })
+
+  const handleToggleStar = async (outputId: string, currentStarred: boolean) => {
+    try {
+      const response = await fetch(`/api/outputs/${outputId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isStarred: !currentStarred,
+        }),
+      })
+
+      if (response.ok) {
+        // Update local state
+        const updatedGenerations = localGenerations.map((gen) => ({
+          ...gen,
+          outputs: gen.outputs.map((output) =>
+            output.id === outputId
+              ? { ...output, isStarred: !currentStarred }
+              : output
+          ),
+        }))
+        setLocalGenerations(updatedGenerations)
+        onGenerationsUpdate?.(updatedGenerations)
+      }
+    } catch (error) {
+      console.error('Error toggling star:', error)
+    }
+  }
+
+  const handleDelete = async (outputId: string, generationId: string) => {
+    if (!confirm('Are you sure you want to delete this image?')) return
+
+    try {
+      const response = await fetch(`/api/outputs/${outputId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        // Update local state - remove output
+        const updatedGenerations = localGenerations
+          .map((gen) => ({
+            ...gen,
+            outputs: gen.outputs.filter((output) => output.id !== outputId),
+          }))
+          .filter((gen) => gen.outputs.length > 0) // Remove generations with no outputs
+
+        setLocalGenerations(updatedGenerations)
+        onGenerationsUpdate?.(updatedGenerations)
+      }
+    } catch (error) {
+      console.error('Error deleting output:', error)
+    }
+  }
+
+  if (localGenerations.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center text-muted-foreground">
@@ -23,7 +88,7 @@ export function GenerationGallery({
 
   return (
     <div className="space-y-8 pb-4">
-      {generations.map((generation) => (
+      {localGenerations.map((generation) => (
         <div key={generation.id} className="space-y-4">
           {/* Prompt Display - Krea Style */}
           <div className="bg-muted/50 rounded-lg p-4 border border-border">
@@ -62,6 +127,13 @@ export function GenerationGallery({
                   />
                 )}
 
+                {/* Star Badge - Top Left */}
+                {output.isStarred && (
+                  <div className="absolute top-2 left-2 bg-yellow-500/90 backdrop-blur-sm p-1.5 rounded-full">
+                    <Star className="h-3 w-3 text-white fill-white" />
+                  </div>
+                )}
+
                 {/* Hover Overlay - Cleaner Design */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
@@ -74,6 +146,12 @@ export function GenerationGallery({
                         <RotateCcw className="h-4 w-4 text-white" />
                       </button>
                       <button
+                        onClick={() => {
+                          const link = document.createElement('a')
+                          link.href = output.fileUrl
+                          link.download = `generation-${output.id}.${output.fileType === 'image' ? 'png' : 'mp4'}`
+                          link.click()
+                        }}
                         className="p-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-colors"
                         title="Download"
                       >
@@ -82,12 +160,14 @@ export function GenerationGallery({
                     </div>
                     <div className="flex items-center gap-2">
                       <button
+                        onClick={() => handleToggleStar(output.id, output.isStarred)}
                         className="p-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-colors"
-                        title="Star"
+                        title={output.isStarred ? 'Unstar' : 'Star'}
                       >
-                        <Star className="h-4 w-4 text-white" />
+                        <Star className={`h-4 w-4 text-white ${output.isStarred ? 'fill-white' : ''}`} />
                       </button>
                       <button
+                        onClick={() => handleDelete(output.id, generation.id)}
                         className="p-2 bg-red-500/80 backdrop-blur-sm rounded-lg hover:bg-red-500 transition-colors"
                         title="Delete"
                       >
@@ -97,7 +177,7 @@ export function GenerationGallery({
                   </div>
                 </div>
 
-                {/* Model Badge - Subtle */}
+                {/* Resolution Badge - Subtle */}
                 <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium text-white opacity-0 group-hover:opacity-100 transition-opacity">
                   {output.width && output.height && `${output.width}×${output.height}`}
                 </div>

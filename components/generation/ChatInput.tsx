@@ -3,7 +3,8 @@
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Paperclip, Image as ImageIcon, Wand2 } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Image as ImageIcon, Wand2, Ratio, Grid3x3, ImagePlus } from 'lucide-react'
 
 interface ChatInputProps {
   onGenerate: (prompt: string, referenceImage?: File) => void
@@ -14,18 +15,17 @@ interface ChatInputProps {
   }
   onParametersChange: (parameters: any) => void
   generationType: 'image' | 'video'
-  centered?: boolean
 }
 
 const ASPECT_RATIOS = ['1:1', '16:9', '9:16', '4:3', '3:4']
 const RESOLUTIONS = [512, 1024, 2048]
+const OUTPUT_COUNTS = [1, 2, 4]
 
 export function ChatInput({
   onGenerate,
   parameters,
   onParametersChange,
   generationType,
-  centered = false,
 }: ChatInputProps) {
   const [prompt, setPrompt] = useState('')
   const [referenceImage, setReferenceImage] = useState<File | null>(null)
@@ -62,24 +62,24 @@ export function ChatInput({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Main Input Area - Krea Style */}
+    <div className="space-y-3">
+      {/* Main Input Area */}
       <div className="relative">
         <Textarea
           placeholder="Describe an image and click generate..."
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
-          className={`resize-none ${centered ? 'min-h-[120px] text-center text-lg' : 'min-h-[80px]'}`}
+          className="resize-none min-h-[100px] pr-32"
           disabled={generating}
         />
         
-        {/* Generate Button - Positioned on the right like Krea */}
+        {/* Generate Button - Inside textarea */}
         <div className="absolute right-3 bottom-3">
           <Button
             onClick={handleSubmit}
             disabled={!prompt.trim() || generating}
-            size={centered ? 'lg' : 'default'}
+            size="default"
             className="shadow-lg"
           >
             <Wand2 className="mr-2 h-4 w-4" />
@@ -88,25 +88,81 @@ export function ChatInput({
         </div>
       </div>
 
-      {/* Inline Parameter Controls - Krea Style */}
-      <div className="flex items-center gap-2 flex-wrap text-sm">
-        {/* Aspect Ratio Button */}
-        <button
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+      {/* Parameter Controls using shadcn Select */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Aspect Ratio Select */}
+        <Select
+          value={parameters.aspectRatio}
+          onValueChange={(value) =>
+            onParametersChange({ ...parameters, aspectRatio: value })
+          }
         >
-          <Wand2 className="h-3.5 w-3.5" />
-          <span>{parameters.aspectRatio}</span>
-        </button>
+          <SelectTrigger className="w-[120px] h-9">
+            <Ratio className="h-3.5 w-3.5 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ASPECT_RATIOS.map((ratio) => (
+              <SelectItem key={ratio} value={ratio}>
+                {ratio}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        {/* Image Prompt Button */}
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
-          disabled={generating}
+        {/* Resolution Select */}
+        <Select
+          value={parameters.resolution.toString()}
+          onValueChange={(value) =>
+            onParametersChange({ ...parameters, resolution: parseInt(value) })
+          }
         >
-          <ImageIcon className="h-3.5 w-3.5" />
-          <span>{referenceImage ? referenceImage.name : 'Image prompt'}</span>
-        </button>
+          <SelectTrigger className="w-[120px] h-9">
+            <Grid3x3 className="h-3.5 w-3.5 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {RESOLUTIONS.map((res) => (
+              <SelectItem key={res} value={res.toString()}>
+                {res}px
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Image Count Select */}
+        {generationType === 'image' && (
+          <Select
+            value={parameters.numOutputs.toString()}
+            onValueChange={(value) =>
+              onParametersChange({ ...parameters, numOutputs: parseInt(value) })
+            }
+          >
+            <SelectTrigger className="w-[100px] h-9">
+              <ImageIcon className="h-3.5 w-3.5 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {OUTPUT_COUNTS.map((count) => (
+                <SelectItem key={count} value={count.toString()}>
+                  {count} {count === 1 ? 'image' : 'images'}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Image Upload Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={generating}
+          className="h-9"
+        >
+          <ImagePlus className="h-3.5 w-3.5 mr-2" />
+          {referenceImage ? referenceImage.name.substring(0, 15) + '...' : 'Image prompt'}
+        </Button>
         <input
           ref={fileInputRef}
           type="file"
@@ -115,35 +171,19 @@ export function ChatInput({
           onChange={handleFileSelect}
         />
 
-        {/* Resolution */}
-        <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 transition-colors">
-          <span className="text-xs">📐</span>
-          <span>{parameters.resolution}</span>
-        </button>
-
-        {/* Image Count */}
-        {generationType === 'image' && (
-          <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 transition-colors">
-            <span className="text-xs">🔢</span>
-            <span>{parameters.numOutputs}</span>
-          </button>
-        )}
-
         {/* Keyboard Shortcut Hint */}
-        {!centered && (
-          <span className="text-xs text-muted-foreground ml-auto">
-            <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">⌘</kbd> + <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Enter</kbd>
-          </span>
-        )}
+        <span className="text-xs text-muted-foreground ml-auto hidden sm:inline">
+          <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">⌘</kbd> + <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Enter</kbd>
+        </span>
       </div>
 
       {/* Reference Image Preview */}
       {referenceImage && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Reference: {referenceImage.name}</span>
           <button
             onClick={() => setReferenceImage(null)}
-            className="text-destructive hover:underline text-xs"
+            className="text-destructive hover:underline"
           >
             Remove
           </button>

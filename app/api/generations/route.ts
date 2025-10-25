@@ -36,6 +36,13 @@ export async function GET(request: NextRequest) {
       },
       include: {
         outputs: {
+          include: {
+            bookmarks: {
+              where: {
+                userId: session.user.id,
+              },
+            },
+          },
           orderBy: {
             createdAt: 'asc',
           },
@@ -46,7 +53,17 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(generations)
+    // Add isBookmarked field to outputs
+    const generationsWithBookmarks = generations.map(generation => ({
+      ...generation,
+      outputs: generation.outputs.map(output => ({
+        ...output,
+        isBookmarked: output.bookmarks.length > 0,
+        bookmarks: undefined, // Remove bookmarks array from response
+      })),
+    }))
+
+    return NextResponse.json(generationsWithBookmarks)
   } catch (error) {
     console.error('Error fetching generations:', error)
     return NextResponse.json(

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Settings, Sun, Moon } from 'lucide-react'
+import { ArrowLeft, Settings, Sun, Moon, Bookmark } from 'lucide-react'
 import { SessionSidebar } from '@/components/sessions/SessionSidebar'
 import { GenerationInterface } from '@/components/generation/GenerationInterface'
 import { ProfileSettings } from '@/components/settings/ProfileSettings'
@@ -199,6 +199,14 @@ export default function ProjectPage() {
 
           {/* Right side */}
           <div className="flex items-center gap-2 flex-1 justify-end">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => router.push('/bookmarks')}
+              title="Bookmarks"
+            >
+              <Bookmark className="h-4 w-4" />
+            </Button>
             <Button 
               variant="ghost" 
               size="icon"

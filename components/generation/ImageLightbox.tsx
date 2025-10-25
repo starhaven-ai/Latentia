@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { X, Download, Star, RotateCcw } from 'lucide-react'
+import { X, Download, Bookmark, RotateCcw } from 'lucide-react'
 import type { Output } from '@/types/generation'
 
 interface ImageLightboxProps {
@@ -9,7 +9,7 @@ interface ImageLightboxProps {
   output: Output | null
   isOpen: boolean
   onClose: () => void
-  onStar: (outputId: string, currentStarred: boolean) => void
+  onBookmark: (outputId: string, isBookmarked: boolean) => void
   onReuse: () => void
   onDownload: (imageUrl: string, outputId: string) => void
 }
@@ -19,7 +19,7 @@ export function ImageLightbox({
   output,
   isOpen, 
   onClose,
-  onStar,
+  onBookmark,
   onReuse,
   onDownload
 }: ImageLightboxProps) {
@@ -83,11 +83,11 @@ export function ImageLightbox({
             <RotateCcw className="h-5 w-5 text-white" />
           </button>
           <button
-            onClick={() => onStar(output.id, output.isStarred)}
+            onClick={() => onBookmark(output.id, (output as any).isBookmarked || false)}
             className="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
-            title={output.isStarred ? 'Unstar' : 'Star'}
+            title={(output as any).isBookmarked ? 'Remove bookmark' : 'Bookmark'}
           >
-            <Star className={`h-5 w-5 text-white ${output.isStarred ? 'fill-white' : ''}`} />
+            <Bookmark className={`h-5 w-5 text-white ${(output as any).isBookmarked ? 'fill-white' : ''}`} />
           </button>
         </div>
       </div>

@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Download, Star, RotateCcw, Info, Copy } from 'lucide-react'
+import { Download, Star, RotateCcw, Info, Copy, Bookmark } from 'lucide-react'
 import type { GenerationWithOutputs } from '@/types/generation'
 import { useUpdateOutputMutation } from '@/hooks/useOutputMutations'
 import { useToast } from '@/components/ui/use-toast'
+import { useQueryClient } from '@tanstack/react-query'
 import { GenerationProgress } from './GenerationProgress'
 import { ImageLightbox } from './ImageLightbox'
 
@@ -24,6 +25,7 @@ export function GenerationGallery({
   pendingAspectRatio = '1:1',
 }: GenerationGalleryProps) {
   const { toast } = useToast()
+  const queryClient = useQueryClient()
   const updateOutputMutation = useUpdateOutputMutation()
   const [lightboxData, setLightboxData] = useState<{
     imageUrl: string
@@ -97,6 +99,38 @@ export function GenerationGallery({
       toast({
         title: "Error",
         description: "Failed to update favorite status",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleToggleBookmark = async (outputId: string, isBookmarked: boolean) => {
+    if (!sessionId) return
+    
+    try {
+      const method = isBookmarked ? 'DELETE' : 'POST'
+      
+      const response = await fetch('/api/bookmarks', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ outputId }),
+      })
+
+      if (!response.ok) throw new Error('Failed to toggle bookmark')
+      
+      toast({
+        title: isBookmarked ? "Bookmark removed" : "Bookmarked",
+        description: isBookmarked ? "Removed from bookmarks" : "Added to bookmarks",
+        variant: "default",
+      })
+
+      // Invalidate generations query to refetch with updated bookmark status
+      queryClient.invalidateQueries({ queryKey: ['generations', sessionId] })
+    } catch (error) {
+      console.error('Error toggling bookmark:', error)
+      toast({
+        title: "Error",
+        description: "Failed to update bookmark status",
         variant: "destructive",
       })
     }
@@ -216,12 +250,12 @@ export function GenerationGallery({
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleToggleStar(output.id, output.isStarred)
+                          handleToggleBookmark(output.id, (output as any).isBookmarked || false)
                         }}
                         className="p-1.5 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"
-                        title={output.isStarred ? 'Unstar' : 'Star'}
+                        title={(output as any).isBookmarked ? 'Remove bookmark' : 'Bookmark'}
                       >
-                        <Star className={`h-3.5 w-3.5 text-white ${output.isStarred ? 'fill-white' : ''}`} />
+                        <Bookmark className={`h-3.5 w-3.5 text-white ${(output as any).isBookmarked ? 'fill-white' : ''}`} />
                       </button>
                     </div>
                   </div>
@@ -275,7 +309,7 @@ export function GenerationGallery({
         output={lightboxData?.output || null}
         isOpen={!!lightboxData}
         onClose={() => setLightboxData(null)}
-        onStar={handleToggleStar}
+        onBookmark={handleToggleBookmark}
         onReuse={() => {
           if (lightboxData?.generation) {
             onReuseParameters(lightboxData.generation)

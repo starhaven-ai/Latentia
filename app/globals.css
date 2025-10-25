@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    /* Loop-inspired warm, minimal palette */
+    /* Loop-inspired warm, minimal palette (Light Mode) */
     --background: 35 20% 97%;        /* Warm cream background */
     --foreground: 0 0% 10%;           /* Deep charcoal text */
     --card: 0 0% 100%;                /* Pure white cards */
@@ -27,6 +27,29 @@
     --input: 35 10% 88%;
     --ring: 180 65% 45%;
     --radius: 0.75rem;                /* More rounded like Loop */
+  }
+
+  .dark {
+    /* Dark mode - sleek, modern palette */
+    --background: 0 0% 8%;            /* Deep dark background */
+    --foreground: 0 0% 98%;           /* Almost white text */
+    --card: 0 0% 12%;                 /* Slightly lighter cards */
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 180 65% 50%;           /* Brighter teal for dark mode */
+    --primary-foreground: 0 0% 10%;
+    --secondary: 0 0% 16%;            /* Dark gray */
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 18%;                /* Muted dark */
+    --muted-foreground: 0 0% 60%;
+    --accent: 180 65% 50%;            /* Teal accent */
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%;               /* Subtle border */
+    --input: 0 0% 20%;
+    --ring: 180 65% 50%;
   }
 }
 

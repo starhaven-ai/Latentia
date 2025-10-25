@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { ChevronUp, Star } from 'lucide-react'
 import {
@@ -16,54 +16,13 @@ interface ModelPickerProps {
   generationType: 'image' | 'video'
 }
 
-// Mock models data
-const MODELS = {
-  image: [
-    {
-      id: 'flux_1_1_pro',
-      name: 'Flux 1.1 Pro',
-      provider: 'Black Forest Labs',
-      description: 'Balanced photo/creative images',
-      speed: 'fast',
-    },
-    {
-      id: 'krea_realtime',
-      name: 'Krea Realtime',
-      provider: 'Krea',
-      description: 'Fast iterations, photorealism',
-      speed: 'fast',
-    },
-    {
-      id: 'seedream_4',
-      name: 'Seedream 4.0',
-      provider: 'Seed Studio',
-      description: 'Multimodal, high quality',
-      speed: 'medium',
-    },
-    {
-      id: 'nano_banana',
-      name: 'Nano Banana',
-      provider: 'Minimax',
-      description: 'Smart editing, context-aware',
-      speed: 'fast',
-    },
-  ],
-  video: [
-    {
-      id: 'minimax_video',
-      name: 'Minimax Video',
-      provider: 'Minimax',
-      description: 'Long-form video up to 6s',
-      speed: 'slow',
-    },
-    {
-      id: 'seedream_video',
-      name: 'Seedream Video',
-      provider: 'Seed Studio',
-      description: 'High-quality video generation',
-      speed: 'medium',
-    },
-  ],
+interface Model {
+  id: string
+  name: string
+  provider: string
+  description: string
+  type: 'image' | 'video'
+  maxResolution?: number
 }
 
 export function ModelPicker({
@@ -72,9 +31,26 @@ export function ModelPicker({
   generationType,
 }: ModelPickerProps) {
   const [open, setOpen] = useState(false)
-  const [pinnedModels, setPinnedModels] = useState<string[]>(['flux_1_1_pro'])
+  const [pinnedModels, setPinnedModels] = useState<string[]>(['google-imagen-3'])
+  const [models, setModels] = useState<Model[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const models = MODELS[generationType]
+  // Fetch models from API
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await fetch(`/api/models?type=${generationType}`)
+        const data = await response.json()
+        setModels(data.models || [])
+      } catch (error) {
+        console.error('Failed to fetch models:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchModels()
+  }, [generationType])
+
   const selectedModelData = models.find((m) => m.id === selectedModel)
 
   const togglePin = (modelId: string) => {

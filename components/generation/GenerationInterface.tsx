@@ -17,7 +17,7 @@ export function GenerationInterface({
   generationType,
 }: GenerationInterfaceProps) {
   const [generations, setGenerations] = useState<GenerationWithOutputs[]>([])
-  const [selectedModel, setSelectedModel] = useState<string>('flux_1_1_pro')
+  const [selectedModel, setSelectedModel] = useState<string>('google-imagen-3')
   const [parameters, setParameters] = useState({
     aspectRatio: '1:1',
     resolution: 1024,
@@ -27,15 +27,61 @@ export function GenerationInterface({
   const handleGenerate = async (prompt: string, referenceImage?: File) => {
     if (!session || !prompt.trim()) return
 
-    console.log('Generating with:', {
-      prompt,
-      model: selectedModel,
-      parameters,
-      referenceImage: referenceImage?.name,
-    })
+    try {
+      // Call the generation API
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId: session.id,
+          modelId: selectedModel,
+          prompt,
+          parameters: {
+            aspectRatio: parameters.aspectRatio,
+            resolution: parameters.resolution,
+            numOutputs: parameters.numOutputs,
+          },
+        }),
+      })
 
-    // TODO: Implement actual generation logic
-    // This would call the API to generate images/videos
+      const result = await response.json()
+
+      if (response.ok && result.status === 'completed' && result.outputs) {
+        // Add the generation to the list
+        const newGeneration: GenerationWithOutputs = {
+          id: result.id,
+          sessionId: session.id,
+          userId: '',
+          modelId: selectedModel,
+          prompt,
+          negativePrompt: undefined,
+          parameters: parameters as any,
+          status: 'completed',
+          createdAt: new Date(),
+          outputs: result.outputs.map((output: any, index: number) => ({
+            id: `${result.id}-${index}`,
+            generationId: result.id,
+            fileUrl: output.url,
+            fileType: generationType,
+            width: output.width,
+            height: output.height,
+            duration: output.duration,
+            isStarred: false,
+            createdAt: new Date(),
+          })),
+        }
+
+        setGenerations((prev) => [newGeneration, ...prev])
+      } else {
+        console.error('Generation failed:', result.error)
+        alert(result.error || 'Generation failed')
+      }
+    } catch (error: any) {
+      console.error('Generation error:', error)
+      alert(error.message || 'Failed to generate')
+    }
   }
 
   const handleReuseParameters = (generation: GenerationWithOutputs) => {

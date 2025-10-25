@@ -158,13 +158,14 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <main 
-        className="w-full px-4 py-8 min-h-screen bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/images/Full page_Sketch.png')" }}
-      >
-        {/* Briefings Tab */}
-        {activeTab === 'briefings' && (
+            {/* Main Content */}
+            <main
+              className="w-full min-h-screen bg-cover bg-center bg-no-repeat"
+              style={{ backgroundImage: "url('/images/Full page_Sketch.png')" }}
+            >
+              <div className="container mx-auto px-4 py-8">
+                {/* Briefings Tab */}
+                {activeTab === 'briefings' && (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="text-center space-y-4 max-w-md">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -250,12 +251,13 @@ export default function ProjectsPage() {
               <p className="text-muted-foreground">
                 Review and approve content submitted by your team. Approved items will appear here.
               </p>
-            </div>
-          </div>
-        )}
-      </main>
+                  </div>
+                </div>
+              )}
+              </div>
+            </main>
 
-      {/* New Project Dialog */}
+            {/* New Project Dialog */}
       <NewProjectDialog
         open={showNewProject}
         onOpenChange={setShowNewProject}

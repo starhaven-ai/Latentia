@@ -1,81 +1,50 @@
 import { Download, Star, Trash2, RotateCcw, Info } from 'lucide-react'
 import type { GenerationWithOutputs } from '@/types/generation'
-import { useState } from 'react'
+import { useUpdateOutputMutation, useDeleteOutputMutation } from '@/hooks/useOutputMutations'
 
 interface GenerationGalleryProps {
   generations: GenerationWithOutputs[]
+  sessionId: string | null
   onReuseParameters: (generation: GenerationWithOutputs) => void
-  onGenerationsUpdate?: (generations: GenerationWithOutputs[]) => void
 }
 
 export function GenerationGallery({
   generations,
+  sessionId,
   onReuseParameters,
-  onGenerationsUpdate,
 }: GenerationGalleryProps) {
-  const [localGenerations, setLocalGenerations] = useState(generations)
-
-  // Update local state when generations prop changes
-  useState(() => {
-    setLocalGenerations(generations)
-  })
+  const updateOutputMutation = useUpdateOutputMutation()
+  const deleteOutputMutation = useDeleteOutputMutation()
 
   const handleToggleStar = async (outputId: string, currentStarred: boolean) => {
+    if (!sessionId) return
+    
     try {
-      const response = await fetch(`/api/outputs/${outputId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          isStarred: !currentStarred,
-        }),
+      await updateOutputMutation.mutateAsync({
+        outputId,
+        sessionId,
+        isStarred: !currentStarred,
       })
-
-      if (response.ok) {
-        // Update local state
-        const updatedGenerations = localGenerations.map((gen) => ({
-          ...gen,
-          outputs: gen.outputs.map((output) =>
-            output.id === outputId
-              ? { ...output, isStarred: !currentStarred }
-              : output
-          ),
-        }))
-        setLocalGenerations(updatedGenerations)
-        onGenerationsUpdate?.(updatedGenerations)
-      }
     } catch (error) {
       console.error('Error toggling star:', error)
     }
   }
 
-  const handleDelete = async (outputId: string, generationId: string) => {
+  const handleDelete = async (outputId: string) => {
+    if (!sessionId) return
     if (!confirm('Are you sure you want to delete this image?')) return
 
     try {
-      const response = await fetch(`/api/outputs/${outputId}`, {
-        method: 'DELETE',
+      await deleteOutputMutation.mutateAsync({
+        outputId,
+        sessionId,
       })
-
-      if (response.ok) {
-        // Update local state - remove output
-        const updatedGenerations = localGenerations
-          .map((gen) => ({
-            ...gen,
-            outputs: gen.outputs.filter((output) => output.id !== outputId),
-          }))
-          .filter((gen) => gen.outputs.length > 0) // Remove generations with no outputs
-
-        setLocalGenerations(updatedGenerations)
-        onGenerationsUpdate?.(updatedGenerations)
-      }
     } catch (error) {
       console.error('Error deleting output:', error)
     }
   }
 
-  if (localGenerations.length === 0) {
+  if (generations.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center text-muted-foreground">
@@ -88,7 +57,7 @@ export function GenerationGallery({
 
   return (
     <div className="space-y-6 pb-4">
-      {localGenerations.map((generation) => (
+      {generations.map((generation) => (
         <div key={generation.id} className="flex gap-6 items-start">
           {/* Left Side: Prompt Display - Krea Style (Expanded) */}
           <div className="w-96 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50">
@@ -175,7 +144,7 @@ export function GenerationGallery({
                         <Star className={`h-3.5 w-3.5 text-white ${output.isStarred ? 'fill-white' : ''}`} />
                       </button>
                       <button
-                        onClick={() => handleDelete(output.id, generation.id)}
+                        onClick={() => handleDelete(output.id)}
                         className="p-1.5 bg-red-500/80 backdrop-blur-sm rounded-lg hover:bg-red-600/90 transition-colors"
                         title="Delete"
                       >

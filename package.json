@@ -18,6 +18,7 @@
     "@supabase/supabase-js": "^2.39.0",
     "@supabase/auth-helpers-nextjs": "^0.8.7",
     "@prisma/client": "^5.8.0",
+    "@tanstack/react-query": "^5.18.0",
     "zustand": "^4.4.7",
     "@radix-ui/react-avatar": "^1.0.4",
     "@radix-ui/react-dialog": "^1.0.5",
@@ -39,6 +40,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@tanstack/react-query-devtools": "^5.18.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

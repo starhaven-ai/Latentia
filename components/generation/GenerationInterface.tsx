@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { GenerationGallery } from './GenerationGallery'
 import { ChatInput } from './ChatInput'
 import { ModelPicker } from './ModelPicker'
 import type { Session } from '@/types/project'
 import type { GenerationWithOutputs } from '@/types/generation'
+import { useGenerations } from '@/hooks/useGenerations'
+import { useGenerateMutation } from '@/hooks/useGenerateMutation'
+import { useUIStore } from '@/store/uiStore'
 
 interface GenerationInterfaceProps {
   session: Session | null
@@ -16,96 +18,29 @@ export function GenerationInterface({
   session,
   generationType,
 }: GenerationInterfaceProps) {
-  const [generations, setGenerations] = useState<GenerationWithOutputs[]>([])
-  const [selectedModel, setSelectedModel] = useState<string>('gemini-nano-banana')
-  const [parameters, setParameters] = useState({
-    aspectRatio: '1:1',
-    resolution: 1024,
-    numOutputs: 4,
-  })
-  const [isLoading, setIsLoading] = useState(false)
-
-  // Load generations when session changes
-  useEffect(() => {
-    const loadGenerations = async () => {
-      if (!session) {
-        setGenerations([])
-        return
-      }
-
-      setIsLoading(true)
-      try {
-        const response = await fetch(`/api/generations?sessionId=${session.id}`)
-        if (response.ok) {
-          const data = await response.json()
-          setGenerations(data)
-        } else {
-          console.error('Failed to load generations:', await response.text())
-        }
-      } catch (error) {
-        console.error('Error loading generations:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadGenerations()
-  }, [session?.id])
+  // Use Zustand store for UI state
+  const { selectedModel, parameters, setSelectedModel, setParameters } = useUIStore()
+  
+  // Use React Query for data fetching
+  const { data: generations = [], isLoading } = useGenerations(session?.id || null)
+  
+  // Use React Query mutation for generating
+  const generateMutation = useGenerateMutation()
 
   const handleGenerate = async (prompt: string, referenceImage?: File) => {
     if (!session || !prompt.trim()) return
 
     try {
-      // Call the generation API
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      await generateMutation.mutateAsync({
+        sessionId: session.id,
+        modelId: selectedModel,
+        prompt,
+        parameters: {
+          aspectRatio: parameters.aspectRatio,
+          resolution: parameters.resolution,
+          numOutputs: parameters.numOutputs,
         },
-        body: JSON.stringify({
-          sessionId: session.id,
-          modelId: selectedModel,
-          prompt,
-          parameters: {
-            aspectRatio: parameters.aspectRatio,
-            resolution: parameters.resolution,
-            numOutputs: parameters.numOutputs,
-          },
-        }),
       })
-
-      const result = await response.json()
-
-      if (response.ok && result.status === 'completed' && result.outputs) {
-        // Add the generation to the list
-        const newGeneration: GenerationWithOutputs = {
-          id: result.id,
-          sessionId: session.id,
-          userId: '',
-          modelId: selectedModel,
-          prompt,
-          negativePrompt: undefined,
-          parameters: parameters as any,
-          status: 'completed',
-          createdAt: new Date(),
-          outputs: result.outputs.map((output: any, index: number) => ({
-            id: `${result.id}-${index}`,
-            generationId: result.id,
-            fileUrl: output.url,
-            fileType: generationType,
-            width: output.width,
-            height: output.height,
-            duration: output.duration,
-            isStarred: false,
-            createdAt: new Date(),
-          })),
-        }
-
-        setGenerations((prev) => [newGeneration, ...prev])
-      } else {
-        console.error('Generation failed:', result.error)
-        alert(result.error || 'Generation failed')
-      }
     } catch (error: any) {
       console.error('Generation error:', error)
       alert(error.message || 'Failed to generate')
@@ -114,8 +49,12 @@ export function GenerationInterface({
 
   const handleReuseParameters = (generation: GenerationWithOutputs) => {
     setSelectedModel(generation.modelId)
-    setParameters(generation.parameters as any)
-    // The prompt will be set by the ChatInput component
+    const genParams = generation.parameters as any
+    setParameters({
+      aspectRatio: genParams.aspectRatio,
+      resolution: genParams.resolution,
+      numOutputs: genParams.numOutputs,
+    })
   }
 
   if (!session) {
@@ -145,6 +84,7 @@ export function GenerationInterface({
             <div className="w-full max-w-7xl">
               <GenerationGallery
                 generations={generations}
+                sessionId={session?.id || null}
                 onReuseParameters={handleReuseParameters}
               />
             </div>

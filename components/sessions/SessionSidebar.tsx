@@ -115,7 +115,7 @@ export function SessionSidebar({
                         if (e.key === 'Escape') handleRenameCancel()
                       }}
                       autoFocus
-                      className="h-7 text-sm flex-1"
+                      className="h-7 text-sm flex-1 text-foreground bg-background border-border"
                     />
                     <button
                       onClick={() => handleRenameSubmit(session.id)}

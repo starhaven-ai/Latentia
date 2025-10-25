@@ -62,7 +62,18 @@ export default function ProjectPage() {
         
         if (parsedSessions.length > 0) {
           setSessions(parsedSessions)
-          setActiveSession(parsedSessions[0])
+          
+          // Preserve the active session if it exists, otherwise use the first one
+          if (activeSession) {
+            const updatedActiveSession = parsedSessions.find((s: Session) => s.id === activeSession.id)
+            if (updatedActiveSession) {
+              setActiveSession(updatedActiveSession)
+            } else {
+              setActiveSession(parsedSessions[0])
+            }
+          } else {
+            setActiveSession(parsedSessions[0])
+          }
         } else {
           // Create a default session if none exist
           await handleSessionCreate('image')
@@ -205,6 +216,7 @@ export default function ProjectPage() {
           generationType={generationType}
           onSessionSelect={setActiveSession}
           onSessionCreate={handleSessionCreate}
+          onSessionUpdate={fetchProject}
         />
 
         {/* Generation Interface */}

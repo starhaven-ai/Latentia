@@ -69,7 +69,7 @@ export class GeminiAdapter extends BaseModelAdapter {
   }
 
   private async generateSingleImage(endpoint: string, request: GenerationRequest): Promise<any> {
-    const payload = {
+    const payload: any = {
       contents: [
         {
           parts: [
@@ -83,6 +83,13 @@ export class GeminiAdapter extends BaseModelAdapter {
         responseModalities: ['image'],
         temperature: 1.0,
       },
+    }
+
+    // Add aspect ratio configuration if provided
+    if (request.aspectRatio) {
+      payload.generationConfig.imageConfig = {
+        aspectRatio: request.aspectRatio,
+      }
     }
 
     const response = await fetch(`${endpoint}?key=${this.apiKey}`, {
@@ -109,10 +116,26 @@ export class GeminiAdapter extends BaseModelAdapter {
       throw new Error('No image data in response')
     }
 
+    // Determine dimensions based on aspect ratio (from official Gemini docs)
+    const aspectRatioDimensions: Record<string, { width: number; height: number }> = {
+      '1:1': { width: 1024, height: 1024 },
+      '2:3': { width: 832, height: 1248 },
+      '3:2': { width: 1248, height: 832 },
+      '3:4': { width: 864, height: 1184 },
+      '4:3': { width: 1184, height: 864 },
+      '4:5': { width: 896, height: 1152 },
+      '5:4': { width: 1152, height: 896 },
+      '9:16': { width: 768, height: 1344 },
+      '16:9': { width: 1344, height: 768 },
+      '21:9': { width: 1536, height: 672 },
+    }
+
+    const dimensions = aspectRatioDimensions[request.aspectRatio || '1:1'] || { width: 1024, height: 1024 }
+
     return {
       url: `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`,
-      width: 1024,
-      height: 1024,
+      width: dimensions.width,
+      height: dimensions.height,
     }
   }
 
@@ -180,30 +203,22 @@ export class GeminiAdapter extends BaseModelAdapter {
 }
 
 // Model configurations based on official Gemini API docs
+// https://ai.google.dev/gemini-api/docs/image-generation
 export const NANO_BANANA_CONFIG: ModelConfig = {
   id: 'gemini-nano-banana',
   name: 'Nano Banana',
   provider: 'Google',
   type: 'image',
   description: 'Gemini 2.5 Flash Image - Highly effective and precise image generation',
-  maxResolution: 1024, // Gemini 2.5 Flash Image max resolution
+  maxResolution: 1536, // Max dimension from 21:9 (1536x672)
   defaultAspectRatio: '1:1',
-  supportedAspectRatios: ['1:1'], // Gemini currently only supports square images
+  // All 10 supported aspect ratios from official Gemini API documentation
+  supportedAspectRatios: ['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9'],
   pricing: {
     perImage: 0.01,
     currency: 'USD',
   },
   parameters: [
-    {
-      name: 'resolution',
-      type: 'select',
-      label: 'Resolution',
-      default: 1024,
-      options: [
-        { label: '512px', value: 512 },
-        { label: '1024px', value: 1024 },
-      ],
-    },
     {
       name: 'numOutputs',
       type: 'select',

@@ -4,8 +4,9 @@ import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Image as ImageIcon, Wand2, Ratio, Grid3x3, ImagePlus } from 'lucide-react'
+import { Image as ImageIcon, Wand2, Grid3x3, ImagePlus } from 'lucide-react'
 import { useModelCapabilities } from '@/hooks/useModelCapabilities'
+import { AspectRatioSelector } from './AspectRatioSelector'
 
 interface ChatInputProps {
   onGenerate: (prompt: string, referenceImage?: File) => void
@@ -126,93 +127,71 @@ export function ChatInput({
         </Button>
       </div>
 
-      {/* Parameter Controls - Clean Row */}
-      <div className="flex items-center gap-2">
-        {/* Style Transfer Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={generating}
-          className="h-8 text-xs px-3 rounded-lg"
-        >
-          <ImagePlus className="h-3.5 w-3.5 mr-1.5" />
-          Style
-        </Button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleFileSelect}
-        />
-
-        {/* Parameter Controls with Borders */}
-        <Select
-          value={parameters.aspectRatio}
-          onValueChange={(value) =>
-            onParametersChange({ ...parameters, aspectRatio: value })
-          }
-        >
-          <SelectTrigger className="w-[90px] h-8 text-xs rounded-lg border bg-background">
-            <Ratio className="h-3.5 w-3.5 mr-1.5" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {supportedAspectRatios.map((ratio) => (
-              <SelectItem key={ratio} value={ratio} className="text-xs">
-                {ratio}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={parameters.resolution.toString()}
-          onValueChange={(value) =>
-            onParametersChange({ ...parameters, resolution: parseInt(value) })
-          }
-        >
-          <SelectTrigger className="w-[85px] h-8 text-xs rounded-lg border bg-background">
-            <Grid3x3 className="h-3.5 w-3.5 mr-1.5" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {resolutionOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value.toString()} className="text-xs">
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {generationType === 'image' && (
-          <Select
-            value={parameters.numOutputs.toString()}
-            onValueChange={(value) =>
-              onParametersChange({ ...parameters, numOutputs: parseInt(value) })
+      {/* Parameter Controls */}
+      <div className="space-y-3">
+        {/* Aspect Ratio Selector - Visual Icons */}
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+            Aspect Ratio
+          </span>
+          <AspectRatioSelector
+            value={parameters.aspectRatio}
+            onChange={(value) =>
+              onParametersChange({ ...parameters, aspectRatio: value })
             }
-          >
-            <SelectTrigger className="w-[80px] h-8 text-xs rounded-lg border bg-background">
-              <ImageIcon className="h-3.5 w-3.5 mr-1.5" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {outputCountOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value.toString()} className="text-xs">
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+            options={supportedAspectRatios}
+          />
+        </div>
 
-        {/* Keyboard Shortcut */}
-        <span className="text-xs text-muted-foreground ml-auto hidden lg:inline-flex items-center gap-1">
-          <kbd className="px-2 py-0.5 bg-muted rounded text-[10px] border">⌘</kbd>
-          <span>+</span>
-          <kbd className="px-2 py-0.5 bg-muted rounded text-[10px] border">Enter</kbd>
-        </span>
+        {/* Other Controls */}
+        <div className="flex items-center gap-2">
+          {/* Style Transfer Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={generating}
+            className="h-8 text-xs px-3 rounded-lg"
+          >
+            <ImagePlus className="h-3.5 w-3.5 mr-1.5" />
+            Style
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+
+          {generationType === 'image' && (
+            <Select
+              value={parameters.numOutputs.toString()}
+              onValueChange={(value) =>
+                onParametersChange({ ...parameters, numOutputs: parseInt(value) })
+              }
+            >
+              <SelectTrigger className="w-[80px] h-8 text-xs rounded-lg border bg-background">
+                <ImageIcon className="h-3.5 w-3.5 mr-1.5" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {outputCountOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value.toString()} className="text-xs">
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          {/* Keyboard Shortcut */}
+          <span className="text-xs text-muted-foreground ml-auto hidden lg:inline-flex items-center gap-1">
+            <kbd className="px-2 py-0.5 bg-muted rounded text-[10px] border">⌘</kbd>
+            <span>+</span>
+            <kbd className="px-2 py-0.5 bg-muted rounded text-[10px] border">Enter</kbd>
+          </span>
+        </div>
       </div>
 
       {/* Reference Image Preview */}

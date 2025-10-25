@@ -201,7 +201,7 @@ export function GenerationGallery({
           // Video layout: Prompt above, video below with more space
           if (isVideo) {
             return (
-              <div key={generation.id} className="space-y-3 max-w-4xl">
+              <div key={generation.id} className="space-y-3 max-w-4xl mx-auto">
                 {/* Prompt above video - truncated with click to copy */}
                 <div 
                   className="bg-muted/30 rounded-lg px-4 py-3 border border-border/50 cursor-pointer hover:border-primary/50 transition-colors group"

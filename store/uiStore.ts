@@ -5,6 +5,7 @@ interface GenerationParameters {
   aspectRatio: string
   resolution: number
   numOutputs: number
+  duration?: number
 }
 
 interface UIState {
@@ -22,6 +23,7 @@ const defaultParameters: GenerationParameters = {
   aspectRatio: '1:1',
   resolution: 1024,
   numOutputs: 4,
+  duration: 8, // Default for video models
 }
 
 export const useUIStore = create<UIState>()(

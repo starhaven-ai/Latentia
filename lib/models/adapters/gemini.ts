@@ -140,25 +140,63 @@ export class GeminiAdapter extends BaseModelAdapter {
   }
 
   private async generateVideo(request: GenerationRequest): Promise<GenerationResponse> {
-    // Veo 3.1 endpoint
-    const endpoint = `${this.baseUrl}/models/veo-3.1:generateContent`
+    // TODO: Implement proper Veo 3.1 API integration
+    // The current endpoint needs to be updated to use:
+    // - POST https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview:predictLongRunning
+    // - Poll the operation status until complete
+    // - Download the video from the returned URI
+    // See: https://ai.google.dev/gemini-api/docs/video
+    
+    const duration = request.duration || 8
+    const resolution = request.resolution || 720
+    const aspectRatio = request.aspectRatio || '16:9'
+    
+    // Calculate dimensions based on aspect ratio and resolution
+    const getDimensions = (aspectRatio: string, resolution: number) => {
+      const [widthRatio, heightRatio] = aspectRatio.split(':').map(Number)
+      if (aspectRatio === '16:9') {
+        return resolution === 1080 ? { width: 1920, height: 1080 } : { width: 1280, height: 720 }
+      }
+      if (aspectRatio === '9:16') {
+        return resolution === 1080 ? { width: 1080, height: 1920 } : { width: 720, height: 1280 }
+      }
+      if (aspectRatio === '1:1') {
+        return { width: resolution, height: resolution }
+      }
+      // For other ratios, calculate proportionally
+      const ratio = widthRatio / heightRatio
+      if (ratio > 1) {
+        return { width: resolution, height: Math.round(resolution / ratio) }
+      } else {
+        return { width: Math.round(resolution * ratio), height: resolution }
+      }
+    }
+    
+    const { width, height } = getDimensions(aspectRatio, resolution)
+    
+    // Veo 3.1 endpoint - note: this is a placeholder implementation
+    // The actual API requires a different endpoint and async operation handling
+    const endpoint = `${this.baseUrl}/models/veo-3.1-generate-preview:predictLongRunning`
 
     const payload = {
-      contents: [
+      instances: [
         {
-          parts: [
-            {
-              text: request.prompt,
-            },
-          ],
+          prompt: request.prompt,
         },
       ],
-      generationConfig: {
-        responseModalities: ['video'],
-        temperature: 1.0,
-      },
     }
 
+    console.log(`Generating video with Veo 3.1: ${duration}s, ${width}x${height}, ${aspectRatio}`)
+
+    // TODO: Replace with actual API call implementation
+    // For now, throw an error to indicate this needs implementation
+    throw new Error(
+      'Veo 3.1 video generation requires proper API implementation. ' +
+      'The current implementation needs to be updated to use the long-running operations API. ' +
+      `Requested: ${duration}s duration, ${width}x${height} (${aspectRatio}), ${resolution}p resolution`
+    )
+
+    /* Template for proper implementation:
     const response = await fetch(`${endpoint}?key=${this.apiKey}`, {
       method: 'POST',
       headers: {
@@ -172,33 +210,12 @@ export class GeminiAdapter extends BaseModelAdapter {
       throw new Error(error.error?.message || 'Video generation failed')
     }
 
-    const data = await response.json()
-
-    // Extract video from response
-    const videoPart = data.candidates?.[0]?.content?.parts?.find(
-      (part: any) => part.inlineData?.mimeType?.startsWith('video/')
-    )
-
-    if (!videoPart?.inlineData?.data) {
-      throw new Error('No video data in response')
-    }
-
-    return {
-      id: `gen-${Date.now()}`,
-      status: 'completed',
-      outputs: [
-        {
-          url: `data:${videoPart.inlineData.mimeType};base64,${videoPart.inlineData.data}`,
-          width: 1280,
-          height: 720,
-          duration: 8, // Veo 3.1 default
-        },
-      ],
-      metadata: {
-        model: this.config.id,
-        prompt: request.prompt,
-      },
-    }
+    const operation = await response.json()
+    
+    // Poll operation until complete
+    // Download video from operation.response.generatedVideos[0].video.uri
+    // Return formatted response with actual video data
+    */
   }
 }
 
@@ -233,6 +250,8 @@ export const NANO_BANANA_CONFIG: ModelConfig = {
   ],
 }
 
+// Veo 3.1 configuration based on official API docs
+// https://ai.google.dev/gemini-api/docs/video
 export const VEO_3_1_CONFIG: ModelConfig = {
   id: 'gemini-veo-3.1',
   name: 'Veo 3.1',
@@ -240,10 +259,43 @@ export const VEO_3_1_CONFIG: ModelConfig = {
   type: 'video',
   description: 'State-of-the-art video generation with native audio support',
   defaultAspectRatio: '16:9',
-  supportedAspectRatios: ['16:9', '9:16', '1:1'],
+  supportedAspectRatios: ['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9'],
+  maxResolution: 1080,
   pricing: {
     perSecond: 0.05,
     currency: 'USD',
   },
+  parameters: [
+    {
+      name: 'resolution',
+      type: 'select',
+      label: 'Resolution',
+      default: 720,
+      options: [
+        { label: '720p', value: 720 },
+        { label: '1080p', value: 1080 },
+      ],
+    },
+    {
+      name: 'duration',
+      type: 'select',
+      label: 'Duration',
+      default: 8,
+      options: [
+        { label: '4 seconds', value: 4 },
+        { label: '6 seconds', value: 6 },
+        { label: '8 seconds', value: 8 },
+      ],
+    },
+    {
+      name: 'numOutputs',
+      type: 'select',
+      label: 'Videos',
+      default: 1,
+      options: [
+        { label: '1', value: 1 },
+      ],
+    },
+  ],
 }
 

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Video as VideoIcon, Wand2, ImagePlus, Ratio, ChevronDown, X, Upload, FolderOpen } from 'lucide-react'
+import { Video as VideoIcon, Wand2, ImagePlus, Ratio, ChevronDown, X, Upload, FolderOpen, Clock } from 'lucide-react'
 import { useModelCapabilities } from '@/hooks/useModelCapabilities'
 import { AspectRatioSelector } from './AspectRatioSelector'
 import { ModelPicker } from './ModelPicker'
@@ -20,6 +20,7 @@ interface VideoInputProps {
     aspectRatio: string
     resolution: number
     numOutputs: number
+    duration?: number
   }
   onParametersChange: (parameters: any) => void
   selectedModel: string
@@ -53,16 +54,17 @@ export function VideoInput({
   
   // Get resolution options from model config or use defaults
   const resolutionOptions = modelParameters.find(p => p.name === 'resolution')?.options || [
-    { label: '512px', value: 512 },
-    { label: '1024px', value: 1024 },
-    { label: '2048px', value: 2048 },
+    { label: '720p', value: 720 },
+    { label: '1080p', value: 1080 },
   ]
+  
+  // Get duration options from model config
+  const durationOptions = modelParameters.find(p => p.name === 'duration')?.options || []
+  const hasDuration = durationOptions.length > 0
   
   // Get output count options from model config or use defaults
   const outputCountOptions = modelParameters.find(p => p.name === 'numOutputs')?.options || [
     { label: '1', value: 1 },
-    { label: '2', value: 2 },
-    { label: '4', value: 4 },
   ]
   
   // Update parameters when model changes if current values aren't supported
@@ -229,14 +231,30 @@ export function VideoInput({
           onChange={handleFileSelect}
         />
 
-        {/* Aspect Ratio Selector - Compact */}
-        <div className="[&>button]:h-8 [&>button]:text-xs [&>button]:px-3 [&>button]:rounded-lg">
-          <AspectRatioSelector
-            value={parameters.aspectRatio}
-            onChange={(ratio: string) => onParametersChange({ ...parameters, aspectRatio: ratio })}
-            options={supportedAspectRatios}
-          />
-        </div>
+        {/* Aspect Ratio Popover */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={generating}
+              className="h-8 text-xs px-3 rounded-lg"
+            >
+              <Ratio className="h-3.5 w-3.5 mr-1.5" />
+              {parameters.aspectRatio}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-3" align="start">
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Aspect Ratio</p>
+              <AspectRatioSelector
+                value={parameters.aspectRatio}
+                onChange={(ratio: string) => onParametersChange({ ...parameters, aspectRatio: ratio })}
+                options={supportedAspectRatios}
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
 
         {/* Resolution Dropdown */}
         <Select
@@ -255,6 +273,27 @@ export function VideoInput({
             ))}
           </SelectContent>
         </Select>
+
+        {/* Duration Dropdown - Only for video models that support it */}
+        {hasDuration && (
+          <Select
+            value={String(parameters.duration || 8)}
+            onValueChange={(value) => onParametersChange({ ...parameters, duration: parseInt(value) })}
+            disabled={generating}
+          >
+            <SelectTrigger className="h-8 text-xs px-3 rounded-lg w-auto min-w-[100px]">
+              <Clock className="h-3.5 w-3.5 mr-1.5" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {durationOptions.map((option) => (
+                <SelectItem key={option.value} value={String(option.value)}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         {/* Number of Outputs */}
         <Select

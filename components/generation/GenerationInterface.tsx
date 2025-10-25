@@ -68,6 +68,7 @@ export function GenerationInterface({
           aspectRatio: parameters.aspectRatio,
           resolution: parameters.resolution,
           numOutputs: parameters.numOutputs,
+          ...(parameters.duration && { duration: parameters.duration }),
         },
       })
       
@@ -100,6 +101,7 @@ export function GenerationInterface({
       aspectRatio: genParams.aspectRatio || '1:1',
       resolution: genParams.resolution || 1024,
       numOutputs: genParams.numOutputs || 1,
+      ...(genParams.duration && { duration: genParams.duration }),
     })
     
     // Show toast to confirm

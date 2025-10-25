@@ -105,8 +105,27 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Generation error:', error)
+    
+    // Update generation status to failed
+    if (generation) {
+      await prisma.generation.update({
+        where: { id: generation.id },
+        data: { 
+          status: 'failed',
+          parameters: {
+            ...parameters,
+            error: error.message,
+          }
+        },
+      })
+    }
+    
     return NextResponse.json(
-      { error: error.message || 'Generation failed' },
+      { 
+        id: generation?.id,
+        status: 'failed',
+        error: error.message || 'Generation failed' 
+      },
       { status: 500 }
     )
   }

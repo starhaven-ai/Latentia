@@ -70,14 +70,15 @@ export function GenerationGallery({
     }
   }
 
-  const handleDownload = async (imageUrl: string, outputId: string) => {
+  const handleDownload = async (fileUrl: string, outputId: string, fileType: string = 'image') => {
     try {
-      const response = await fetch(imageUrl)
+      const response = await fetch(fileUrl)
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = `generation-${outputId}.png`
+      const extension = fileType === 'video' ? 'mp4' : 'png'
+      link.download = `generation-${outputId}.${extension}`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -86,7 +87,7 @@ export function GenerationGallery({
       console.error('Download failed:', error)
       toast({
         title: "Download failed",
-        description: "Failed to download image",
+        description: `Failed to download ${fileType}`,
         variant: "destructive",
       })
     }
@@ -293,7 +294,7 @@ export function GenerationGallery({
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleDownload(output.fileUrl, output.id)
+                          handleDownload(output.fileUrl, output.id, output.fileType)
                         }}
                         className="p-1.5 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"
                         title="Download"

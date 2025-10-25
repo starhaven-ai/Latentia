@@ -174,29 +174,47 @@ export class GeminiAdapter extends BaseModelAdapter {
     
     const { width, height } = getDimensions(aspectRatio, resolution)
     
-    // Veo 3.1 endpoint - note: this is a placeholder implementation
-    // The actual API requires a different endpoint and async operation handling
-    const endpoint = `${this.baseUrl}/models/veo-3.1-generate-preview:predictLongRunning`
-
-    const payload = {
-      instances: [
-        {
-          prompt: request.prompt,
-        },
-      ],
-    }
-
     console.log(`Generating video with Veo 3.1: ${duration}s, ${width}x${height}, ${aspectRatio}`)
 
-    // TODO: Replace with actual API call implementation
-    // For now, throw an error to indicate this needs implementation
-    throw new Error(
-      'Veo 3.1 video generation requires proper API implementation. ' +
-      'The current implementation needs to be updated to use the long-running operations API. ' +
-      `Requested: ${duration}s duration, ${width}x${height} (${aspectRatio}), ${resolution}p resolution`
-    )
+    // MOCK IMPLEMENTATION FOR TESTING
+    // Using a placeholder video URL for demonstration
+    // Replace this with actual Veo 3.1 API implementation
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // Return mock video response
+    // Using Big Buck Bunny sample video (open source)
+    const mockVideoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+    
+    return {
+      id: `gen-${Date.now()}`,
+      status: 'completed',
+      outputs: [
+        {
+          url: mockVideoUrl,
+          width,
+          height,
+          duration,
+        },
+      ],
+      metadata: {
+        model: this.config.id,
+        prompt: request.prompt,
+        note: 'MOCK VIDEO - Replace with actual Veo 3.1 API implementation',
+      },
+    }
 
-    /* Template for proper implementation:
+    /* Template for proper Veo 3.1 implementation:
+    
+    const endpoint = `${this.baseUrl}/models/veo-3.1-generate-preview:predictLongRunning`
+    
+    const payload = {
+      instances: [{
+        prompt: request.prompt,
+      }],
+    }
+    
     const response = await fetch(`${endpoint}?key=${this.apiKey}`, {
       method: 'POST',
       headers: {
@@ -213,8 +231,18 @@ export class GeminiAdapter extends BaseModelAdapter {
     const operation = await response.json()
     
     // Poll operation until complete
-    // Download video from operation.response.generatedVideos[0].video.uri
-    // Return formatted response with actual video data
+    let operationComplete = false
+    while (!operationComplete) {
+      await new Promise(resolve => setTimeout(resolve, 10000)) // Wait 10s
+      const statusResponse = await fetch(`${this.baseUrl}/${operation.name}?key=${this.apiKey}`)
+      const status = await statusResponse.json()
+      operationComplete = status.done
+      if (operationComplete) {
+        const videoUri = status.response.generatedVideos[0].video.uri
+        // Download video from URI
+        // Return formatted response with actual video data
+      }
+    }
     */
   }
 }

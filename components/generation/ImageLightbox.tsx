@@ -12,7 +12,7 @@ interface ImageLightboxProps {
   onBookmark: (outputId: string, isBookmarked: boolean) => void
   onApprove: (outputId: string, isApproved: boolean) => void
   onReuse: () => void
-  onDownload: (imageUrl: string, outputId: string) => void
+  onDownload: (imageUrl: string, outputId: string, fileType: string) => void
 }
 
 export function ImageLightbox({ 
@@ -71,7 +71,7 @@ export function ImageLightbox({
         {/* Action Bar */}
         <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-full px-6 py-3 border border-white/20">
           <button
-            onClick={() => onDownload(imageUrl, output.id)}
+            onClick={() => onDownload(imageUrl, output.id, output.fileType)}
             className="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
             title="Download"
           >

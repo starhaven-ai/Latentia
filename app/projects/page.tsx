@@ -9,11 +9,14 @@ import { ProjectGrid } from '@/components/projects/ProjectGrid'
 import { NewProjectDialog } from '@/components/projects/NewProjectDialog'
 import type { Project } from '@/types/project'
 
+type TabType = 'briefings' | 'projects' | 'review'
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [showNewProject, setShowNewProject] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<TabType>('projects')
   const router = useRouter()
   const supabase = createClient()
 
@@ -103,31 +106,144 @@ export default function ProjectsPage() {
         </div>
       </header>
 
+      {/* Tab Navigation */}
+      <div className="border-b border-border bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center gap-8">
+            <button
+              onClick={() => setActiveTab('briefings')}
+              className={`px-4 py-3 text-sm font-medium transition-all relative ${
+                activeTab === 'briefings'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Briefings
+              {activeTab === 'briefings' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('projects')}
+              className={`px-4 py-3 text-sm font-medium transition-all relative ${
+                activeTab === 'projects'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Projects
+              {activeTab === 'projects' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('review')}
+              className={`px-4 py-3 text-sm font-medium transition-all relative ${
+                activeTab === 'review'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Review
+              {activeTab === 'review' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <p className="text-muted-foreground">Loading projects...</p>
-          </div>
-        ) : projects.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <div className="text-center">
-              <h2 className="text-2xl font-semibold mb-2">No projects yet</h2>
-              <p className="text-muted-foreground mb-6">
-                Create your first project to start generating AI content
+        {/* Briefings Tab */}
+        {activeTab === 'briefings' && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="text-center space-y-4 max-w-md">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-primary"
+                >
+                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" x2="8" y1="13" y2="13" />
+                  <line x1="16" x2="8" y1="17" y2="17" />
+                  <line x1="10" x2="8" y1="9" y2="9" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold">Briefings</h2>
+              <p className="text-muted-foreground">
+                Create and manage creative briefings for your team. This feature is coming soon.
               </p>
-              <Button onClick={() => setShowNewProject(true)} size="lg">
-                <Plus className="mr-2 h-5 w-5" />
-                Create Your First Project
-              </Button>
             </div>
           </div>
-        ) : (
-          <ProjectGrid 
-            projects={projects} 
-            currentUserId={currentUserId || undefined}
-            onProjectUpdate={fetchProjects}
-          />
+        )}
+
+        {/* Projects Tab */}
+        {activeTab === 'projects' && (
+          <>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <p className="text-muted-foreground">Loading projects...</p>
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <div className="text-center">
+                  <h2 className="text-2xl font-semibold mb-2">No projects yet</h2>
+                  <p className="text-muted-foreground mb-6">
+                    Create your first project to start generating AI content
+                  </p>
+                  <Button onClick={() => setShowNewProject(true)} size="lg">
+                    <Plus className="mr-2 h-5 w-5" />
+                    Create Your First Project
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <ProjectGrid 
+                projects={projects} 
+                currentUserId={currentUserId || undefined}
+                onProjectUpdate={fetchProjects}
+              />
+            )}
+          </>
+        )}
+
+        {/* Review Tab */}
+        {activeTab === 'review' && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="text-center space-y-4 max-w-md">
+              <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-green-600"
+                >
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold">Review</h2>
+              <p className="text-muted-foreground">
+                Review and approve content submitted by your team. Approved items will appear here.
+              </p>
+            </div>
+          </div>
         )}
       </main>
 

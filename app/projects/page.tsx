@@ -13,6 +13,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [showNewProject, setShowNewProject] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -31,6 +32,8 @@ export default function ProjectsPage() {
         router.push('/login')
         return
       }
+
+      setCurrentUserId(user.id)
 
       // Fetch projects from API
       console.log('Fetching projects from API...')
@@ -120,7 +123,11 @@ export default function ProjectsPage() {
             </div>
           </div>
         ) : (
-          <ProjectGrid projects={projects} />
+          <ProjectGrid 
+            projects={projects} 
+            currentUserId={currentUserId || undefined}
+            onProjectUpdate={fetchProjects}
+          />
         )}
       </main>
 

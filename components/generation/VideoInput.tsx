@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Image as ImageIcon, Wand2, ImagePlus, Ratio, ChevronDown, Upload, FolderOpen } from 'lucide-react'
+import { Video as VideoIcon, Wand2, ImagePlus, Ratio, ChevronDown, X, Upload, FolderOpen } from 'lucide-react'
 import { useModelCapabilities } from '@/hooks/useModelCapabilities'
 import { AspectRatioSelector } from './AspectRatioSelector'
 import { ModelPicker } from './ModelPicker'
 import { ImageBrowseModal } from './ImageBrowseModal'
 import { useParams } from 'next/navigation'
 
-interface ChatInputProps {
+interface VideoInputProps {
   prompt: string
   onPromptChange: (prompt: string) => void
   onGenerate: (prompt: string, referenceImage?: File) => void
@@ -22,21 +22,25 @@ interface ChatInputProps {
     numOutputs: number
   }
   onParametersChange: (parameters: any) => void
-  generationType: 'image' | 'video'
   selectedModel: string
   onModelSelect: (modelId: string) => void
+  referenceImageUrl?: string | null
+  onClearReferenceImage?: () => void
+  onSetReferenceImageUrl?: (url: string) => void
 }
 
-export function ChatInput({
+export function VideoInput({
   prompt,
   onPromptChange,
   onGenerate,
   parameters,
   onParametersChange,
-  generationType,
   selectedModel,
   onModelSelect,
-}: ChatInputProps) {
+  referenceImageUrl,
+  onClearReferenceImage,
+  onSetReferenceImageUrl,
+}: VideoInputProps) {
   const params = useParams()
   const [referenceImage, setReferenceImage] = useState<File | null>(null)
   const [generating, setGenerating] = useState(false)
@@ -111,15 +115,9 @@ export function ChatInput({
     }
   }
 
-  const handleBrowseSelect = async (imageUrl: string) => {
-    // Convert URL to File for image generation
-    try {
-      const response = await fetch(imageUrl)
-      const blob = await response.blob()
-      const file = new File([blob], 'reference.png', { type: blob.type })
-      setReferenceImage(file)
-    } catch (error) {
-      console.error('Error loading image from URL:', error)
+  const handleBrowseSelect = (imageUrl: string) => {
+    if (onSetReferenceImageUrl) {
+      onSetReferenceImageUrl(imageUrl)
     }
   }
 
@@ -130,7 +128,7 @@ export function ChatInput({
         {/* Input */}
         <div className="flex-1 relative">
           <Textarea
-            placeholder="Describe an image and click generate..."
+            placeholder="Describe a video to animate from the reference image..."
             value={prompt}
             onChange={(e) => onPromptChange(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -138,6 +136,26 @@ export function ChatInput({
             disabled={generating}
           />
         </div>
+
+        {/* Reference Image Thumbnail - Left of Generate Button */}
+        {referenceImageUrl && (
+          <div className="relative group">
+            <div className="w-[52px] h-[52px] rounded-lg overflow-hidden border-2 border-primary shadow-md">
+              <img
+                src={referenceImageUrl}
+                alt="Reference"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <button
+              onClick={onClearReferenceImage}
+              className="absolute -top-2 -right-2 bg-background border border-border rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-destructive hover:text-destructive-foreground"
+              title="Remove reference image"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        )}
         
         {/* Generate Button */}
         <Button
@@ -146,7 +164,7 @@ export function ChatInput({
           size="default"
           className="h-[52px] px-8 rounded-lg font-semibold shadow-sm hover:shadow transition-all"
         >
-          <Wand2 className="mr-2 h-4 w-4" />
+          <VideoIcon className="mr-2 h-4 w-4" />
           {generating ? 'Generating...' : 'Generate'}
         </Button>
       </div>
@@ -158,7 +176,7 @@ export function ChatInput({
           <ModelPicker
             selectedModel={selectedModel}
             onModelSelect={onModelSelect}
-            generationType={generationType}
+            generationType="video"
           />
         </div>
 
@@ -211,75 +229,55 @@ export function ChatInput({
           onChange={handleFileSelect}
         />
 
-        {/* Aspect Ratio Popover */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={generating}
-              className="h-8 text-xs px-3 rounded-lg"
-            >
-              <Ratio className="h-3.5 w-3.5 mr-1.5" />
-              {parameters.aspectRatio}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-3" align="start">
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">Aspect Ratio</p>
-              <AspectRatioSelector
-                value={parameters.aspectRatio}
-                onChange={(value) =>
-                  onParametersChange({ ...parameters, aspectRatio: value })
-                }
-                options={supportedAspectRatios}
-              />
-            </div>
-          </PopoverContent>
-        </Popover>
+        {/* Aspect Ratio Selector - Compact */}
+        <div className="[&>button]:h-8 [&>button]:text-xs [&>button]:px-3 [&>button]:rounded-lg">
+          <AspectRatioSelector
+            value={parameters.aspectRatio}
+            onChange={(ratio: string) => onParametersChange({ ...parameters, aspectRatio: ratio })}
+            options={supportedAspectRatios}
+          />
+        </div>
 
-        {generationType === 'image' && (
-          <Select
-            value={parameters.numOutputs.toString()}
-            onValueChange={(value) =>
-              onParametersChange({ ...parameters, numOutputs: parseInt(value) })
-            }
-          >
-            <SelectTrigger className="w-[80px] h-8 text-xs rounded-lg border bg-background">
-              <ImageIcon className="h-3.5 w-3.5 mr-1.5" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {outputCountOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value.toString()} className="text-xs">
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        {/* Resolution Dropdown */}
+        <Select
+          value={String(parameters.resolution)}
+          onValueChange={(value) => onParametersChange({ ...parameters, resolution: parseInt(value) })}
+          disabled={generating}
+        >
+          <SelectTrigger className="h-8 text-xs px-3 rounded-lg w-auto min-w-[90px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {resolutionOptions.map(option => (
+              <SelectItem key={option.value} value={String(option.value)}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        {/* Keyboard Shortcut */}
-        <span className="text-xs text-muted-foreground ml-auto hidden lg:inline-flex items-center gap-1">
-          <kbd className="px-2 py-0.5 bg-muted rounded text-[10px] border">⌘</kbd>
-          <span>+</span>
-          <kbd className="px-2 py-0.5 bg-muted rounded text-[10px] border">Enter</kbd>
-        </span>
+        {/* Number of Outputs */}
+        <Select
+          value={String(parameters.numOutputs)}
+          onValueChange={(value) => onParametersChange({ ...parameters, numOutputs: parseInt(value) })}
+          disabled={generating}
+        >
+          <SelectTrigger className="h-8 text-xs px-3 rounded-lg w-auto min-w-[60px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {outputCountOptions.map(option => (
+              <SelectItem key={option.value} value={String(option.value)}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Reference Image Preview */}
       {referenceImage && (
-        <div className="flex items-center gap-2">
-          <div className="inline-flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/30 rounded-lg text-xs shadow-sm">
-            <ImagePlus className="h-4 w-4 text-primary" />
-            <span className="text-foreground font-medium truncate max-w-[200px]">{referenceImage.name}</span>
-            <button
-              onClick={() => setReferenceImage(null)}
-              className="text-muted-foreground hover:text-destructive transition-colors ml-1 text-base leading-none"
-            >
-              ×
-            </button>
-          </div>
+        <div className="text-xs text-muted-foreground">
+          Reference: {referenceImage.name}
         </div>
       )}
 

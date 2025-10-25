@@ -95,7 +95,7 @@ export default function ProjectPage() {
     }
   }
 
-  const handleSessionCreate = async (type: 'image' | 'video') => {
+  const handleSessionCreate = async (type: 'image' | 'video', name?: string): Promise<Session | null> => {
     try {
       const response = await fetch('/api/sessions', {
         method: 'POST',
@@ -104,7 +104,7 @@ export default function ProjectPage() {
         },
         body: JSON.stringify({
           projectId: params.id as string,
-          name: `${type === 'image' ? 'Image' : 'Video'} Session ${sessions.length + 1}`,
+          name: name || `${type === 'image' ? 'Image' : 'Video'} Session ${sessions.length + 1}`,
           type,
         }),
       })
@@ -120,11 +120,36 @@ export default function ProjectPage() {
         setSessions([...sessions, parsedSession])
         setActiveSession(parsedSession)
         setGenerationType(type)
+        return parsedSession
       } else {
         console.error('Failed to create session')
+        return null
       }
     } catch (error) {
       console.error('Error creating session:', error)
+      return null
+    }
+  }
+
+  const handleSessionSwitch = (sessionId: string) => {
+    const targetSession = sessions.find(s => s.id === sessionId)
+    if (targetSession) {
+      setActiveSession(targetSession)
+      setGenerationType(targetSession.type)
+    }
+  }
+
+  const handleGenerationTypeChange = (type: 'image' | 'video') => {
+    // Find sessions of the target type
+    const sessionsOfType = sessions.filter(s => s.type === type)
+    
+    if (sessionsOfType.length > 0) {
+      // Switch to the first session of that type
+      setActiveSession(sessionsOfType[0])
+      setGenerationType(type)
+    } else {
+      // No sessions of this type exist, create one
+      handleSessionCreate(type)
     }
   }
 
@@ -155,7 +180,7 @@ export default function ProjectPage() {
             <Button
               variant={generationType === 'image' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setGenerationType('image')}
+              onClick={() => handleGenerationTypeChange('image')}
               className="h-8 w-8 p-0"
             >
               <svg
@@ -177,7 +202,7 @@ export default function ProjectPage() {
             <Button
               variant={generationType === 'video' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setGenerationType('video')}
+              onClick={() => handleGenerationTypeChange('video')}
               className="h-8 w-8 p-0"
             >
               <svg
@@ -234,7 +259,7 @@ export default function ProjectPage() {
       <div className="flex-1 flex overflow-hidden">
         {/* Sessions Sidebar - Always Visible */}
         <SessionSidebar
-          sessions={sessions}
+          sessions={sessions.filter(s => s.type === generationType)}
           activeSession={activeSession}
           generationType={generationType}
           projectOwnerId={projectOwnerId}
@@ -248,6 +273,9 @@ export default function ProjectPage() {
         <GenerationInterface
           session={activeSession}
           generationType={generationType}
+          allSessions={sessions}
+          onSessionCreate={handleSessionCreate}
+          onSessionSwitch={handleSessionSwitch}
         />
       </div>
 

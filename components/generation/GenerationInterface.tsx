@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { GenerationGallery } from './GenerationGallery'
 import { ChatInput } from './ChatInput'
+import { VideoInput } from './VideoInput'
 import type { Session } from '@/types/project'
 import type { GenerationWithOutputs } from '@/types/generation'
 import { useGenerations } from '@/hooks/useGenerations'
@@ -13,15 +14,22 @@ import { useToast } from '@/components/ui/use-toast'
 interface GenerationInterfaceProps {
   session: Session | null
   generationType: 'image' | 'video'
+  allSessions?: Session[]
+  onSessionCreate?: (type: 'image' | 'video', name: string) => Promise<Session | null>
+  onSessionSwitch?: (sessionId: string) => void
 }
 
 export function GenerationInterface({
   session,
   generationType,
+  allSessions = [],
+  onSessionCreate,
+  onSessionSwitch,
 }: GenerationInterfaceProps) {
   const { toast } = useToast()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [prompt, setPrompt] = useState('')
+  const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null)
   
   // Use Zustand store for UI state
   const { selectedModel, parameters, setSelectedModel, setParameters } = useUIStore()
@@ -102,6 +110,38 @@ export function GenerationInterface({
     })
   }
 
+  const handleConvertToVideo = async (generation: GenerationWithOutputs, videoSessionId: string, imageUrl?: string) => {
+    if (!onSessionSwitch) return
+
+    // Switch to the video session
+    onSessionSwitch(videoSessionId)
+
+    // Set prompt and parameters from the image generation
+    setPrompt(generation.prompt)
+    setSelectedModel(generation.modelId)
+    
+    // Set the reference image URL for the thumbnail
+    if (imageUrl) {
+      setReferenceImageUrl(imageUrl)
+    }
+    
+    const genParams = generation.parameters as any
+    setParameters({
+      aspectRatio: genParams.aspectRatio || '16:9', // Default to 16:9 for video
+      resolution: genParams.resolution || 1024,
+      numOutputs: 1, // Videos typically generate one at a time
+    })
+
+    toast({
+      title: "Converted to video",
+      description: "Prompt copied to video session. Ready to generate!",
+      variant: "success",
+    })
+  }
+
+  // Get video sessions
+  const videoSessions = allSessions.filter(s => s.type === 'video')
+
   if (!session) {
     return (
       <div className="flex-1 flex items-center justify-center text-muted-foreground">
@@ -134,6 +174,10 @@ export function GenerationInterface({
                 isGenerating={generateMutation.isPending}
                 pendingCount={generateMutation.isPending ? parameters.numOutputs : 0}
                 pendingAspectRatio={parameters.aspectRatio}
+                videoSessions={videoSessions}
+                onConvertToVideo={handleConvertToVideo}
+                onCreateVideoSession={onSessionCreate}
+                currentGenerationType={generationType}
               />
             </div>
           </div>
@@ -144,16 +188,31 @@ export function GenerationInterface({
       <div className="border-t border-border/50 bg-muted/20 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="bg-card border border-border rounded-xl shadow-lg p-4">
-            <ChatInput
-              prompt={prompt}
-              onPromptChange={setPrompt}
-              onGenerate={handleGenerate}
-              parameters={parameters}
-              onParametersChange={setParameters}
-              generationType={generationType}
-              selectedModel={selectedModel}
-              onModelSelect={setSelectedModel}
-            />
+            {generationType === 'video' ? (
+              <VideoInput
+                prompt={prompt}
+                onPromptChange={setPrompt}
+                onGenerate={handleGenerate}
+                parameters={parameters}
+                onParametersChange={setParameters}
+                selectedModel={selectedModel}
+                onModelSelect={setSelectedModel}
+                referenceImageUrl={referenceImageUrl}
+                onClearReferenceImage={() => setReferenceImageUrl(null)}
+                onSetReferenceImageUrl={setReferenceImageUrl}
+              />
+            ) : (
+              <ChatInput
+                prompt={prompt}
+                onPromptChange={setPrompt}
+                onGenerate={handleGenerate}
+                parameters={parameters}
+                onParametersChange={setParameters}
+                generationType={generationType}
+                selectedModel={selectedModel}
+                onModelSelect={setSelectedModel}
+              />
+            )}
           </div>
         </div>
       </div>

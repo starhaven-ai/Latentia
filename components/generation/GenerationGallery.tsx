@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { Download, RotateCcw, Info, Copy, Bookmark, Check } from 'lucide-react'
+import { Download, RotateCcw, Info, Copy, Bookmark, Check, Video } from 'lucide-react'
 import type { GenerationWithOutputs } from '@/types/generation'
+import type { Session } from '@/types/project'
 import { useUpdateOutputMutation } from '@/hooks/useOutputMutations'
 import { useToast } from '@/components/ui/use-toast'
 import { useQueryClient } from '@tanstack/react-query'
 import { GenerationProgress } from './GenerationProgress'
 import { ImageLightbox } from './ImageLightbox'
+import { VideoSessionSelector } from './VideoSessionSelector'
 
 interface GenerationGalleryProps {
   generations: GenerationWithOutputs[]
@@ -14,6 +16,10 @@ interface GenerationGalleryProps {
   pendingCount?: number
   isGenerating?: boolean
   pendingAspectRatio?: string
+  videoSessions?: Session[]
+  onConvertToVideo?: (generation: GenerationWithOutputs, videoSessionId: string, imageUrl?: string) => void
+  onCreateVideoSession?: ((type: 'image' | 'video', name: string) => Promise<Session | null>) | undefined
+  currentGenerationType?: 'image' | 'video'
 }
 
 export function GenerationGallery({
@@ -23,6 +29,10 @@ export function GenerationGallery({
   pendingCount = 0,
   isGenerating = false,
   pendingAspectRatio = '1:1',
+  videoSessions = [],
+  onConvertToVideo,
+  onCreateVideoSession,
+  currentGenerationType = 'image',
 }: GenerationGalleryProps) {
   const { toast } = useToast()
   const queryClient = useQueryClient()
@@ -32,6 +42,9 @@ export function GenerationGallery({
     output: any
     generation: GenerationWithOutputs
   } | null>(null)
+  const [videoSelectorOpen, setVideoSelectorOpen] = useState(false)
+  const [selectedGeneration, setSelectedGeneration] = useState<GenerationWithOutputs | null>(null)
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null)
 
   // Convert aspect ratio string to CSS aspect-ratio value
   const getAspectRatioStyle = (aspectRatio?: string) => {
@@ -133,6 +146,27 @@ export function GenerationGallery({
         description: "Failed to update bookmark status",
         variant: "destructive",
       })
+    }
+  }
+
+  const handleVideoConversion = (generation: GenerationWithOutputs, imageUrl: string) => {
+    setSelectedGeneration(generation)
+    setSelectedImageUrl(imageUrl)
+    setVideoSelectorOpen(true)
+  }
+
+  const handleSelectVideoSession = async (videoSessionId: string) => {
+    if (selectedGeneration && onConvertToVideo) {
+      onConvertToVideo(selectedGeneration, videoSessionId, selectedImageUrl || undefined)
+    }
+  }
+
+  const handleCreateVideoSession = async (sessionName: string) => {
+    if (selectedGeneration && onCreateVideoSession) {
+      const newSession = await onCreateVideoSession('video', sessionName)
+      if (newSession && onConvertToVideo) {
+        onConvertToVideo(selectedGeneration, newSession.id, selectedImageUrl || undefined)
+      }
     }
   }
 
@@ -276,6 +310,18 @@ export function GenerationGallery({
                       >
                         <RotateCcw className="h-3.5 w-3.5 text-white" />
                       </button>
+                      {currentGenerationType === 'image' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleVideoConversion(generation, output.fileUrl)
+                          }}
+                          className="p-1.5 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"
+                          title="Convert to Video"
+                        >
+                          <Video className="h-3.5 w-3.5 text-white" />
+                        </button>
+                      )}
                     </div>
                     <div className="flex items-center gap-1">
                       <button
@@ -349,6 +395,19 @@ export function GenerationGallery({
           }
         }}
         onDownload={handleDownload}
+      />
+
+      {/* Video Session Selector */}
+      <VideoSessionSelector
+        isOpen={videoSelectorOpen}
+        onClose={() => {
+          setVideoSelectorOpen(false)
+          setSelectedGeneration(null)
+          setSelectedImageUrl(null)
+        }}
+        videoSessions={videoSessions}
+        onSelectSession={handleSelectVideoSession}
+        onCreateNewSession={handleCreateVideoSession}
       />
     </>
   )

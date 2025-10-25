@@ -11,6 +11,8 @@ import { AspectRatioSelector } from './AspectRatioSelector'
 import { ModelPicker } from './ModelPicker'
 
 interface ChatInputProps {
+  prompt: string
+  onPromptChange: (prompt: string) => void
   onGenerate: (prompt: string, referenceImage?: File) => void
   parameters: {
     aspectRatio: string
@@ -24,6 +26,8 @@ interface ChatInputProps {
 }
 
 export function ChatInput({
+  prompt,
+  onPromptChange,
   onGenerate,
   parameters,
   onParametersChange,
@@ -31,7 +35,6 @@ export function ChatInput({
   selectedModel,
   onModelSelect,
 }: ChatInputProps) {
-  const [prompt, setPrompt] = useState('')
   const [referenceImage, setReferenceImage] = useState<File | null>(null)
   const [generating, setGenerating] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -80,7 +83,7 @@ export function ChatInput({
     setGenerating(true)
     try {
       await onGenerate(prompt, referenceImage || undefined)
-      setPrompt('')
+      onPromptChange('')
       setReferenceImage(null)
     } catch (error) {
       console.error('Generation error:', error)
@@ -112,7 +115,7 @@ export function ChatInput({
           <Textarea
             placeholder="Describe an image and click generate..."
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={(e) => onPromptChange(e.target.value)}
             onKeyDown={handleKeyDown}
             className="resize-none min-h-[52px] max-h-[104px] px-4 py-3 text-sm rounded-lg bg-muted/50 border border-border focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary transition-all"
             disabled={generating}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { GenerationGallery } from './GenerationGallery'
 import { ChatInput } from './ChatInput'
 import type { Session } from '@/types/project'
@@ -21,6 +21,7 @@ export function GenerationInterface({
 }: GenerationInterfaceProps) {
   const { toast } = useToast()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [prompt, setPrompt] = useState('')
   
   // Use Zustand store for UI state
   const { selectedModel, parameters, setSelectedModel, setParameters } = useUIStore()
@@ -79,12 +80,25 @@ export function GenerationInterface({
   }
 
   const handleReuseParameters = (generation: GenerationWithOutputs) => {
+    // Set prompt
+    setPrompt(generation.prompt)
+    
+    // Set model
     setSelectedModel(generation.modelId)
+    
+    // Set parameters
     const genParams = generation.parameters as any
     setParameters({
-      aspectRatio: genParams.aspectRatio,
-      resolution: genParams.resolution,
-      numOutputs: genParams.numOutputs,
+      aspectRatio: genParams.aspectRatio || '1:1',
+      resolution: genParams.resolution || 1024,
+      numOutputs: genParams.numOutputs || 1,
+    })
+    
+    // Show toast to confirm
+    toast({
+      title: "Parameters reused",
+      description: "Prompt and settings have been loaded. You can now modify and regenerate.",
+      variant: "default",
     })
   }
 
@@ -131,6 +145,8 @@ export function GenerationInterface({
         <div className="max-w-4xl mx-auto">
           <div className="bg-card border border-border rounded-xl shadow-lg p-4">
             <ChatInput
+              prompt={prompt}
+              onPromptChange={setPrompt}
               onGenerate={handleGenerate}
               parameters={parameters}
               onParametersChange={setParameters}

@@ -200,24 +200,53 @@ export function SessionSidebar({
                         </p>
                       </div>
                       <div className="flex items-center gap-1">
-                        <button
-                          onClick={(e) => handleTogglePrivacy(session, e)}
-                          className={`p-1 rounded transition-all ${
-                            isOwner 
-                              ? 'hover:bg-white/10 opacity-0 group-hover:opacity-100' 
-                              : 'opacity-50 cursor-default'
-                          } ${
-                            activeSession?.id === session.id ? 'text-primary-foreground' : 'text-muted-foreground'
-                          }`}
-                          title={isOwner ? (session.isPrivate ? 'Make public' : 'Make private') : (session.isPrivate ? 'Private' : 'Public')}
-                          disabled={!isOwner}
-                        >
-                          {session.isPrivate ? (
-                            <Lock className="h-3.5 w-3.5" />
-                          ) : (
-                            <Globe className="h-3.5 w-3.5" />
-                          )}
-                        </button>
+                        {isOwner ? (
+                          <button
+                            onClick={(e) => handleTogglePrivacy(session, e)}
+                            className={`rounded-full p-0.5 flex items-center gap-0.5 transition-all relative opacity-0 group-hover:opacity-100 ${
+                              activeSession?.id === session.id
+                                ? 'bg-primary-foreground/10 hover:bg-primary-foreground/20'
+                                : 'bg-white/10 hover:bg-white/20'
+                            }`}
+                            title={session.isPrivate ? 'Click to make public' : 'Click to make private'}
+                          >
+                            {/* Lock Icon - Left */}
+                            <div className={`p-1 rounded-full transition-all z-10 ${
+                              session.isPrivate
+                                ? activeSession?.id === session.id ? 'text-primary' : 'text-background'
+                                : activeSession?.id === session.id ? 'text-primary-foreground/60' : 'text-muted-foreground'
+                            }`}>
+                              <Lock className="h-3 w-3" />
+                            </div>
+                            
+                            {/* Globe Icon - Right */}
+                            <div className={`p-1 rounded-full transition-all z-10 ${
+                              !session.isPrivate
+                                ? activeSession?.id === session.id ? 'text-primary' : 'text-background'
+                                : activeSession?.id === session.id ? 'text-primary-foreground/60' : 'text-muted-foreground'
+                            }`}>
+                              <Globe className="h-3 w-3" />
+                            </div>
+
+                            {/* Sliding Background */}
+                            <div
+                              className={`absolute top-0.5 bottom-0.5 w-6 rounded-full transition-all duration-300 ${
+                                activeSession?.id === session.id ? 'bg-primary-foreground' : 'bg-primary'
+                              } ${
+                                !session.isPrivate ? 'left-[calc(50%-1px)]' : 'left-0.5'
+                              }`}
+                            />
+                          </button>
+                        ) : (
+                          <div className="rounded-full p-0.5 flex items-center gap-0.5 bg-white/5 opacity-50">
+                            <div className={`p-1 ${session.isPrivate ? 'opacity-100' : 'opacity-40'}`}>
+                              <Lock className="h-3 w-3 text-muted-foreground" />
+                            </div>
+                            <div className={`p-1 ${!session.isPrivate ? 'opacity-100' : 'opacity-40'}`}>
+                              <Globe className="h-3 w-3 text-primary" />
+                            </div>
+                          </div>
+                        )}
                         <button
                           onClick={(e) => handleRenameStart(session, e)}
                           className={`p-1 rounded hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity ${

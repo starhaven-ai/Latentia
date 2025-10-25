@@ -94,27 +94,45 @@ export function ProjectCard({ project, currentUserId, onProjectUpdate }: Project
           )}
           <div className="absolute top-2 right-2">
             {isOwner ? (
-              <Button
-                variant="secondary"
-                size="sm"
-                className="h-auto p-1.5 bg-background/90 backdrop-blur-sm hover:bg-background/95"
+              <button
                 onClick={handleTogglePrivacy}
                 disabled={updating}
-                title={project.isShared ? 'Make private' : 'Make shared'}
+                className="bg-background/90 backdrop-blur-sm rounded-full p-1 flex items-center gap-0.5 hover:bg-background/95 transition-all relative"
+                title={project.isShared ? 'Click to make private' : 'Click to make shared'}
               >
-                {project.isShared ? (
-                  <Globe className="h-4 w-4 text-primary" />
-                ) : (
-                  <Lock className="h-4 w-4 text-muted-foreground" />
-                )}
-              </Button>
+                {/* Lock Icon - Left */}
+                <div className={`p-1.5 rounded-full transition-all z-10 ${
+                  !project.isShared 
+                    ? 'text-background' 
+                    : 'text-muted-foreground'
+                }`}>
+                  <Lock className="h-3.5 w-3.5" />
+                </div>
+                
+                {/* Globe Icon - Right */}
+                <div className={`p-1.5 rounded-full transition-all z-10 ${
+                  project.isShared 
+                    ? 'text-background' 
+                    : 'text-muted-foreground'
+                }`}>
+                  <Globe className="h-3.5 w-3.5" />
+                </div>
+
+                {/* Sliding Background */}
+                <div
+                  className={`absolute top-1 bottom-1 w-7 bg-primary rounded-full transition-all duration-300 ${
+                    project.isShared ? 'left-[calc(50%-2px)]' : 'left-1'
+                  }`}
+                />
+              </button>
             ) : (
-              <div className="bg-background/80 backdrop-blur-sm rounded-full p-1.5">
-                {project.isShared ? (
-                  <Globe className="h-4 w-4 text-primary" />
-                ) : (
-                  <Lock className="h-4 w-4 text-muted-foreground" />
-                )}
+              <div className="bg-background/80 backdrop-blur-sm rounded-full p-1 flex items-center gap-0.5">
+                <div className={`p-1.5 ${!project.isShared ? 'opacity-100' : 'opacity-40'}`}>
+                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                <div className={`p-1.5 ${project.isShared ? 'opacity-100' : 'opacity-40'}`}>
+                  <Globe className="h-3.5 w-3.5 text-primary" />
+                </div>
               </div>
             )}
           </div>

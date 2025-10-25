@@ -31,12 +31,19 @@ export async function PATCH(
       )
     }
 
+    // First verify the session belongs to the user via the project
+    const existingSession = await prisma.session.findUnique({
+      where: { id },
+      include: { project: true },
+    })
+
+    if (!existingSession || existingSession.project.ownerId !== session.user.id) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 })
+    }
+
     // Update session
     const updatedSession = await prisma.session.update({
-      where: {
-        id,
-        userId: session.user.id, // Ensure user owns this session
-      },
+      where: { id },
       data: {
         name: name.trim(),
         updatedAt: new Date(),

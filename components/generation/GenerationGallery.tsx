@@ -171,8 +171,8 @@ export function GenerationGallery({
                   />
                 )}
 
-                {/* Hover Overlay - Minimal Krea Style */}
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                {/* Hover Overlay - Minimal Krea Style - pointer-events-none to allow image clicks */}
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                   {/* Top Bar - Star indicator */}
                   {output.isStarred && (
                     <div className="absolute top-2 left-2">
@@ -181,7 +181,7 @@ export function GenerationGallery({
                   )}
                   
                   {/* Bottom Action Bar */}
-                  <div className="absolute bottom-0 left-0 right-0 p-2 flex items-center justify-between">
+                  <div className="absolute bottom-0 left-0 right-0 p-2 flex items-center justify-between pointer-events-auto">
                     <div className="flex items-center gap-1">
                       <button
                         onClick={(e) => {

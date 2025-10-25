@@ -14,6 +14,8 @@ export default function ProjectPage() {
   const params = useParams()
   const router = useRouter()
   const [projectName, setProjectName] = useState('Loading...')
+  const [projectOwnerId, setProjectOwnerId] = useState<string>('')
+  const [currentUserId, setCurrentUserId] = useState<string>('')
   const [sessions, setSessions] = useState<Session[]>([])
   const [activeSession, setActiveSession] = useState<Session | null>(null)
   const [generationType, setGenerationType] = useState<'image' | 'video'>('image')
@@ -43,11 +45,18 @@ export default function ProjectPage() {
 
   const fetchProject = async () => {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setCurrentUserId(user.id)
+      }
+
       // Fetch project details
       const response = await fetch(`/api/projects/${params.id}`)
       if (response.ok) {
         const project = await response.json()
         setProjectName(project.name)
+        setProjectOwnerId(project.ownerId)
       }
 
       // Fetch sessions for this project
@@ -220,6 +229,8 @@ export default function ProjectPage() {
           sessions={sessions}
           activeSession={activeSession}
           generationType={generationType}
+          projectOwnerId={projectOwnerId}
+          currentUserId={currentUserId}
           onSessionSelect={setActiveSession}
           onSessionCreate={handleSessionCreate}
           onSessionUpdate={fetchProject}

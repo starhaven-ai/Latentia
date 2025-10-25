@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Image, Video, Pencil, Check, X } from 'lucide-react'
+import { Plus, Image, Video, Pencil, Check, X, Lock, Globe } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import type { Session } from '@/types/project'
 
@@ -9,6 +9,8 @@ interface SessionSidebarProps {
   sessions: Session[]
   activeSession: Session | null
   generationType: 'image' | 'video'
+  projectOwnerId: string
+  currentUserId?: string
   onSessionSelect: (session: Session) => void
   onSessionCreate: (type: 'image' | 'video') => void
   onSessionUpdate?: () => void
@@ -18,6 +20,8 @@ export function SessionSidebar({
   sessions,
   activeSession,
   generationType,
+  projectOwnerId,
+  currentUserId,
   onSessionSelect,
   onSessionCreate,
   onSessionUpdate,
@@ -27,6 +31,7 @@ export function SessionSidebar({
   const [newSessionName, setNewSessionName] = useState('')
   
   const filteredSessions = sessions.filter((s) => s.type === generationType)
+  const isOwner = currentUserId === projectOwnerId
 
   const handleRenameStart = (session: Session, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -67,6 +72,45 @@ export function SessionSidebar({
   const handleRenameCancel = () => {
     setRenamingSessionId(null)
     setNewSessionName('')
+  }
+
+  const handleTogglePrivacy = async (session: Session, e: React.MouseEvent) => {
+    e.stopPropagation()
+    
+    if (!isOwner) {
+      toast({
+        title: "Permission denied",
+        description: "Only the project owner can change session privacy",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/sessions/${session.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPrivate: !session.isPrivate }),
+      })
+
+      if (!response.ok) throw new Error('Failed to update privacy')
+
+      const newStatus = !session.isPrivate ? 'Private' : 'Public'
+      toast({
+        title: "Privacy updated",
+        description: `Session is now ${newStatus}`,
+        variant: "default",
+      })
+
+      onSessionUpdate?.()
+    } catch (error) {
+      console.error('Error updating privacy:', error)
+      toast({
+        title: "Update failed",
+        description: "Failed to update session privacy",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
@@ -155,15 +199,35 @@ export function SessionSidebar({
                           {new Date(session.updatedAt).toLocaleDateString()}
                         </p>
                       </div>
-                      <button
-                        onClick={(e) => handleRenameStart(session, e)}
-                        className={`p-1 rounded hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity ${
-                          activeSession?.id === session.id ? 'text-primary-foreground' : 'text-muted-foreground'
-                        }`}
-                        title="Rename session"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={(e) => handleTogglePrivacy(session, e)}
+                          className={`p-1 rounded transition-all ${
+                            isOwner 
+                              ? 'hover:bg-white/10 opacity-0 group-hover:opacity-100' 
+                              : 'opacity-50 cursor-default'
+                          } ${
+                            activeSession?.id === session.id ? 'text-primary-foreground' : 'text-muted-foreground'
+                          }`}
+                          title={isOwner ? (session.isPrivate ? 'Make public' : 'Make private') : (session.isPrivate ? 'Private' : 'Public')}
+                          disabled={!isOwner}
+                        >
+                          {session.isPrivate ? (
+                            <Lock className="h-3.5 w-3.5" />
+                          ) : (
+                            <Globe className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <button
+                          onClick={(e) => handleRenameStart(session, e)}
+                          className={`p-1 rounded hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity ${
+                            activeSession?.id === session.id ? 'text-primary-foreground' : 'text-muted-foreground'
+                          }`}
+                          title="Rename session"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </button>

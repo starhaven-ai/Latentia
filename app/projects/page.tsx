@@ -89,9 +89,11 @@ export default function ProjectsPage() {
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">L</span>
-            </div>
+            <img 
+              src="/images/loop-logo.png" 
+              alt="Loop Logo" 
+              className="w-10 h-10 object-contain"
+            />
             <h1 className="text-2xl font-bold tracking-wide">PRISM</h1>
           </div>
           <div className="flex items-center gap-2">

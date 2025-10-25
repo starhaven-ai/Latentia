@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { X, Download, Bookmark, RotateCcw } from 'lucide-react'
+import { X, Download, Bookmark, RotateCcw, Check } from 'lucide-react'
 import type { Output } from '@/types/generation'
 
 interface ImageLightboxProps {
@@ -10,6 +10,7 @@ interface ImageLightboxProps {
   isOpen: boolean
   onClose: () => void
   onBookmark: (outputId: string, isBookmarked: boolean) => void
+  onApprove: (outputId: string, isApproved: boolean) => void
   onReuse: () => void
   onDownload: (imageUrl: string, outputId: string) => void
 }
@@ -20,6 +21,7 @@ export function ImageLightbox({
   isOpen, 
   onClose,
   onBookmark,
+  onApprove,
   onReuse,
   onDownload
 }: ImageLightboxProps) {
@@ -88,6 +90,17 @@ export function ImageLightbox({
             title={(output as any).isBookmarked ? 'Remove bookmark' : 'Bookmark'}
           >
             <Bookmark className={`h-5 w-5 text-white ${(output as any).isBookmarked ? 'fill-white' : ''}`} />
+          </button>
+          <button
+            onClick={() => onApprove(output.id, (output as any).isApproved || false)}
+            className={`p-2 rounded-lg transition-colors ${
+              (output as any).isApproved
+                ? 'bg-green-500/90 hover:bg-green-600/90'
+                : 'bg-white/20 hover:bg-white/30'
+            }`}
+            title={(output as any).isApproved ? 'Approved for review' : 'Approve for review'}
+          >
+            <Check className="h-5 w-5 text-white" />
           </button>
         </div>
       </div>

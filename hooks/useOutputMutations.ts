@@ -4,6 +4,7 @@ interface UpdateOutputParams {
   outputId: string
   sessionId: string
   isStarred?: boolean
+  isApproved?: boolean
 }
 
 interface DeleteOutputParams {
@@ -19,6 +20,7 @@ async function updateOutput(params: UpdateOutputParams) {
     },
     body: JSON.stringify({
       isStarred: params.isStarred,
+      isApproved: params.isApproved,
     }),
   })
 

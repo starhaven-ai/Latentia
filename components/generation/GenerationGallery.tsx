@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, Star, RotateCcw, Info, Copy, Bookmark } from 'lucide-react'
+import { Download, RotateCcw, Info, Copy, Bookmark, Check } from 'lucide-react'
 import type { GenerationWithOutputs } from '@/types/generation'
 import { useUpdateOutputMutation } from '@/hooks/useOutputMutations'
 import { useToast } from '@/components/ui/use-toast'
@@ -79,26 +79,26 @@ export function GenerationGallery({
     }
   }
 
-  const handleToggleStar = async (outputId: string, currentStarred: boolean) => {
+  const handleToggleApproval = async (outputId: string, currentApproved: boolean) => {
     if (!sessionId) return
     
     try {
       await updateOutputMutation.mutateAsync({
         outputId,
         sessionId,
-        isStarred: !currentStarred,
+        isApproved: !currentApproved,
       })
       
       toast({
-        title: currentStarred ? "Removed from favorites" : "Added to favorites",
-        description: currentStarred ? "Image unstarred" : "Image starred",
+        title: currentApproved ? "Approval removed" : "Approved",
+        description: currentApproved ? "Image unapproved" : "Image approved for review",
         variant: "default",
       })
     } catch (error) {
-      console.error('Error toggling star:', error)
+      console.error('Error toggling approval:', error)
       toast({
         title: "Error",
-        description: "Failed to update favorite status",
+        description: "Failed to update approval status",
         variant: "destructive",
       })
     }
@@ -215,12 +215,23 @@ export function GenerationGallery({
 
                 {/* Hover Overlay - Minimal Krea Style - pointer-events-none to allow image clicks */}
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
-                  {/* Top Bar - Star indicator */}
-                  {output.isStarred && (
-                    <div className="absolute top-2 left-2">
-                      <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                    </div>
-                  )}
+                  {/* Top Right - Approval checkmark (always visible when approved) */}
+                  <div className="absolute top-2 right-2 pointer-events-auto">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleToggleApproval(output.id, (output as any).isApproved || false)
+                      }}
+                      className={`p-1.5 backdrop-blur-sm rounded-lg transition-colors ${
+                        (output as any).isApproved
+                          ? 'bg-green-500/90 hover:bg-green-600/90'
+                          : 'bg-white/20 hover:bg-white/30'
+                      }`}
+                      title={(output as any).isApproved ? 'Approved for review' : 'Approve for review'}
+                    >
+                      <Check className={`h-3.5 w-3.5 ${(output as any).isApproved ? 'text-white' : 'text-white'}`} />
+                    </button>
+                  </div>
                   
                   {/* Bottom Action Bar */}
                   <div className="absolute bottom-0 left-0 right-0 p-2 flex items-center justify-between pointer-events-auto">
@@ -310,6 +321,7 @@ export function GenerationGallery({
         isOpen={!!lightboxData}
         onClose={() => setLightboxData(null)}
         onBookmark={handleToggleBookmark}
+        onApprove={handleToggleApproval}
         onReuse={() => {
           if (lightboxData?.generation) {
             onReuseParameters(lightboxData.generation)

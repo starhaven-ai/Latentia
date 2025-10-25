@@ -22,7 +22,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { isStarred } = body
+    const { isStarred, isApproved } = body
 
     // Verify the output belongs to the user
     const output = await prisma.output.findUnique({
@@ -49,6 +49,7 @@ export async function PATCH(
       where: { id: params.id },
       data: {
         ...(typeof isStarred === 'boolean' && { isStarred }),
+        ...(typeof isApproved === 'boolean' && { isApproved }),
       },
     })
 

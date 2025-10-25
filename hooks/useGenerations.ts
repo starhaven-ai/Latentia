@@ -16,7 +16,8 @@ export function useGenerations(sessionId: string | null) {
     queryKey: ['generations', sessionId],
     queryFn: () => fetchGenerations(sessionId!),
     enabled: !!sessionId, // Only run if sessionId exists
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 0, // Always refetch when invalidated
+    refetchOnMount: true, // Refetch on component mount
   })
 }
 

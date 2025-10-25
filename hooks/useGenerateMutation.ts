@@ -78,10 +78,10 @@ export function useGenerateMutation() {
           })),
         }
 
-        // Update cache optimistically
+        // Update cache optimistically - add to end (bottom)
         queryClient.setQueryData<GenerationWithOutputs[]>(
           ['generations', variables.sessionId],
-          (old) => (old ? [newGeneration, ...old] : [newGeneration])
+          (old) => (old ? [...old, newGeneration] : [newGeneration])
         )
       }
     },

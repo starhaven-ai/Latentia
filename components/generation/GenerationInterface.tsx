@@ -17,7 +17,7 @@ export function GenerationInterface({
   generationType,
 }: GenerationInterfaceProps) {
   const [generations, setGenerations] = useState<GenerationWithOutputs[]>([])
-  const [selectedModel, setSelectedModel] = useState<string>('google-imagen-3')
+  const [selectedModel, setSelectedModel] = useState<string>('gemini-nano-banana')
   const [parameters, setParameters] = useState({
     aspectRatio: '1:1',
     resolution: 1024,

@@ -1,9 +1,9 @@
 import { BaseModelAdapter, ModelConfig } from './base'
 import {
-  GoogleVertexAdapter,
-  IMAGEN_3_CONFIG,
-  VEO_2_CONFIG,
-} from './adapters/google-vertex'
+  GeminiAdapter,
+  NANO_BANANA_CONFIG,
+  VEO_3_1_CONFIG,
+} from './adapters/gemini'
 
 /**
  * Model Registry
@@ -19,9 +19,9 @@ class ModelRegistry {
   }
 
   private registerDefaultModels() {
-    // Register Google models
-    this.register(IMAGEN_3_CONFIG, GoogleVertexAdapter)
-    this.register(VEO_2_CONFIG, GoogleVertexAdapter)
+    // Register Google Gemini models
+    this.register(NANO_BANANA_CONFIG, GeminiAdapter)
+    this.register(VEO_3_1_CONFIG, GeminiAdapter)
   }
 
   /**

@@ -31,7 +31,7 @@ export function ModelPicker({
   generationType,
 }: ModelPickerProps) {
   const [open, setOpen] = useState(false)
-  const [pinnedModels, setPinnedModels] = useState<string[]>(['google-imagen-3'])
+  const [pinnedModels, setPinnedModels] = useState<string[]>(['gemini-nano-banana'])
   const [models, setModels] = useState<Model[]>([])
   const [loading, setLoading] = useState(true)
 

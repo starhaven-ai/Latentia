@@ -161,7 +161,7 @@ export function GenerationInterface({
       </div>
 
       {/* Chat Input - Always at Bottom */}
-      <div className="border-t border-border bg-card p-6">
+      <div className="border-t border-border/50 bg-card p-4">
         <div className="max-w-7xl mx-auto">
           <ChatInput
             onGenerate={handleGenerate}
@@ -173,7 +173,7 @@ export function GenerationInterface({
       </div>
 
       {/* Model Picker (Bottom Left) */}
-      <div className="absolute bottom-24 left-6 z-10">
+      <div className="absolute bottom-20 left-6 z-10">
         <ModelPicker
           selectedModel={selectedModel}
           onModelSelect={setSelectedModel}

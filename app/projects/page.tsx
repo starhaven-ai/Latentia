@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Plus, LogOut } from 'lucide-react'
+import { Plus, LogOut, Settings, Sun, Moon, Bookmark } from 'lucide-react'
 import { ProjectGrid } from '@/components/projects/ProjectGrid'
 import { NewProjectDialog } from '@/components/projects/NewProjectDialog'
+import { ProfileSettings } from '@/components/settings/ProfileSettings'
 import type { Project } from '@/types/project'
 
 type TabType = 'briefings' | 'projects' | 'review'
@@ -17,8 +18,26 @@ export default function ProjectsPage() {
   const [showNewProject, setShowNewProject] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabType>('projects')
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const [showProfileSettings, setShowProfileSettings] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  // Initialize theme from localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+    if (savedTheme) {
+      setTheme(savedTheme)
+      document.documentElement.classList.toggle('dark', savedTheme === 'dark')
+    }
+  }, [])
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light'
+    setTheme(newTheme)
+    localStorage.setItem('theme', newTheme)
+    document.documentElement.classList.toggle('dark', newTheme === 'dark')
+  }
 
   useEffect(() => {
     fetchProjects()
@@ -101,7 +120,36 @@ export default function ProjectsPage() {
               <Plus className="mr-2 h-4 w-4" />
               New Project
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleSignOut}>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => router.push('/bookmarks')}
+              title="Bookmarks"
+            >
+              <Bookmark className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={toggleTheme}
+              className="transition-transform hover:rotate-12"
+              title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+            >
+              {theme === 'light' ? (
+                <Moon className="h-4 w-4" />
+              ) : (
+                <Sun className="h-4 w-4" />
+              )}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setShowProfileSettings(true)}
+              title="Settings"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign out">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -262,6 +310,12 @@ export default function ProjectsPage() {
         open={showNewProject}
         onOpenChange={setShowNewProject}
         onProjectCreated={handleProjectCreated}
+      />
+
+      {/* Profile Settings Dialog */}
+      <ProfileSettings 
+        isOpen={showProfileSettings}
+        onClose={() => setShowProfileSettings(false)}
       />
     </div>
   )

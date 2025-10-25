@@ -17,6 +17,17 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Ensure user profile exists (create if it doesn't)
+    await prisma.profile.upsert({
+      where: { id: user.id },
+      update: {},
+      create: {
+        id: user.id,
+        username: user.email?.split('@')[0],
+        displayName: user.user_metadata?.full_name || user.email,
+      },
+    })
+
     // Fetch projects owned by user or shared with user
     const projects = await prisma.project.findMany({
       where: {
@@ -66,6 +77,17 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    // Ensure user profile exists (create if it doesn't)
+    await prisma.profile.upsert({
+      where: { id: user.id },
+      update: {},
+      create: {
+        id: user.id,
+        username: user.email?.split('@')[0],
+        displayName: user.user_metadata?.full_name || user.email,
+      },
+    })
 
     const body = await request.json()
     const { name, description } = body

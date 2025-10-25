@@ -141,11 +141,13 @@ export function GenerationInterface({
             </div>
           </div>
         ) : generations.length > 0 ? (
-          <div className="p-6">
-            <GenerationGallery
-              generations={generations}
-              onReuseParameters={handleReuseParameters}
-            />
+          <div className="p-6 flex justify-center">
+            <div className="w-full max-w-7xl">
+              <GenerationGallery
+                generations={generations}
+                onReuseParameters={handleReuseParameters}
+              />
+            </div>
           </div>
         ) : (
           // Empty state
@@ -160,7 +162,7 @@ export function GenerationInterface({
 
       {/* Chat Input - Always at Bottom */}
       <div className="border-t border-border bg-card p-6">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <ChatInput
             onGenerate={handleGenerate}
             parameters={parameters}

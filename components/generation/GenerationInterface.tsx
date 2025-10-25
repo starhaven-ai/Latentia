@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { GenerationGallery } from './GenerationGallery'
 import { ChatInput } from './ChatInput'
 import type { Session } from '@/types/project'
@@ -19,6 +20,7 @@ export function GenerationInterface({
   generationType,
 }: GenerationInterfaceProps) {
   const { toast } = useToast()
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   
   // Use Zustand store for UI state
   const { selectedModel, parameters, setSelectedModel, setParameters } = useUIStore()
@@ -28,6 +30,19 @@ export function GenerationInterface({
   
   // Use React Query mutation for generating
   const generateMutation = useGenerateMutation()
+
+  // Auto-scroll to bottom when generations load or update
+  useEffect(() => {
+    if (!isLoading && generations.length > 0 && scrollContainerRef.current) {
+      // Small delay to ensure DOM is fully rendered
+      setTimeout(() => {
+        scrollContainerRef.current?.scrollTo({
+          top: scrollContainerRef.current.scrollHeight,
+          behavior: 'smooth',
+        })
+      }, 100)
+    }
+  }, [generations, isLoading])
 
   const handleGenerate = async (prompt: string, referenceImage?: File) => {
     if (!session || !prompt.trim()) return
@@ -87,7 +102,7 @@ export function GenerationInterface({
   return (
     <div className="flex-1 flex flex-col relative">
       {/* Gallery Area - Always show, even if empty */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
         {isLoading ? (
           // Loading state
           <div className="h-full flex items-center justify-center">

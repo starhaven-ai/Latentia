@@ -1,8 +1,10 @@
-import { Download, Star, Trash2, RotateCcw, Info } from 'lucide-react'
+import { useState } from 'react'
+import { Download, Star, RotateCcw, Info, Copy } from 'lucide-react'
 import type { GenerationWithOutputs } from '@/types/generation'
-import { useUpdateOutputMutation, useDeleteOutputMutation } from '@/hooks/useOutputMutations'
+import { useUpdateOutputMutation } from '@/hooks/useOutputMutations'
 import { useToast } from '@/components/ui/use-toast'
 import { GenerationProgress } from './GenerationProgress'
+import { ImageLightbox } from './ImageLightbox'
 
 interface GenerationGalleryProps {
   generations: GenerationWithOutputs[]
@@ -23,12 +25,52 @@ export function GenerationGallery({
 }: GenerationGalleryProps) {
   const { toast } = useToast()
   const updateOutputMutation = useUpdateOutputMutation()
-  const deleteOutputMutation = useDeleteOutputMutation()
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null)
 
   // Convert aspect ratio string to CSS aspect-ratio value
   const getAspectRatioStyle = (aspectRatio?: string) => {
     if (!aspectRatio) return '1 / 1'
     return aspectRatio.replace(':', ' / ')
+  }
+
+  const handleCopyPrompt = async (prompt: string) => {
+    try {
+      await navigator.clipboard.writeText(prompt)
+      toast({
+        title: "Copied",
+        description: "Prompt copied to clipboard",
+        variant: "default",
+      })
+    } catch (error) {
+      console.error('Failed to copy:', error)
+      toast({
+        title: "Copy failed",
+        description: "Failed to copy prompt to clipboard",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDownload = async (imageUrl: string, outputId: string) => {
+    try {
+      const response = await fetch(imageUrl)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `generation-${outputId}.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Download failed:', error)
+      toast({
+        title: "Download failed",
+        description: "Failed to download image",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleToggleStar = async (outputId: string, currentStarred: boolean) => {
@@ -56,30 +98,6 @@ export function GenerationGallery({
     }
   }
 
-  const handleDelete = async (outputId: string) => {
-    if (!sessionId) return
-    if (!confirm('Are you sure you want to delete this image?')) return
-
-    try {
-      await deleteOutputMutation.mutateAsync({
-        outputId,
-        sessionId,
-      })
-      
-      toast({
-        title: "Image deleted",
-        description: "Successfully removed the image",
-        variant: "default",
-      })
-    } catch (error) {
-      console.error('Error deleting output:', error)
-      toast({
-        title: "Deletion failed",
-        description: "Failed to delete the image",
-        variant: "destructive",
-      })
-    }
-  }
 
   if (generations.length === 0 && !isGenerating) {
     return (
@@ -93,31 +111,40 @@ export function GenerationGallery({
   }
 
   return (
-    <div className="space-y-6 pb-4">
-      {generations.map((generation) => (
-        <div key={generation.id} className="flex gap-6 items-start">
-          {/* Left Side: Prompt Display - Krea Style (Expanded) */}
-          <div className="w-96 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50">
-            <p className="text-base font-normal leading-relaxed text-foreground/90 mb-4">
-              {generation.prompt}
-            </p>
-            <div className="space-y-2 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Info className="h-3.5 w-3.5" />
-                <span className="capitalize font-medium">{generation.modelId.replace('gemini-', '').replace('-', ' ')}</span>
+    <>
+      <div className="space-y-6 pb-4">
+        {generations.map((generation) => (
+          <div key={generation.id} className="flex gap-6 items-start">
+            {/* Left Side: Prompt Display - Fixed Height with Scroll on Hover */}
+            <div className="w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 flex flex-col">
+              <div className="flex-1 overflow-hidden hover:overflow-y-auto transition-all group relative">
+                <p 
+                  className="text-base font-normal leading-relaxed text-foreground/90 cursor-pointer hover:text-primary transition-colors"
+                  onClick={() => handleCopyPrompt(generation.prompt)}
+                  title="Click to copy"
+                >
+                  {generation.prompt}
+                </p>
+                {/* Copy icon hint */}
+                <Copy className="h-3.5 w-3.5 absolute top-0 right-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              {generation.parameters?.aspectRatio && (
+              <div className="space-y-2 text-xs text-muted-foreground mt-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground/70">Aspect Ratio:</span>
-                  <span className="font-medium">{generation.parameters.aspectRatio}</span>
+                  <Info className="h-3.5 w-3.5" />
+                  <span className="capitalize font-medium">{generation.modelId.replace('gemini-', '').replace('-', ' ')}</span>
                 </div>
-              )}
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground/70">Generated:</span>
-                <span className="font-medium">{new Date(generation.createdAt).toLocaleDateString()}</span>
+                {generation.parameters?.aspectRatio && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground/70">Aspect Ratio:</span>
+                    <span className="font-medium">{generation.parameters.aspectRatio}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground/70">Generated:</span>
+                  <span className="font-medium">{new Date(generation.createdAt).toLocaleDateString()}</span>
+                </div>
               </div>
             </div>
-          </div>
 
           {/* Right Side: Outputs in 2-Column Grid - Smaller Images */}
           <div className="flex-1 grid grid-cols-2 gap-3 max-w-2xl">
@@ -133,7 +160,8 @@ export function GenerationGallery({
                   <img
                     src={output.fileUrl}
                     alt="Generated content"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover cursor-pointer"
+                    onClick={() => setLightboxImage(output.fileUrl)}
                   />
                 ) : (
                   <video
@@ -156,11 +184,9 @@ export function GenerationGallery({
                   <div className="absolute bottom-0 left-0 right-0 p-2 flex items-center justify-between">
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => {
-                          const link = document.createElement('a')
-                          link.href = output.fileUrl
-                          link.download = `generation-${output.id}.${output.fileType === 'image' ? 'png' : 'mp4'}`
-                          link.click()
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDownload(output.fileUrl, output.id)
                         }}
                         className="p-1.5 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"
                         title="Download"
@@ -168,7 +194,10 @@ export function GenerationGallery({
                         <Download className="h-3.5 w-3.5 text-white" />
                       </button>
                       <button
-                        onClick={() => onReuseParameters(generation)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onReuseParameters(generation)
+                        }}
                         className="p-1.5 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"
                         title="Reuse"
                       >
@@ -177,18 +206,14 @@ export function GenerationGallery({
                     </div>
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => handleToggleStar(output.id, output.isStarred)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleToggleStar(output.id, output.isStarred)
+                        }}
                         className="p-1.5 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"
                         title={output.isStarred ? 'Unstar' : 'Star'}
                       >
                         <Star className={`h-3.5 w-3.5 text-white ${output.isStarred ? 'fill-white' : ''}`} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(output.id)}
-                        className="p-1.5 bg-red-500/80 backdrop-blur-sm rounded-lg hover:bg-red-600/90 transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-3.5 w-3.5 text-white" />
                       </button>
                     </div>
                   </div>
@@ -200,25 +225,27 @@ export function GenerationGallery({
         </div>
       ))}
 
-      {/* Show pending generations at the bottom */}
-      {isGenerating && pendingCount > 0 && (
-        <div className="flex gap-6 items-start">
-          {/* Left Side: Generating message */}
-          <div className="w-96 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 border-green-500/30">
-            <p className="text-base font-normal leading-relaxed text-foreground/90 mb-4">
-              Generating...
-            </p>
-            <div className="space-y-2 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Info className="h-3.5 w-3.5 text-green-500" />
-                <span className="font-medium text-green-500">In Progress</span>
+        {/* Show pending generations at the bottom */}
+        {isGenerating && pendingCount > 0 && (
+          <div className="flex gap-6 items-start">
+            {/* Left Side: Generating message */}
+            <div className="w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 border-green-500/30 flex flex-col">
+              <div className="flex-1">
+                <p className="text-base font-normal leading-relaxed text-foreground/90 mb-4">
+                  Generating...
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground/70">Outputs:</span>
-                <span className="font-medium">{pendingCount} {pendingCount === 1 ? 'image' : 'images'}</span>
+              <div className="space-y-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Info className="h-3.5 w-3.5 text-green-500" />
+                  <span className="font-medium text-green-500">In Progress</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground/70">Outputs:</span>
+                  <span className="font-medium">{pendingCount} {pendingCount === 1 ? 'image' : 'images'}</span>
+                </div>
               </div>
             </div>
-          </div>
 
           {/* Right Side: Progress placeholders in 2-column grid */}
           <div className="flex-1 grid grid-cols-2 gap-3 max-w-2xl">
@@ -230,9 +257,17 @@ export function GenerationGallery({
               />
             ))}
           </div>
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+      </div>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        imageUrl={lightboxImage || ''}
+        isOpen={!!lightboxImage}
+        onClose={() => setLightboxImage(null)}
+      />
+    </>
   )
 }
 

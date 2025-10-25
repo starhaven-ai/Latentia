@@ -160,20 +160,22 @@ export function GenerationInterface({
         )}
       </div>
 
-      {/* Chat Input - Always at Bottom */}
-      <div className="border-t border-border/50 bg-card p-4">
-        <div className="max-w-7xl mx-auto">
-          <ChatInput
-            onGenerate={handleGenerate}
-            parameters={parameters}
-            onParametersChange={setParameters}
-            generationType={generationType}
-          />
+      {/* Chat Input - Floating Card at Bottom */}
+      <div className="border-t border-border/50 bg-muted/20 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-card border border-border rounded-xl shadow-lg p-4">
+            <ChatInput
+              onGenerate={handleGenerate}
+              parameters={parameters}
+              onParametersChange={setParameters}
+              generationType={generationType}
+            />
+          </div>
         </div>
       </div>
 
       {/* Model Picker (Bottom Left) */}
-      <div className="absolute bottom-20 left-6 z-10">
+      <div className="absolute bottom-28 left-6 z-10">
         <ModelPicker
           selectedModel={selectedModel}
           onModelSelect={setSelectedModel}

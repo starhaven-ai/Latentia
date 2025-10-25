@@ -62,44 +62,44 @@ export function ChatInput({
   }
 
   return (
-    <div className="space-y-2">
-      {/* Main Input Area - Minimal Krea Style */}
-      <div className="flex items-center gap-2">
-        {/* Compact Input */}
+    <div className="space-y-3">
+      {/* Main Input Area - Card Style */}
+      <div className="flex items-center gap-3">
+        {/* Input */}
         <div className="flex-1 relative">
           <Textarea
             placeholder="Describe an image and click generate..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="resize-none min-h-[48px] max-h-[96px] px-4 py-3 text-sm rounded-lg bg-background border border-border/60 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary transition-all"
+            className="resize-none min-h-[52px] max-h-[104px] px-4 py-3 text-sm rounded-lg bg-muted/50 border border-border focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary transition-all"
             disabled={generating}
           />
         </div>
         
-        {/* Compact Generate Button */}
+        {/* Generate Button */}
         <Button
           onClick={handleSubmit}
           disabled={!prompt.trim() || generating}
           size="default"
-          className="h-[48px] px-6 rounded-lg font-medium transition-all"
+          className="h-[52px] px-8 rounded-lg font-semibold shadow-sm hover:shadow transition-all"
         >
           <Wand2 className="mr-2 h-4 w-4" />
           {generating ? 'Generating...' : 'Generate'}
         </Button>
       </div>
 
-      {/* Parameter Controls - Minimal Row */}
-      <div className="flex items-center gap-1.5 px-0.5">
-        {/* Style Transfer Button - Minimal */}
+      {/* Parameter Controls - Clean Row */}
+      <div className="flex items-center gap-2">
+        {/* Style Transfer Button */}
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           onClick={() => fileInputRef.current?.click()}
           disabled={generating}
-          className="h-7 text-[11px] px-2.5 rounded-md hover:bg-accent/50"
+          className="h-8 text-xs px-3 rounded-lg"
         >
-          <ImagePlus className="h-3 w-3 mr-1" />
+          <ImagePlus className="h-3.5 w-3.5 mr-1.5" />
           Style
         </Button>
         <input
@@ -110,15 +110,15 @@ export function ChatInput({
           onChange={handleFileSelect}
         />
 
-        {/* Compact Controls */}
+        {/* Parameter Controls with Borders */}
         <Select
           value={parameters.aspectRatio}
           onValueChange={(value) =>
             onParametersChange({ ...parameters, aspectRatio: value })
           }
         >
-          <SelectTrigger className="w-[80px] h-7 text-[11px] rounded-md border-0 bg-muted/50 hover:bg-muted">
-            <Ratio className="h-3 w-3 mr-1" />
+          <SelectTrigger className="w-[90px] h-8 text-xs rounded-lg border bg-background">
+            <Ratio className="h-3.5 w-3.5 mr-1.5" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -136,7 +136,8 @@ export function ChatInput({
             onParametersChange({ ...parameters, resolution: parseInt(value) })
           }
         >
-          <SelectTrigger className="w-[75px] h-7 text-[11px] rounded-md border-0 bg-muted/50 hover:bg-muted">
+          <SelectTrigger className="w-[85px] h-8 text-xs rounded-lg border bg-background">
+            <Grid3x3 className="h-3.5 w-3.5 mr-1.5" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -155,8 +156,8 @@ export function ChatInput({
               onParametersChange({ ...parameters, numOutputs: parseInt(value) })
             }
           >
-            <SelectTrigger className="w-[70px] h-7 text-[11px] rounded-md border-0 bg-muted/50 hover:bg-muted">
-              <ImageIcon className="h-3 w-3 mr-1" />
+            <SelectTrigger className="w-[80px] h-8 text-xs rounded-lg border bg-background">
+              <ImageIcon className="h-3.5 w-3.5 mr-1.5" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -169,21 +170,23 @@ export function ChatInput({
           </Select>
         )}
 
-        {/* Keyboard Shortcut - Subtle */}
-        <span className="text-[10px] text-muted-foreground/60 ml-auto hidden lg:inline">
-          ⌘ + Enter
+        {/* Keyboard Shortcut */}
+        <span className="text-xs text-muted-foreground ml-auto hidden lg:inline-flex items-center gap-1">
+          <kbd className="px-2 py-0.5 bg-muted rounded text-[10px] border">⌘</kbd>
+          <span>+</span>
+          <kbd className="px-2 py-0.5 bg-muted rounded text-[10px] border">Enter</kbd>
         </span>
       </div>
 
-      {/* Reference Image Preview - Minimal Pill */}
+      {/* Reference Image Preview */}
       {referenceImage && (
-        <div className="flex items-center gap-2 px-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-xs">
-            <ImagePlus className="h-3.5 w-3.5 text-primary" />
+        <div className="flex items-center gap-2">
+          <div className="inline-flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/30 rounded-lg text-xs shadow-sm">
+            <ImagePlus className="h-4 w-4 text-primary" />
             <span className="text-foreground font-medium truncate max-w-[200px]">{referenceImage.name}</span>
             <button
               onClick={() => setReferenceImage(null)}
-              className="text-muted-foreground hover:text-destructive transition-colors ml-1"
+              className="text-muted-foreground hover:text-destructive transition-colors ml-1 text-base leading-none"
             >
               ×
             </button>

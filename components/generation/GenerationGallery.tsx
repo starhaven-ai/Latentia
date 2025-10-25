@@ -89,32 +89,32 @@ export function GenerationGallery({
   return (
     <div className="space-y-6 pb-4">
       {localGenerations.map((generation) => (
-        <div key={generation.id} className="flex gap-5 items-start">
-          {/* Left Side: Prompt Display - Krea Style (More Space) */}
-          <div className="w-80 flex-shrink-0 bg-muted/30 rounded-xl p-5 border border-border/50">
-            <p className="text-sm font-normal leading-relaxed text-foreground/90 mb-4">
+        <div key={generation.id} className="flex gap-6 items-start">
+          {/* Left Side: Prompt Display - Krea Style (Expanded) */}
+          <div className="w-96 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50">
+            <p className="text-base font-normal leading-relaxed text-foreground/90 mb-4">
               {generation.prompt}
             </p>
-            <div className="space-y-1.5 text-[11px] text-muted-foreground">
+            <div className="space-y-2 text-xs text-muted-foreground">
               <div className="flex items-center gap-2">
-                <Info className="h-3 w-3" />
-                <span className="capitalize">{generation.modelId.replace('gemini-', '').replace('-', ' ')}</span>
+                <Info className="h-3.5 w-3.5" />
+                <span className="capitalize font-medium">{generation.modelId.replace('gemini-', '').replace('-', ' ')}</span>
               </div>
               {generation.parameters?.aspectRatio && (
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground/70">Ratio:</span>
-                  <span>{generation.parameters.aspectRatio}</span>
+                  <span className="text-muted-foreground/70">Aspect Ratio:</span>
+                  <span className="font-medium">{generation.parameters.aspectRatio}</span>
                 </div>
               )}
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground/70">Date:</span>
-                <span>{new Date(generation.createdAt).toLocaleDateString()}</span>
+                <span className="text-muted-foreground/70">Generated:</span>
+                <span className="font-medium">{new Date(generation.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
           </div>
 
-          {/* Right Side: Outputs in 2-Column Grid - Krea Style */}
-          <div className="flex-1 grid grid-cols-2 gap-4">
+          {/* Right Side: Outputs in 2-Column Grid - Smaller Images */}
+          <div className="flex-1 grid grid-cols-2 gap-3 max-w-2xl">
             {generation.outputs.map((output) => (
               <div
                 key={output.id}

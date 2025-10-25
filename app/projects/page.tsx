@@ -90,7 +90,7 @@ export default function ProjectsPage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
-              src="/images/loop-logo.png" 
+              src="/images/loop logo_standalone - white.png" 
               alt="Loop Logo" 
               className="w-10 h-10 object-contain"
             />

@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
+import { PrismaClient } from '@prisma/client'
 import { getModel } from '@/lib/models/registry'
+
+const prisma = new PrismaClient()
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,28 +49,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create generation record in database
-    const { data: generation, error: dbError } = await supabase
-      .from('generations')
-      .insert({
-        session_id: sessionId,
-        user_id: user.id,
-        model_id: modelId,
+    // Create generation record in database using Prisma
+    const generation = await prisma.generation.create({
+      data: {
+        sessionId,
+        userId: user.id,
+        modelId,
         prompt,
-        negative_prompt: negativePrompt,
+        negativePrompt: negativePrompt || null,
         parameters: parameters || {},
         status: 'processing',
-      })
-      .select()
-      .single()
-
-    if (dbError) {
-      console.error('Database error:', dbError)
-      return NextResponse.json(
-        { error: 'Failed to create generation record' },
-        { status: 500 }
-      )
-    }
+      },
+    })
 
     // Generate using the model
     const result = await model.generate({
@@ -78,34 +71,30 @@ export async function POST(request: NextRequest) {
 
     // Update generation status
     if (result.status === 'completed' && result.outputs) {
-      // Store outputs in database
+      // Store outputs in database using Prisma
       const outputRecords = result.outputs.map((output) => ({
-        generation_id: generation.id,
-        file_url: output.url,
-        file_type: model.getConfig().type,
+        generationId: generation.id,
+        fileUrl: output.url,
+        fileType: model.getConfig().type,
         width: output.width,
         height: output.height,
         duration: output.duration,
       }))
 
-      const { error: outputError } = await supabase
-        .from('outputs')
-        .insert(outputRecords)
-
-      if (outputError) {
-        console.error('Output storage error:', outputError)
-      }
+      await prisma.output.createMany({
+        data: outputRecords,
+      })
 
       // Update generation status
-      await supabase
-        .from('generations')
-        .update({ status: 'completed' })
-        .eq('id', generation.id)
+      await prisma.generation.update({
+        where: { id: generation.id },
+        data: { status: 'completed' },
+      })
     } else if (result.status === 'failed') {
-      await supabase
-        .from('generations')
-        .update({ status: 'failed' })
-        .eq('id', generation.id)
+      await prisma.generation.update({
+        where: { id: generation.id },
+        data: { status: 'failed' },
+      })
     }
 
     return NextResponse.json({

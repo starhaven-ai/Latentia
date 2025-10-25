@@ -159,7 +159,10 @@ export default function ProjectsPage() {
       </div>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main 
+        className="container mx-auto px-4 py-8 min-h-screen bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/Full page_Sketch.png')" }}
+      >
         {/* Briefings Tab */}
         {activeTab === 'briefings' && (
           <div className="flex flex-col items-center justify-center py-20">

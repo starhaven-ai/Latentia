@@ -23,19 +23,19 @@
     --card-foreground: 0 0% 10%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 10%;
-    --primary: 131 100% 85%;          /* Light mint green accent */
-    --primary-foreground: 0 0% 10%;
+    --primary: 263 66% 44%;           /* Purple accent */
+    --primary-foreground: 0 0% 100%;
     --secondary: 35 25% 92%;          /* Soft warm gray */
     --secondary-foreground: 0 0% 10%;
     --muted: 35 15% 90%;              /* Muted warm gray */
     --muted-foreground: 0 0% 45%;
-    --accent: 131 100% 85%;           /* Light mint green accent */
-    --accent-foreground: 0 0% 10%;
+    --accent: 263 66% 44%;            /* Purple accent */
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
     --border: 35 10% 88%;             /* Soft border */
     --input: 35 10% 88%;
-    --ring: 131 100% 85%;
+    --ring: 263 66% 44%;
     --radius: 0.75rem;                /* More rounded like Loop */
   }
 

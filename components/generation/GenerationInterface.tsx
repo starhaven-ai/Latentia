@@ -78,7 +78,7 @@ export function GenerationInterface({
       </div>
 
       {/* Chat Input - Always at Bottom */}
-      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4">
+      <div className="border-t border-border bg-card p-6">
         <div className="max-w-5xl mx-auto">
           <ChatInput
             onGenerate={handleGenerate}

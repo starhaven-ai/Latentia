@@ -70,7 +70,7 @@ export function ChatInput({
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="resize-none min-h-[100px] pr-32"
+          className="resize-none min-h-[100px] pr-32 bg-background border-2 focus-visible:ring-2 focus-visible:ring-primary"
           disabled={generating}
         />
         
@@ -80,7 +80,7 @@ export function ChatInput({
             onClick={handleSubmit}
             disabled={!prompt.trim() || generating}
             size="default"
-            className="shadow-lg"
+            className="shadow-md font-medium"
           >
             <Wand2 className="mr-2 h-4 w-4" />
             {generating ? 'Generating...' : 'Generate'}
@@ -97,8 +97,8 @@ export function ChatInput({
             onParametersChange({ ...parameters, aspectRatio: value })
           }
         >
-          <SelectTrigger className="w-[120px] h-9">
-            <Ratio className="h-3.5 w-3.5 mr-2" />
+          <SelectTrigger className="w-[120px] h-10 border-2 bg-background">
+            <Ratio className="h-4 w-4 mr-2" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -117,8 +117,8 @@ export function ChatInput({
             onParametersChange({ ...parameters, resolution: parseInt(value) })
           }
         >
-          <SelectTrigger className="w-[120px] h-9">
-            <Grid3x3 className="h-3.5 w-3.5 mr-2" />
+          <SelectTrigger className="w-[120px] h-10 border-2 bg-background">
+            <Grid3x3 className="h-4 w-4 mr-2" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -138,8 +138,8 @@ export function ChatInput({
               onParametersChange({ ...parameters, numOutputs: parseInt(value) })
             }
           >
-            <SelectTrigger className="w-[100px] h-9">
-              <ImageIcon className="h-3.5 w-3.5 mr-2" />
+            <SelectTrigger className="w-[100px] h-10 border-2 bg-background">
+              <ImageIcon className="h-4 w-4 mr-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -158,9 +158,9 @@ export function ChatInput({
           size="sm"
           onClick={() => fileInputRef.current?.click()}
           disabled={generating}
-          className="h-9"
+          className="h-10 border-2 bg-background font-medium"
         >
-          <ImagePlus className="h-3.5 w-3.5 mr-2" />
+          <ImagePlus className="h-4 w-4 mr-2" />
           {referenceImage ? referenceImage.name.substring(0, 15) + '...' : 'Image prompt'}
         </Button>
         <input
@@ -172,8 +172,8 @@ export function ChatInput({
         />
 
         {/* Keyboard Shortcut Hint */}
-        <span className="text-xs text-muted-foreground ml-auto hidden sm:inline">
-          <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">⌘</kbd> + <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Enter</kbd>
+        <span className="text-xs text-muted-foreground ml-auto hidden sm:inline font-medium">
+          <kbd className="px-2 py-1 bg-muted rounded-md text-xs font-medium">⌘</kbd> + <kbd className="px-2 py-1 bg-muted rounded-md text-xs font-medium">Enter</kbd>
         </span>
       </div>
 

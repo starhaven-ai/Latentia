@@ -2,9 +2,18 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import type { GenerationWithOutputs } from '@/types/generation'
 
+interface PendingGeneration {
+  id: string
+  prompt: string
+  modelId: string
+  numOutputs: number
+  startTime: number
+}
+
 interface GenerationState {
   // State
   generations: GenerationWithOutputs[]
+  pendingGenerations: PendingGeneration[]
   isGenerating: boolean
   
   // Actions
@@ -14,6 +23,8 @@ interface GenerationState {
   removeGeneration: (id: string) => void
   setIsGenerating: (isGenerating: boolean) => void
   clearGenerations: () => void
+  addPendingGeneration: (pending: PendingGeneration) => void
+  removePendingGeneration: (id: string) => void
 }
 
 export const useGenerationStore = create<GenerationState>()(
@@ -21,6 +32,7 @@ export const useGenerationStore = create<GenerationState>()(
     (set) => ({
       // Initial state
       generations: [],
+      pendingGenerations: [],
       isGenerating: false,
 
       // Actions
@@ -30,7 +42,7 @@ export const useGenerationStore = create<GenerationState>()(
       addGeneration: (generation) =>
         set(
           (state) => ({
-            generations: [generation, ...state.generations],
+            generations: [...state.generations, generation], // Add to end
           }),
           false,
           'addGeneration'
@@ -60,7 +72,25 @@ export const useGenerationStore = create<GenerationState>()(
         set({ isGenerating }, false, 'setIsGenerating'),
 
       clearGenerations: () =>
-        set({ generations: [] }, false, 'clearGenerations'),
+        set({ generations: [], pendingGenerations: [] }, false, 'clearGenerations'),
+
+      addPendingGeneration: (pending) =>
+        set(
+          (state) => ({
+            pendingGenerations: [...state.pendingGenerations, pending],
+          }),
+          false,
+          'addPendingGeneration'
+        ),
+
+      removePendingGeneration: (id) =>
+        set(
+          (state) => ({
+            pendingGenerations: state.pendingGenerations.filter((p) => p.id !== id),
+          }),
+          false,
+          'removePendingGeneration'
+        ),
     }),
     { name: 'GenerationStore' }
   )

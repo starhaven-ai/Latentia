@@ -2,17 +2,22 @@ import { Download, Star, Trash2, RotateCcw, Info } from 'lucide-react'
 import type { GenerationWithOutputs } from '@/types/generation'
 import { useUpdateOutputMutation, useDeleteOutputMutation } from '@/hooks/useOutputMutations'
 import { useToast } from '@/components/ui/use-toast'
+import { GenerationProgress } from './GenerationProgress'
 
 interface GenerationGalleryProps {
   generations: GenerationWithOutputs[]
   sessionId: string | null
   onReuseParameters: (generation: GenerationWithOutputs) => void
+  pendingCount?: number
+  isGenerating?: boolean
 }
 
 export function GenerationGallery({
   generations,
   sessionId,
   onReuseParameters,
+  pendingCount = 0,
+  isGenerating = false,
 }: GenerationGalleryProps) {
   const { toast } = useToast()
   const updateOutputMutation = useUpdateOutputMutation()
@@ -68,7 +73,7 @@ export function GenerationGallery({
     }
   }
 
-  if (generations.length === 0) {
+  if (generations.length === 0 && !isGenerating) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center text-muted-foreground">
@@ -182,6 +187,35 @@ export function GenerationGallery({
           </div>
         </div>
       ))}
+
+      {/* Show pending generations at the bottom */}
+      {isGenerating && pendingCount > 0 && (
+        <div className="flex gap-6 items-start">
+          {/* Left Side: Generating message */}
+          <div className="w-96 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 border-green-500/30">
+            <p className="text-base font-normal leading-relaxed text-foreground/90 mb-4">
+              Generating...
+            </p>
+            <div className="space-y-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Info className="h-3.5 w-3.5 text-green-500" />
+                <span className="font-medium text-green-500">In Progress</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground/70">Outputs:</span>
+                <span className="font-medium">{pendingCount} {pendingCount === 1 ? 'image' : 'images'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Side: Progress placeholders in 2-column grid */}
+          <div className="flex-1 grid grid-cols-2 gap-3 max-w-2xl">
+            {Array.from({ length: pendingCount }).map((_, idx) => (
+              <GenerationProgress key={`pending-${idx}`} estimatedTime={25} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

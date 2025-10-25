@@ -33,8 +33,11 @@ export function GenerationInterface({
   const handleGenerate = async (prompt: string, referenceImage?: File) => {
     if (!session || !prompt.trim()) return
 
+    // Create pending generation ID
+    const pendingId = `pending-${Date.now()}`
+
     try {
-      await generateMutation.mutateAsync({
+      const result = await generateMutation.mutateAsync({
         sessionId: session.id,
         modelId: selectedModel,
         prompt,
@@ -93,22 +96,16 @@ export function GenerationInterface({
               <p className="text-lg mb-2">Loading generations...</p>
             </div>
           </div>
-        ) : generations.length > 0 ? (
+        ) : (
           <div className="p-6 flex justify-center">
             <div className="w-full max-w-7xl">
               <GenerationGallery
                 generations={generations}
                 sessionId={session?.id || null}
                 onReuseParameters={handleReuseParameters}
+                isGenerating={generateMutation.isPending}
+                pendingCount={generateMutation.isPending ? parameters.numOutputs : 0}
               />
-            </div>
-          </div>
-        ) : (
-          // Empty state
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <p className="text-lg mb-2">No generations yet</p>
-              <p className="text-sm">Enter a prompt below to generate your first {generationType}</p>
             </div>
           </div>
         )}

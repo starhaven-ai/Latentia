@@ -1,15 +1,28 @@
 'use client'
 
 import { useEffect } from 'react'
-import { X } from 'lucide-react'
+import { X, Download, Star, RotateCcw } from 'lucide-react'
+import type { Output } from '@/types/generation'
 
 interface ImageLightboxProps {
   imageUrl: string
+  output: Output | null
   isOpen: boolean
   onClose: () => void
+  onStar: (outputId: string, currentStarred: boolean) => void
+  onReuse: () => void
+  onDownload: (imageUrl: string, outputId: string) => void
 }
 
-export function ImageLightbox({ imageUrl, isOpen, onClose }: ImageLightboxProps) {
+export function ImageLightbox({ 
+  imageUrl, 
+  output,
+  isOpen, 
+  onClose,
+  onStar,
+  onReuse,
+  onDownload
+}: ImageLightboxProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -26,7 +39,7 @@ export function ImageLightbox({ imageUrl, isOpen, onClose }: ImageLightboxProps)
     }
   }, [isOpen, onClose])
 
-  if (!isOpen) return null
+  if (!isOpen || !output) return null
 
   return (
     <div
@@ -36,18 +49,48 @@ export function ImageLightbox({ imageUrl, isOpen, onClose }: ImageLightboxProps)
       {/* Close button */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+        className="absolute top-4 right-4 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors z-10"
       >
         <X className="h-6 w-6 text-white" />
       </button>
 
-      {/* Image */}
-      <img
-        src={imageUrl}
-        alt="Full size preview"
-        className="max-w-full max-h-full object-contain rounded-lg"
+      {/* Image and Action Bar Container */}
+      <div 
+        className="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center gap-4"
         onClick={(e) => e.stopPropagation()}
-      />
+      >
+        {/* Image */}
+        <img
+          src={imageUrl}
+          alt="Full size preview"
+          className="max-w-full max-h-[calc(90vh-80px)] object-contain rounded-lg shadow-2xl"
+        />
+
+        {/* Action Bar */}
+        <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-full px-6 py-3 border border-white/20">
+          <button
+            onClick={() => onDownload(imageUrl, output.id)}
+            className="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
+            title="Download"
+          >
+            <Download className="h-5 w-5 text-white" />
+          </button>
+          <button
+            onClick={onReuse}
+            className="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
+            title="Reuse parameters"
+          >
+            <RotateCcw className="h-5 w-5 text-white" />
+          </button>
+          <button
+            onClick={() => onStar(output.id, output.isStarred)}
+            className="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
+            title={output.isStarred ? 'Unstar' : 'Star'}
+          >
+            <Star className={`h-5 w-5 text-white ${output.isStarred ? 'fill-white' : ''}`} />
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

@@ -25,7 +25,11 @@ export function GenerationGallery({
 }: GenerationGalleryProps) {
   const { toast } = useToast()
   const updateOutputMutation = useUpdateOutputMutation()
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null)
+  const [lightboxData, setLightboxData] = useState<{
+    imageUrl: string
+    output: any
+    generation: GenerationWithOutputs
+  } | null>(null)
 
   // Convert aspect ratio string to CSS aspect-ratio value
   const getAspectRatioStyle = (aspectRatio?: string) => {
@@ -161,7 +165,11 @@ export function GenerationGallery({
                     src={output.fileUrl}
                     alt="Generated content"
                     className="w-full h-full object-cover cursor-pointer"
-                    onClick={() => setLightboxImage(output.fileUrl)}
+                    onClick={() => setLightboxData({
+                      imageUrl: output.fileUrl,
+                      output: output,
+                      generation: generation
+                    })}
                   />
                 ) : (
                   <video
@@ -263,9 +271,18 @@ export function GenerationGallery({
 
       {/* Image Lightbox */}
       <ImageLightbox
-        imageUrl={lightboxImage || ''}
-        isOpen={!!lightboxImage}
-        onClose={() => setLightboxImage(null)}
+        imageUrl={lightboxData?.imageUrl || ''}
+        output={lightboxData?.output || null}
+        isOpen={!!lightboxData}
+        onClose={() => setLightboxData(null)}
+        onStar={handleToggleStar}
+        onReuse={() => {
+          if (lightboxData?.generation) {
+            onReuseParameters(lightboxData.generation)
+            setLightboxData(null)
+          }
+        }}
+        onDownload={handleDownload}
       />
     </>
   )

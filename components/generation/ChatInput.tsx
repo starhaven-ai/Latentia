@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Image as ImageIcon, Wand2, Ratio, Grid3x3, ImagePlus } from 'lucide-react'
+import { useModelCapabilities } from '@/hooks/useModelCapabilities'
 
 interface ChatInputProps {
   onGenerate: (prompt: string, referenceImage?: File) => void
@@ -15,22 +16,58 @@ interface ChatInputProps {
   }
   onParametersChange: (parameters: any) => void
   generationType: 'image' | 'video'
+  selectedModel: string
 }
-
-const ASPECT_RATIOS = ['1:1', '16:9', '9:16', '4:3', '3:4']
-const RESOLUTIONS = [512, 1024, 2048]
-const OUTPUT_COUNTS = [1, 2, 4]
 
 export function ChatInput({
   onGenerate,
   parameters,
   onParametersChange,
   generationType,
+  selectedModel,
 }: ChatInputProps) {
   const [prompt, setPrompt] = useState('')
   const [referenceImage, setReferenceImage] = useState<File | null>(null)
   const [generating, setGenerating] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Get model-specific capabilities
+  const { modelConfig, supportedAspectRatios, maxResolution, parameters: modelParameters } = useModelCapabilities(selectedModel)
+  
+  // Get resolution options from model config or use defaults
+  const resolutionOptions = modelParameters.find(p => p.name === 'resolution')?.options || [
+    { label: '512px', value: 512 },
+    { label: '1024px', value: 1024 },
+    { label: '2048px', value: 2048 },
+  ]
+  
+  // Get output count options from model config or use defaults
+  const outputCountOptions = modelParameters.find(p => p.name === 'numOutputs')?.options || [
+    { label: '1', value: 1 },
+    { label: '2', value: 2 },
+    { label: '4', value: 4 },
+  ]
+  
+  // Update parameters when model changes if current values aren't supported
+  useEffect(() => {
+    if (modelConfig) {
+      const updates: any = {}
+      
+      // Check aspect ratio
+      if (!supportedAspectRatios.includes(parameters.aspectRatio)) {
+        updates.aspectRatio = modelConfig.defaultAspectRatio || supportedAspectRatios[0]
+      }
+      
+      // Check resolution
+      if (parameters.resolution > maxResolution) {
+        updates.resolution = maxResolution
+      }
+      
+      if (Object.keys(updates).length > 0) {
+        onParametersChange({ ...parameters, ...updates })
+      }
+    }
+  }, [modelConfig, selectedModel])
 
   const handleSubmit = async () => {
     if (!prompt.trim()) return
@@ -122,7 +159,7 @@ export function ChatInput({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {ASPECT_RATIOS.map((ratio) => (
+            {supportedAspectRatios.map((ratio) => (
               <SelectItem key={ratio} value={ratio} className="text-xs">
                 {ratio}
               </SelectItem>
@@ -141,9 +178,9 @@ export function ChatInput({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {RESOLUTIONS.map((res) => (
-              <SelectItem key={res} value={res.toString()} className="text-xs">
-                {res}px
+            {resolutionOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value.toString()} className="text-xs">
+                {option.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -161,9 +198,9 @@ export function ChatInput({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {OUTPUT_COUNTS.map((count) => (
-                <SelectItem key={count} value={count.toString()} className="text-xs">
-                  {count}
+              {outputCountOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value.toString()} className="text-xs">
+                  {option.label}
                 </SelectItem>
               ))}
             </SelectContent>

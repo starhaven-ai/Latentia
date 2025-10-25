@@ -123,6 +123,7 @@ export function GenerationInterface({
               parameters={parameters}
               onParametersChange={setParameters}
               generationType={generationType}
+              selectedModel={selectedModel}
             />
           </div>
         </div>

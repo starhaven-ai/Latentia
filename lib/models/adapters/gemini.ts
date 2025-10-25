@@ -179,20 +179,43 @@ export class GeminiAdapter extends BaseModelAdapter {
   }
 }
 
-// Model configurations
+// Model configurations based on official Gemini API docs
 export const NANO_BANANA_CONFIG: ModelConfig = {
   id: 'gemini-nano-banana',
   name: 'Nano Banana',
   provider: 'Google',
   type: 'image',
   description: 'Gemini 2.5 Flash Image - Highly effective and precise image generation',
-  maxResolution: 2048,
+  maxResolution: 1024, // Gemini 2.5 Flash Image max resolution
   defaultAspectRatio: '1:1',
-  supportedAspectRatios: ['1:1', '16:9', '9:16', '4:3', '3:4'],
+  supportedAspectRatios: ['1:1'], // Gemini currently only supports square images
   pricing: {
     perImage: 0.01,
     currency: 'USD',
   },
+  parameters: [
+    {
+      name: 'resolution',
+      type: 'select',
+      label: 'Resolution',
+      default: 1024,
+      options: [
+        { label: '512px', value: 512 },
+        { label: '1024px', value: 1024 },
+      ],
+    },
+    {
+      name: 'numOutputs',
+      type: 'select',
+      label: 'Images',
+      default: 1,
+      options: [
+        { label: '1 image', value: 1 },
+        { label: '2 images', value: 2 },
+        { label: '4 images', value: 4 },
+      ],
+    },
+  ],
 }
 
 export const VEO_3_1_CONFIG: ModelConfig = {

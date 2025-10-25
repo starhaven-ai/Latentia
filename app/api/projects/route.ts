@@ -28,11 +28,20 @@ export async function GET() {
       },
     })
 
-    // Fetch projects owned by user or shared with user
+    // Fetch projects:
+    // 1. Projects owned by user (regardless of isShared)
+    // 2. Shared projects (isShared: true) from other users
+    // 3. Projects where user is explicitly a member
     const projects = await prisma.project.findMany({
       where: {
         OR: [
-          { ownerId: user.id },
+          { ownerId: user.id }, // Own projects
+          {
+            AND: [
+              { isShared: true }, // Only shared projects
+              { ownerId: { not: user.id } }, // From other users
+            ],
+          },
           {
             members: {
               some: {
@@ -46,6 +55,13 @@ export async function GET() {
         updatedAt: 'desc',
       },
       include: {
+        owner: {
+          select: {
+            id: true,
+            displayName: true,
+            username: true,
+          },
+        },
         sessions: {
           select: {
             id: true,

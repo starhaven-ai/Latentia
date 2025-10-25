@@ -1,3 +1,9 @@
+export interface ProjectOwner {
+  id: string
+  displayName: string | null
+  username: string | null
+}
+
 export interface Project {
   id: string
   name: string
@@ -7,6 +13,7 @@ export interface Project {
   isShared: boolean
   createdAt: Date
   updatedAt: Date
+  owner?: ProjectOwner
 }
 
 export interface ProjectWithSessions extends Project {
@@ -27,6 +34,7 @@ export interface Session {
   projectId: string
   name: string
   type: 'image' | 'video'
+  isPrivate: boolean
   createdAt: Date
   updatedAt: Date
 }

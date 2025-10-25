@@ -51,9 +51,14 @@ export async function GET(request: Request) {
       )
     }
 
+    // Filter sessions based on privacy and ownership
+    const isOwner = project.ownerId === user.id
     const sessions = await prisma.session.findMany({
       where: {
         projectId,
+        ...(isOwner
+          ? {} // Owner sees all sessions
+          : { isPrivate: false }), // Non-owners only see public sessions
       },
       orderBy: {
         updatedAt: 'desc',

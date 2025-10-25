@@ -24,17 +24,29 @@ export async function GET(
       where: {
         id: params.id,
         OR: [
-          { ownerId: user.id },
+          { ownerId: user.id }, // Owner can always access
           {
-            members: {
-              some: {
-                userId: user.id,
+            AND: [
+              { isShared: true }, // Only shared projects
+              {
+                members: {
+                  some: {
+                    userId: user.id,
+                  },
+                },
               },
-            },
+            ],
           },
         ],
       },
       include: {
+        owner: {
+          select: {
+            id: true,
+            displayName: true,
+            username: true,
+          },
+        },
         sessions: {
           orderBy: {
             createdAt: 'desc',

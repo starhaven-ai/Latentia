@@ -22,14 +22,7 @@ export async function PATCH(
 
     const { id } = params
     const body = await request.json()
-    const { name } = body
-
-    if (!name || typeof name !== 'string') {
-      return NextResponse.json(
-        { error: 'Session name is required' },
-        { status: 400 }
-      )
-    }
+    const { name, isPrivate } = body
 
     // First verify the session belongs to the user via the project
     const existingSession = await prisma.session.findUnique({
@@ -45,7 +38,8 @@ export async function PATCH(
     const updatedSession = await prisma.session.update({
       where: { id },
       data: {
-        name: name.trim(),
+        ...(name && typeof name === 'string' && { name: name.trim() }),
+        ...(typeof isPrivate === 'boolean' && { isPrivate }),
         updatedAt: new Date(),
       },
     })

@@ -41,37 +41,69 @@ export default function ProjectPage() {
 
   const fetchProject = async () => {
     try {
-      // TODO: Fetch project and sessions from database
-      setProjectName('My Project')
-      
-      // Create a default session if none exist
-      const defaultSession: Session = {
-        id: '1',
-        projectId: params.id as string,
-        name: 'Session 1',
-        type: 'image',
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      // Fetch project details
+      const response = await fetch(`/api/projects/${params.id}`)
+      if (response.ok) {
+        const project = await response.json()
+        setProjectName(project.name)
       }
-      setSessions([defaultSession])
-      setActiveSession(defaultSession)
+
+      // Fetch sessions for this project
+      const sessionsResponse = await fetch(`/api/sessions?projectId=${params.id}`)
+      if (sessionsResponse.ok) {
+        const fetchedSessions = await sessionsResponse.json()
+        
+        // Parse dates from strings to Date objects
+        const parsedSessions = fetchedSessions.map((s: any) => ({
+          ...s,
+          createdAt: new Date(s.createdAt),
+          updatedAt: new Date(s.updatedAt),
+        }))
+        
+        if (parsedSessions.length > 0) {
+          setSessions(parsedSessions)
+          setActiveSession(parsedSessions[0])
+        } else {
+          // Create a default session if none exist
+          await handleSessionCreate('image')
+        }
+      }
     } catch (error) {
       console.error('Error fetching project:', error)
     }
   }
 
-  const handleSessionCreate = (type: 'image' | 'video') => {
-    const newSession: Session = {
-      id: Math.random().toString(36).substring(7),
-      projectId: params.id as string,
-      name: `${type === 'image' ? 'Image' : 'Video'} Session ${sessions.length + 1}`,
-      type,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+  const handleSessionCreate = async (type: 'image' | 'video') => {
+    try {
+      const response = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId: params.id as string,
+          name: `${type === 'image' ? 'Image' : 'Video'} Session ${sessions.length + 1}`,
+          type,
+        }),
+      })
+
+      if (response.ok) {
+        const newSession = await response.json()
+        // Parse dates from strings to Date objects
+        const parsedSession = {
+          ...newSession,
+          createdAt: new Date(newSession.createdAt),
+          updatedAt: new Date(newSession.updatedAt),
+        }
+        setSessions([...sessions, parsedSession])
+        setActiveSession(parsedSession)
+        setGenerationType(type)
+      } else {
+        console.error('Failed to create session')
+      }
+    } catch (error) {
+      console.error('Error creating session:', error)
     }
-    setSessions([...sessions, newSession])
-    setActiveSession(newSession)
-    setGenerationType(type)
   }
 
   return (

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, Settings } from 'lucide-react'
 import { SessionSidebar } from '@/components/sessions/SessionSidebar'
 import { GenerationInterface } from '@/components/generation/GenerationInterface'
@@ -61,33 +60,78 @@ export default function ProjectPage() {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="border-b border-border px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push('/projects')}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="font-semibold">{projectName}</h1>
-            <p className="text-xs text-muted-foreground">
-              {activeSession?.name || 'No session'}
-            </p>
+      <header className="border-b border-border px-4 py-3">
+        <div className="flex items-center justify-between">
+          {/* Left side */}
+          <div className="flex items-center gap-3 flex-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push('/projects')}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="font-semibold">{projectName}</h1>
+              <p className="text-xs text-muted-foreground">
+                {activeSession?.name || 'No session'}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Mode Toggle using shadcn Tabs */}
-          <Tabs value={generationType} onValueChange={(value) => setGenerationType(value as 'image' | 'video')}>
-            <TabsList>
-              <TabsTrigger value="image">Image</TabsTrigger>
-              <TabsTrigger value="video">Video</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <Button variant="ghost" size="icon">
-            <Settings className="h-4 w-4" />
-          </Button>
+
+          {/* Center - Mode Toggle with Icons */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 bg-muted rounded-lg p-1">
+            <Button
+              variant={generationType === 'image' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setGenerationType('image')}
+              className="h-8 w-8 p-0"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                <circle cx="9" cy="9" r="2" />
+                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+              </svg>
+            </Button>
+            <Button
+              variant={generationType === 'video' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setGenerationType('video')}
+              className="h-8 w-8 p-0"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5" />
+                <rect x="2" y="6" width="14" height="12" rx="2" />
+              </svg>
+            </Button>
+          </div>
+
+          {/* Right side */}
+          <div className="flex items-center gap-2 flex-1 justify-end">
+            <Button variant="ghost" size="icon">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </header>
 

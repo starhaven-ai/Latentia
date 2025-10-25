@@ -112,11 +112,12 @@ export default function ProjectsPage() {
           <div className="flex items-center justify-center gap-12">
             <button
               onClick={() => setActiveTab('briefings')}
-              className={`px-6 py-4 text-lg font-medium transition-all relative ${
+              className={`px-6 py-4 text-lg font-medium transition-all relative uppercase ${
                 activeTab === 'briefings'
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
+              style={{ fontFamily: 'FKScreamer, sans-serif' }}
             >
               Briefings
               {activeTab === 'briefings' && (
@@ -125,11 +126,12 @@ export default function ProjectsPage() {
             </button>
             <button
               onClick={() => setActiveTab('projects')}
-              className={`px-6 py-4 text-lg font-medium transition-all relative ${
+              className={`px-6 py-4 text-lg font-medium transition-all relative uppercase ${
                 activeTab === 'projects'
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
+              style={{ fontFamily: 'FKScreamer, sans-serif' }}
             >
               Projects
               {activeTab === 'projects' && (
@@ -138,11 +140,12 @@ export default function ProjectsPage() {
             </button>
             <button
               onClick={() => setActiveTab('review')}
-              className={`px-6 py-4 text-lg font-medium transition-all relative ${
+              className={`px-6 py-4 text-lg font-medium transition-all relative uppercase ${
                 activeTab === 'review'
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
+              style={{ fontFamily: 'FKScreamer, sans-serif' }}
             >
               Review
               {activeTab === 'review' && (

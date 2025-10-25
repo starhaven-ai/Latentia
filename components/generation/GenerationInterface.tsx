@@ -2,7 +2,6 @@
 
 import { GenerationGallery } from './GenerationGallery'
 import { ChatInput } from './ChatInput'
-import { ModelPicker } from './ModelPicker'
 import type { Session } from '@/types/project'
 import type { GenerationWithOutputs } from '@/types/generation'
 import { useGenerations } from '@/hooks/useGenerations'
@@ -122,18 +121,10 @@ export function GenerationInterface({
               onParametersChange={setParameters}
               generationType={generationType}
               selectedModel={selectedModel}
+              onModelSelect={setSelectedModel}
             />
           </div>
         </div>
-      </div>
-
-      {/* Model Picker (Bottom Left) */}
-      <div className="absolute bottom-28 left-6 z-10">
-        <ModelPicker
-          selectedModel={selectedModel}
-          onModelSelect={setSelectedModel}
-          generationType={generationType}
-        />
       </div>
     </div>
   )

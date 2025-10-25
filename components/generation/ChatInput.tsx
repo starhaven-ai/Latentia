@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Image as ImageIcon, Wand2, ImagePlus, Ratio } from 'lucide-react'
+import { Image as ImageIcon, Wand2, ImagePlus, Ratio, ChevronDown } from 'lucide-react'
 import { useModelCapabilities } from '@/hooks/useModelCapabilities'
 import { AspectRatioSelector } from './AspectRatioSelector'
+import { ModelPicker } from './ModelPicker'
 
 interface ChatInputProps {
   onGenerate: (prompt: string, referenceImage?: File) => void
@@ -19,6 +20,7 @@ interface ChatInputProps {
   onParametersChange: (parameters: any) => void
   generationType: 'image' | 'video'
   selectedModel: string
+  onModelSelect: (modelId: string) => void
 }
 
 export function ChatInput({
@@ -27,6 +29,7 @@ export function ChatInput({
   onParametersChange,
   generationType,
   selectedModel,
+  onModelSelect,
 }: ChatInputProps) {
   const [prompt, setPrompt] = useState('')
   const [referenceImage, setReferenceImage] = useState<File | null>(null)
@@ -130,6 +133,15 @@ export function ChatInput({
 
       {/* Parameter Controls - Compact Row */}
       <div className="flex items-center gap-2">
+        {/* Model Picker - Inline */}
+        <div className="[&>button]:h-8 [&>button]:text-xs [&>button]:px-3 [&>button]:rounded-lg">
+          <ModelPicker
+            selectedModel={selectedModel}
+            onModelSelect={onModelSelect}
+            generationType={generationType}
+          />
+        </div>
+
         {/* Style Transfer Button */}
         <Button
           variant="outline"

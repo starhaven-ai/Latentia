@@ -55,28 +55,61 @@ export function GenerationInterface({
     )
   }
 
+  const hasGenerations = generations.length > 0
+
   return (
     <div className="flex-1 flex flex-col relative">
-      {/* Gallery */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <GenerationGallery
-          generations={generations}
-          onReuseParameters={handleReuseParameters}
-        />
+      {/* Gallery or Centered Input */}
+      <div className="flex-1 overflow-y-auto">
+        {hasGenerations ? (
+          <div className="p-6">
+            <GenerationGallery
+              generations={generations}
+              onReuseParameters={handleReuseParameters}
+            />
+          </div>
+        ) : (
+          // Centered layout when no generations (Krea-style)
+          <div className="h-full flex flex-col items-center justify-center px-4">
+            <div className="w-full max-w-3xl space-y-6">
+              {/* Session Title */}
+              <div className="text-center">
+                <h1 className="text-2xl font-semibold mb-2">{session.name}</h1>
+                <p className="text-sm text-muted-foreground">
+                  Enter a prompt below to generate your first image or video
+                </p>
+              </div>
+
+              {/* Centered Chat Input */}
+              <ChatInput
+                onGenerate={handleGenerate}
+                parameters={parameters}
+                onParametersChange={setParameters}
+                generationType={generationType}
+                centered={true}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Chat Input */}
-      <div className="border-t border-border bg-card p-4">
-        <ChatInput
-          onGenerate={handleGenerate}
-          parameters={parameters}
-          onParametersChange={setParameters}
-          generationType={generationType}
-        />
-      </div>
+      {/* Bottom Chat Input (shown when there are generations) */}
+      {hasGenerations && (
+        <div className="border-t border-border bg-card p-4">
+          <div className="max-w-5xl mx-auto">
+            <ChatInput
+              onGenerate={handleGenerate}
+              parameters={parameters}
+              onParametersChange={setParameters}
+              generationType={generationType}
+              centered={false}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Model Picker (Bottom Left) */}
-      <div className="absolute bottom-24 left-6">
+      <div className="absolute bottom-6 left-6 z-10">
         <ModelPicker
           selectedModel={selectedModel}
           onModelSelect={setSelectedModel}

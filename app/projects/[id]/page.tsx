@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Settings } from 'lucide-react'
+import { ArrowLeft, Settings, Menu, X } from 'lucide-react'
 import { SessionSidebar } from '@/components/sessions/SessionSidebar'
 import { GenerationInterface } from '@/components/generation/GenerationInterface'
 import type { Session } from '@/types/project'
@@ -16,6 +16,7 @@ export default function ProjectPage() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [activeSession, setActiveSession] = useState<Session | null>(null)
   const [generationType, setGenerationType] = useState<'image' | 'video'>('image')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -65,6 +66,13 @@ export default function ProjectPage() {
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => router.push('/projects')}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -107,17 +115,31 @@ export default function ProjectPage() {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sessions Sidebar */}
-        <SessionSidebar
-          sessions={sessions}
-          activeSession={activeSession}
-          generationType={generationType}
-          onSessionSelect={setActiveSession}
-          onSessionCreate={handleSessionCreate}
-        />
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Sessions Sidebar - Collapsible */}
+        {sidebarOpen && (
+          <>
+            {/* Overlay for mobile */}
+            <div 
+              className="absolute inset-0 bg-background/80 backdrop-blur-sm z-20 lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <div className="absolute left-0 top-0 bottom-0 z-30 lg:relative">
+              <SessionSidebar
+                sessions={sessions}
+                activeSession={activeSession}
+                generationType={generationType}
+                onSessionSelect={(session) => {
+                  setActiveSession(session)
+                  setSidebarOpen(false)
+                }}
+                onSessionCreate={handleSessionCreate}
+              />
+            </div>
+          </>
+        )}
 
-        {/* Generation Interface */}
+        {/* Generation Interface - Full width when sidebar closed */}
         <GenerationInterface
           session={activeSession}
           generationType={generationType}

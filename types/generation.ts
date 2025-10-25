@@ -22,7 +22,14 @@ export interface Output {
   createdAt: Date
 }
 
+export interface GenerationUser {
+  id: string
+  displayName: string
+  username?: string | null
+}
+
 export interface GenerationWithOutputs extends Generation {
   outputs: Output[]
+  user?: GenerationUser
 }
 

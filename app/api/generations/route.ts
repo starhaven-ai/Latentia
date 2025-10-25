@@ -28,13 +28,20 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch generations with their outputs
+    // Fetch generations with their outputs and user profile
     const generations = await prisma.generation.findMany({
       where: {
         sessionId,
         userId: session.user.id, // Only fetch user's own generations
       },
       include: {
+        user: {
+          select: {
+            id: true,
+            displayName: true,
+            username: true,
+          },
+        },
         outputs: {
           include: {
             bookmarks: {
@@ -42,7 +49,7 @@ export async function GET(request: NextRequest) {
                 userId: session.user.id,
               },
             },
-          },
+          } as any, // Type assertion for Prisma relation
           orderBy: {
             createdAt: 'asc',
           },
@@ -54,9 +61,9 @@ export async function GET(request: NextRequest) {
     })
 
     // Add isBookmarked field to outputs
-    const generationsWithBookmarks = generations.map(generation => ({
+    const generationsWithBookmarks = generations.map((generation: any) => ({
       ...generation,
-      outputs: generation.outputs.map(output => ({
+      outputs: generation.outputs.map((output: any) => ({
         ...output,
         isBookmarked: output.bookmarks.length > 0,
         bookmarks: undefined, // Remove bookmarks array from response

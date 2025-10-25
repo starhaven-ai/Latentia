@@ -112,12 +112,12 @@ export default function ProjectsPage() {
           <div className="flex items-center justify-center gap-12">
             <button
               onClick={() => setActiveTab('briefings')}
-              className={`px-6 py-4 text-lg font-medium transition-all relative uppercase ${
+              className={`px-6 py-4 text-lg font-bold transition-all relative uppercase ${
                 activeTab === 'briefings'
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
-              style={{ fontFamily: 'FKScreamer, sans-serif' }}
+              style={{ fontFamily: 'Avantt, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 700 }}
             >
               Briefings
               {activeTab === 'briefings' && (
@@ -126,12 +126,12 @@ export default function ProjectsPage() {
             </button>
             <button
               onClick={() => setActiveTab('projects')}
-              className={`px-6 py-4 text-lg font-medium transition-all relative uppercase ${
+              className={`px-6 py-4 text-lg font-bold transition-all relative uppercase ${
                 activeTab === 'projects'
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
-              style={{ fontFamily: 'FKScreamer, sans-serif' }}
+              style={{ fontFamily: 'Avantt, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 700 }}
             >
               Projects
               {activeTab === 'projects' && (
@@ -140,12 +140,12 @@ export default function ProjectsPage() {
             </button>
             <button
               onClick={() => setActiveTab('review')}
-              className={`px-6 py-4 text-lg font-medium transition-all relative uppercase ${
+              className={`px-6 py-4 text-lg font-bold transition-all relative uppercase ${
                 activeTab === 'review'
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
-              style={{ fontFamily: 'FKScreamer, sans-serif' }}
+              style={{ fontFamily: 'Avantt, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 700 }}
             >
               Review
               {activeTab === 'review' && (

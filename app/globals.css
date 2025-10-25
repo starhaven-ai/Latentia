@@ -1,9 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @font-face {
-  font-family: 'FKScreamer';
-  src: url('/fonts/FKScreamer-Medium.ttf') format('truetype');
-  font-weight: 500;
+  font-family: 'Avantt';
+  src: url('/fonts/Avantt-Bold.ttf') format('truetype'),
+       url('/fonts/Avantt-Bold.otf') format('opentype'),
+       url('/fonts/Avantt-Bold.woff') format('woff');
+  font-weight: 700;
   font-style: normal;
   font-display: swap;
 }

@@ -22,21 +22,31 @@ export function GenerationGallery({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-4">
       {generations.map((generation) => (
-        <div key={generation.id} className="space-y-3">
-          {/* Prompt */}
-          <div className="text-sm">
-            <p className="text-muted-foreground">Prompt:</p>
-            <p className="font-medium">{generation.prompt}</p>
+        <div key={generation.id} className="space-y-4">
+          {/* Prompt Display - Krea Style */}
+          <div className="bg-muted/50 rounded-lg p-4 border border-border">
+            <p className="text-sm font-medium leading-relaxed">{generation.prompt}</p>
+            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+              <span className="capitalize">{generation.modelId.replace('gemini-', '').replace('-', ' ')}</span>
+              <span>•</span>
+              <span>{new Date(generation.createdAt).toLocaleDateString()}</span>
+              {generation.parameters?.aspectRatio && (
+                <>
+                  <span>•</span>
+                  <span>{generation.parameters.aspectRatio}</span>
+                </>
+              )}
+            </div>
           </div>
 
-          {/* Outputs Grid */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Outputs Grid - Krea Style */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {generation.outputs.map((output) => (
               <div
                 key={output.id}
-                className="group relative aspect-square bg-muted rounded-lg overflow-hidden"
+                className="group relative aspect-square bg-muted rounded-lg overflow-hidden border border-border hover:border-primary transition-all duration-200"
               >
                 {output.fileType === 'image' ? (
                   <img
@@ -52,44 +62,44 @@ export function GenerationGallery({
                   />
                 )}
 
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  <button
-                    onClick={() => onReuseParameters(generation)}
-                    className="p-2 bg-primary rounded-lg hover:bg-primary/90 transition-colors"
-                    title="Reuse parameters"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </button>
-                  <button
-                    className="p-2 bg-background/90 rounded-lg hover:bg-background transition-colors"
-                    title="Download"
-                  >
-                    <Download className="h-4 w-4" />
-                  </button>
-                  <button
-                    className="p-2 bg-background/90 rounded-lg hover:bg-background transition-colors"
-                    title="Star"
-                  >
-                    <Star className="h-4 w-4" />
-                  </button>
-                  <button
-                    className="p-2 bg-background/90 rounded-lg hover:bg-background transition-colors"
-                    title="Info"
-                  >
-                    <Info className="h-4 w-4" />
-                  </button>
-                  <button
-                    className="p-2 bg-destructive rounded-lg hover:bg-destructive/90 transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                {/* Hover Overlay - Cleaner Design */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => onReuseParameters(generation)}
+                        className="p-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-colors"
+                        title="Reuse parameters"
+                      >
+                        <RotateCcw className="h-4 w-4 text-white" />
+                      </button>
+                      <button
+                        className="p-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-colors"
+                        title="Download"
+                      >
+                        <Download className="h-4 w-4 text-white" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        className="p-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-colors"
+                        title="Star"
+                      >
+                        <Star className="h-4 w-4 text-white" />
+                      </button>
+                      <button
+                        className="p-2 bg-red-500/80 backdrop-blur-sm rounded-lg hover:bg-red-500 transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4 text-white" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Model Badge */}
-                <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium">
-                  {generation.modelId}
+                {/* Model Badge - Subtle */}
+                <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                  {output.width && output.height && `${output.width}×${output.height}`}
                 </div>
               </div>
             ))}

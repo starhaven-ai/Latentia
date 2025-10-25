@@ -62,44 +62,63 @@ export function ChatInput({
   }
 
   return (
-    <div className="space-y-2">
-      {/* Main Input Area - Krea Style */}
-      <div className="flex items-start gap-2">
-        {/* Compact Input */}
+    <div className="space-y-3">
+      {/* Main Input Area - Krea Style Centered */}
+      <div className="flex items-start gap-3">
+        {/* Input with rounded design */}
         <div className="flex-1 relative">
           <Textarea
             placeholder="Describe an image and click generate..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="resize-none min-h-[56px] max-h-[120px] pr-3 py-3 rounded-2xl bg-muted/50 border border-border focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary transition-all"
+            className="resize-none min-h-[60px] max-h-[120px] px-4 py-3.5 rounded-xl bg-background border-2 border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary transition-all shadow-sm"
             disabled={generating}
           />
         </div>
         
-        {/* Generate Button - Compact */}
+        {/* Generate Button - Krea Style */}
         <Button
           onClick={handleSubmit}
           disabled={!prompt.trim() || generating}
-          size="default"
-          className="h-[56px] px-6 rounded-2xl shadow-sm font-medium"
+          size="lg"
+          className="h-[60px] px-8 rounded-xl shadow-md font-semibold text-base hover:shadow-lg transition-all"
         >
-          <Wand2 className="mr-2 h-4 w-4" />
+          <Wand2 className="mr-2 h-5 w-5" />
           {generating ? 'Generating...' : 'Generate'}
         </Button>
       </div>
 
-      {/* Parameter Controls - Compact Row */}
-      <div className="flex items-center gap-1.5 px-1">
-        {/* Aspect Ratio Select - Compact */}
+      {/* Parameter Controls - Cleaner Row */}
+      <div className="flex items-center gap-2 px-1">
+        {/* Style Transfer Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={generating}
+          className="h-9 text-xs px-3.5 rounded-lg border hover:bg-accent transition-colors"
+        >
+          <ImagePlus className="h-3.5 w-3.5 mr-1.5" />
+          Style transfer
+        </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
+
+        {/* Aspect Ratio Pills */}
         <Select
           value={parameters.aspectRatio}
           onValueChange={(value) =>
             onParametersChange({ ...parameters, aspectRatio: value })
           }
         >
-          <SelectTrigger className="w-[90px] h-8 text-xs rounded-full border bg-muted/50">
-            <Ratio className="h-3 w-3 mr-1.5" />
+          <SelectTrigger className="w-[100px] h-9 text-xs rounded-lg border hover:bg-accent">
+            <Ratio className="h-3.5 w-3.5 mr-1.5" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -111,15 +130,15 @@ export function ChatInput({
           </SelectContent>
         </Select>
 
-        {/* Resolution Select - Compact */}
+        {/* 6K Button - Resolution */}
         <Select
           value={parameters.resolution.toString()}
           onValueChange={(value) =>
             onParametersChange({ ...parameters, resolution: parseInt(value) })
           }
         >
-          <SelectTrigger className="w-[90px] h-8 text-xs rounded-full border bg-muted/50">
-            <Grid3x3 className="h-3 w-3 mr-1.5" />
+          <SelectTrigger className="w-[90px] h-9 text-xs rounded-lg border hover:bg-accent">
+            <Grid3x3 className="h-3.5 w-3.5 mr-1.5" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -131,7 +150,7 @@ export function ChatInput({
           </SelectContent>
         </Select>
 
-        {/* Image Count Select - Compact */}
+        {/* Image Count */}
         {generationType === 'image' && (
           <Select
             value={parameters.numOutputs.toString()}
@@ -139,55 +158,41 @@ export function ChatInput({
               onParametersChange({ ...parameters, numOutputs: parseInt(value) })
             }
           >
-            <SelectTrigger className="w-[80px] h-8 text-xs rounded-full border bg-muted/50">
-              <ImageIcon className="h-3 w-3 mr-1.5" />
+            <SelectTrigger className="w-[85px] h-9 text-xs rounded-lg border hover:bg-accent">
+              <ImageIcon className="h-3.5 w-3.5 mr-1.5" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {OUTPUT_COUNTS.map((count) => (
                 <SelectItem key={count} value={count.toString()} className="text-xs">
-                  {count}
+                  {count} {count === 1 ? 'image' : 'images'}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         )}
 
-        {/* Image Upload Button - Compact */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={generating}
-          className="h-8 text-xs px-3 rounded-full border bg-muted/50"
-        >
-          <ImagePlus className="h-3 w-3 mr-1.5" />
-          {referenceImage ? 'Image' : 'Image'}
-        </Button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleFileSelect}
-        />
-
-        {/* Keyboard Shortcut Hint - Compact */}
-        <span className="text-[10px] text-muted-foreground ml-auto hidden lg:inline">
-          <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px]">⌘</kbd>+<kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px]">↵</kbd>
+        {/* Keyboard Shortcut Hint */}
+        <span className="text-[11px] text-muted-foreground ml-auto hidden lg:inline">
+          <kbd className="px-2 py-1 bg-muted/50 rounded text-[10px] border border-border/50">⌘</kbd>
+          <span className="mx-0.5">+</span>
+          <kbd className="px-2 py-1 bg-muted/50 rounded text-[10px] border border-border/50">Enter</kbd>
         </span>
       </div>
 
-      {/* Reference Image Preview - Minimal */}
+      {/* Reference Image Preview - Minimal Pill */}
       {referenceImage && (
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground px-1">
-          <span className="truncate max-w-[200px]">{referenceImage.name}</span>
-          <button
-            onClick={() => setReferenceImage(null)}
-            className="text-destructive hover:underline text-[11px]"
-          >
-            ×
-          </button>
+        <div className="flex items-center gap-2 px-1">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-xs">
+            <ImagePlus className="h-3.5 w-3.5 text-primary" />
+            <span className="text-foreground font-medium truncate max-w-[200px]">{referenceImage.name}</span>
+            <button
+              onClick={() => setReferenceImage(null)}
+              className="text-muted-foreground hover:text-destructive transition-colors ml-1"
+            >
+              ×
+            </button>
+          </div>
         </div>
       )}
     </div>

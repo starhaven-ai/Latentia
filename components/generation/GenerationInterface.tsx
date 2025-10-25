@@ -8,6 +8,7 @@ import type { GenerationWithOutputs } from '@/types/generation'
 import { useGenerations } from '@/hooks/useGenerations'
 import { useGenerateMutation } from '@/hooks/useGenerateMutation'
 import { useUIStore } from '@/store/uiStore'
+import { useToast } from '@/components/ui/use-toast'
 
 interface GenerationInterfaceProps {
   session: Session | null
@@ -18,6 +19,8 @@ export function GenerationInterface({
   session,
   generationType,
 }: GenerationInterfaceProps) {
+  const { toast } = useToast()
+  
   // Use Zustand store for UI state
   const { selectedModel, parameters, setSelectedModel, setParameters } = useUIStore()
   
@@ -41,9 +44,20 @@ export function GenerationInterface({
           numOutputs: parameters.numOutputs,
         },
       })
+      
+      // Show success toast
+      toast({
+        title: "Generation complete!",
+        description: `Successfully generated ${parameters.numOutputs} ${generationType}${parameters.numOutputs > 1 ? 's' : ''}`,
+        variant: "success",
+      })
     } catch (error: any) {
       console.error('Generation error:', error)
-      alert(error.message || 'Failed to generate')
+      toast({
+        title: "Generation failed",
+        description: error.message || 'Failed to generate. Please try again.',
+        variant: "destructive",
+      })
     }
   }
 

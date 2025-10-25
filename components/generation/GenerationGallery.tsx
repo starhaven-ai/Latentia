@@ -1,6 +1,7 @@
 import { Download, Star, Trash2, RotateCcw, Info } from 'lucide-react'
 import type { GenerationWithOutputs } from '@/types/generation'
 import { useUpdateOutputMutation, useDeleteOutputMutation } from '@/hooks/useOutputMutations'
+import { useToast } from '@/components/ui/use-toast'
 
 interface GenerationGalleryProps {
   generations: GenerationWithOutputs[]
@@ -13,6 +14,7 @@ export function GenerationGallery({
   sessionId,
   onReuseParameters,
 }: GenerationGalleryProps) {
+  const { toast } = useToast()
   const updateOutputMutation = useUpdateOutputMutation()
   const deleteOutputMutation = useDeleteOutputMutation()
 
@@ -25,8 +27,19 @@ export function GenerationGallery({
         sessionId,
         isStarred: !currentStarred,
       })
+      
+      toast({
+        title: currentStarred ? "Removed from favorites" : "Added to favorites",
+        description: currentStarred ? "Image unstarred" : "Image starred",
+        variant: "default",
+      })
     } catch (error) {
       console.error('Error toggling star:', error)
+      toast({
+        title: "Error",
+        description: "Failed to update favorite status",
+        variant: "destructive",
+      })
     }
   }
 
@@ -39,8 +52,19 @@ export function GenerationGallery({
         outputId,
         sessionId,
       })
+      
+      toast({
+        title: "Image deleted",
+        description: "Successfully removed the image",
+        variant: "default",
+      })
     } catch (error) {
       console.error('Error deleting output:', error)
+      toast({
+        title: "Deletion failed",
+        description: "Failed to delete the image",
+        variant: "destructive",
+      })
     }
   }
 

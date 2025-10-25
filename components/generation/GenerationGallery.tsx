@@ -89,13 +89,13 @@ export function GenerationGallery({
   return (
     <div className="space-y-6 pb-4">
       {localGenerations.map((generation) => (
-        <div key={generation.id} className="flex gap-4 items-start">
-          {/* Left Side: Prompt Display - Krea Style */}
-          <div className="w-64 flex-shrink-0 bg-muted/30 rounded-xl p-4 border border-border/50">
-            <p className="text-sm font-normal leading-relaxed text-foreground/90 mb-3">
+        <div key={generation.id} className="flex gap-5 items-start">
+          {/* Left Side: Prompt Display - Krea Style (More Space) */}
+          <div className="w-80 flex-shrink-0 bg-muted/30 rounded-xl p-5 border border-border/50">
+            <p className="text-sm font-normal leading-relaxed text-foreground/90 mb-4">
               {generation.prompt}
             </p>
-            <div className="space-y-1 text-[11px] text-muted-foreground">
+            <div className="space-y-1.5 text-[11px] text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Info className="h-3 w-3" />
                 <span className="capitalize">{generation.modelId.replace('gemini-', '').replace('-', ' ')}</span>
@@ -113,8 +113,8 @@ export function GenerationGallery({
             </div>
           </div>
 
-          {/* Right Side: Outputs in Horizontal Grid - Krea Style */}
-          <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Right Side: Outputs in 2-Column Grid - Krea Style */}
+          <div className="flex-1 grid grid-cols-2 gap-4">
             {generation.outputs.map((output) => (
               <div
                 key={output.id}

@@ -201,7 +201,7 @@ export function GenerationGallery({
           // Video layout: Prompt above, video below with more space
           if (isVideo) {
             return (
-              <div key={generation.id} className="space-y-3">
+              <div key={generation.id} className="space-y-3 max-w-4xl">
                 {/* Prompt above video - truncated with click to copy */}
                 <div 
                   className="bg-muted/30 rounded-lg px-4 py-3 border border-border/50 cursor-pointer hover:border-primary/50 transition-colors group"
@@ -213,8 +213,8 @@ export function GenerationGallery({
                   </p>
                 </div>
 
-                {/* Video outputs - larger display */}
-                <div className="grid grid-cols-1 gap-4 max-w-4xl">
+                {/* Video outputs - same width as prompt */}
+                <div className="grid grid-cols-1 gap-4">
                   {generation.outputs.map((output) => {
                     const aspectRatio = (generation.parameters as any)?.aspectRatio || '16:9'
                     return (

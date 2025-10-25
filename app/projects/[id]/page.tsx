@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, Settings, Sun, Moon } from 'lucide-react'
 import { SessionSidebar } from '@/components/sessions/SessionSidebar'
 import { GenerationInterface } from '@/components/generation/GenerationInterface'
+import { ProfileSettings } from '@/components/settings/ProfileSettings'
 import type { Session } from '@/types/project'
 
 export default function ProjectPage() {
@@ -17,6 +18,7 @@ export default function ProjectPage() {
   const [activeSession, setActiveSession] = useState<Session | null>(null)
   const [generationType, setGenerationType] = useState<'image' | 'video'>('image')
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const [showProfileSettings, setShowProfileSettings] = useState(false)
   const supabase = createClient()
 
   // Initialize theme from localStorage
@@ -200,7 +202,11 @@ export default function ProjectPage() {
                 <Sun className="h-4 w-4" />
               )}
             </Button>
-            <Button variant="ghost" size="icon">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setShowProfileSettings(true)}
+            >
               <Settings className="h-4 w-4" />
             </Button>
           </div>
@@ -225,6 +231,12 @@ export default function ProjectPage() {
           generationType={generationType}
         />
       </div>
+
+      {/* Profile Settings Dialog */}
+      <ProfileSettings 
+        isOpen={showProfileSettings}
+        onClose={() => setShowProfileSettings(false)}
+      />
     </div>
   )
 }

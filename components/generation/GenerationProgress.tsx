@@ -6,9 +6,10 @@ import { Loader2 } from 'lucide-react'
 interface GenerationProgressProps {
   estimatedTime?: number // in seconds
   onComplete?: () => void
+  aspectRatio?: string
 }
 
-export function GenerationProgress({ estimatedTime = 30, onComplete }: GenerationProgressProps) {
+export function GenerationProgress({ estimatedTime = 30, onComplete, aspectRatio = '1:1' }: GenerationProgressProps) {
   const [progress, setProgress] = useState(0)
   const [elapsed, setElapsed] = useState(0)
 
@@ -31,8 +32,15 @@ export function GenerationProgress({ estimatedTime = 30, onComplete }: Generatio
     return () => clearInterval(interval)
   }, [estimatedTime])
 
+  const getAspectRatioStyle = (ratio: string) => {
+    return ratio.replace(':', ' / ')
+  }
+
   return (
-    <div className="relative aspect-square bg-muted/30 rounded-xl overflow-hidden border border-border/50">
+    <div 
+      className="relative bg-muted/30 rounded-xl overflow-hidden border border-border/50"
+      style={{ aspectRatio: getAspectRatioStyle(aspectRatio) }}
+    >
       {/* Placeholder content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <Loader2 className="h-8 w-8 text-primary/60 animate-spin mb-4" />

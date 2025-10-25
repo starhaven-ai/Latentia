@@ -10,6 +10,7 @@ interface GenerationGalleryProps {
   onReuseParameters: (generation: GenerationWithOutputs) => void
   pendingCount?: number
   isGenerating?: boolean
+  pendingAspectRatio?: string
 }
 
 export function GenerationGallery({
@@ -18,10 +19,17 @@ export function GenerationGallery({
   onReuseParameters,
   pendingCount = 0,
   isGenerating = false,
+  pendingAspectRatio = '1:1',
 }: GenerationGalleryProps) {
   const { toast } = useToast()
   const updateOutputMutation = useUpdateOutputMutation()
   const deleteOutputMutation = useDeleteOutputMutation()
+
+  // Convert aspect ratio string to CSS aspect-ratio value
+  const getAspectRatioStyle = (aspectRatio?: string) => {
+    if (!aspectRatio) return '1 / 1'
+    return aspectRatio.replace(':', ' / ')
+  }
 
   const handleToggleStar = async (outputId: string, currentStarred: boolean) => {
     if (!sessionId) return
@@ -113,10 +121,13 @@ export function GenerationGallery({
 
           {/* Right Side: Outputs in 2-Column Grid - Smaller Images */}
           <div className="flex-1 grid grid-cols-2 gap-3 max-w-2xl">
-            {generation.outputs.map((output) => (
+            {generation.outputs.map((output) => {
+              const aspectRatio = (generation.parameters as any)?.aspectRatio || '1:1'
+              return (
               <div
                 key={output.id}
-                className="group relative aspect-square bg-muted rounded-xl overflow-hidden border border-border/50 hover:border-primary/50 hover:shadow-lg transition-all duration-200"
+                className="group relative bg-muted rounded-xl overflow-hidden border border-border/50 hover:border-primary/50 hover:shadow-lg transition-all duration-200"
+                style={{ aspectRatio: getAspectRatioStyle(aspectRatio) }}
               >
                 {output.fileType === 'image' ? (
                   <img
@@ -183,7 +194,8 @@ export function GenerationGallery({
                   </div>
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       ))}
@@ -211,7 +223,11 @@ export function GenerationGallery({
           {/* Right Side: Progress placeholders in 2-column grid */}
           <div className="flex-1 grid grid-cols-2 gap-3 max-w-2xl">
             {Array.from({ length: pendingCount }).map((_, idx) => (
-              <GenerationProgress key={`pending-${idx}`} estimatedTime={25} />
+              <GenerationProgress 
+                key={`pending-${idx}`} 
+                estimatedTime={25} 
+                aspectRatio={pendingAspectRatio}
+              />
             ))}
           </div>
         </div>

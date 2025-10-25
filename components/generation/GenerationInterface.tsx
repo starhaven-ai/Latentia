@@ -105,6 +105,7 @@ export function GenerationInterface({
                 onReuseParameters={handleReuseParameters}
                 isGenerating={generateMutation.isPending}
                 pendingCount={generateMutation.isPending ? parameters.numOutputs : 0}
+                pendingAspectRatio={parameters.aspectRatio}
               />
             </div>
           </div>

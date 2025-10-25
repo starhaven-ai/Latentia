@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Image, Video, Pencil } from 'lucide-react'
+import { Plus, Image, Video, Pencil, Check, X } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import type { Session } from '@/types/project'
 
@@ -101,17 +101,37 @@ export function SessionSidebar({
             >
               {renamingSessionId === session.id ? (
                 <div className="p-3" onClick={(e) => e.stopPropagation()}>
-                  <Input
-                    value={newSessionName}
-                    onChange={(e) => setNewSessionName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleRenameSubmit(session.id)
-                      if (e.key === 'Escape') handleRenameCancel()
-                    }}
-                    onBlur={() => handleRenameSubmit(session.id)}
-                    autoFocus
-                    className="h-7 text-sm"
-                  />
+                  <div className="flex items-center gap-2">
+                    {session.type === 'image' ? (
+                      <Image className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                    ) : (
+                      <Video className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                    )}
+                    <Input
+                      value={newSessionName}
+                      onChange={(e) => setNewSessionName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleRenameSubmit(session.id)
+                        if (e.key === 'Escape') handleRenameCancel()
+                      }}
+                      autoFocus
+                      className="h-7 text-sm flex-1"
+                    />
+                    <button
+                      onClick={() => handleRenameSubmit(session.id)}
+                      className="p-1 rounded hover:bg-primary/20 text-green-600 hover:text-green-700 transition-colors"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={handleRenameCancel}
+                      className="p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <button

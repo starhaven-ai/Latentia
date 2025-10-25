@@ -160,7 +160,7 @@ export default function ProjectsPage() {
 
       {/* Main Content */}
       <main 
-        className="container mx-auto px-4 py-8 min-h-screen bg-cover bg-center bg-no-repeat"
+        className="w-full px-4 py-8 min-h-screen bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: "url('/images/Full page_Sketch.png')" }}
       >
         {/* Briefings Tab */}

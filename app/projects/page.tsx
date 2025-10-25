@@ -88,11 +88,11 @@ export default function ProjectsPage() {
       {/* Header */}
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Latentia
-            </h1>
-            <p className="text-sm text-muted-foreground">Your AI Projects</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-xl">L</span>
+            </div>
+            <h1 className="text-2xl font-bold tracking-wide">PRISM</h1>
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={() => setShowNewProject(true)}>
@@ -109,10 +109,10 @@ export default function ProjectsPage() {
       {/* Tab Navigation */}
       <div className="border-b border-border bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="flex items-center gap-8">
+          <div className="flex items-center justify-center gap-12">
             <button
               onClick={() => setActiveTab('briefings')}
-              className={`px-4 py-3 text-sm font-medium transition-all relative ${
+              className={`px-6 py-4 text-lg font-medium transition-all relative ${
                 activeTab === 'briefings'
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
@@ -125,7 +125,7 @@ export default function ProjectsPage() {
             </button>
             <button
               onClick={() => setActiveTab('projects')}
-              className={`px-4 py-3 text-sm font-medium transition-all relative ${
+              className={`px-6 py-4 text-lg font-medium transition-all relative ${
                 activeTab === 'projects'
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
@@ -138,7 +138,7 @@ export default function ProjectsPage() {
             </button>
             <button
               onClick={() => setActiveTab('review')}
-              className={`px-4 py-3 text-sm font-medium transition-all relative ${
+              className={`px-6 py-4 text-lg font-medium transition-all relative ${
                 activeTab === 'review'
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'

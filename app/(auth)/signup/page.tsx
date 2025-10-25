@@ -93,7 +93,7 @@ export default function SignupPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-3xl font-bold text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Latentia
+            PRISM
           </CardTitle>
           <CardDescription className="text-center">
             Create your account to get started

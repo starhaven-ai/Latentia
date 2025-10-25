@@ -62,75 +62,76 @@ export function ChatInput({
   }
 
   return (
-    <div className="space-y-3">
-      {/* Main Input Area */}
-      <div className="relative">
-        <Textarea
-          placeholder="Describe an image and click generate..."
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="resize-none min-h-[100px] pr-32 bg-background border-2 focus-visible:ring-2 focus-visible:ring-primary"
-          disabled={generating}
-        />
-        
-        {/* Generate Button - Inside textarea */}
-        <div className="absolute right-3 bottom-3">
-          <Button
-            onClick={handleSubmit}
-            disabled={!prompt.trim() || generating}
-            size="default"
-            className="shadow-md font-medium"
-          >
-            <Wand2 className="mr-2 h-4 w-4" />
-            {generating ? 'Generating...' : 'Generate'}
-          </Button>
+    <div className="space-y-2">
+      {/* Main Input Area - Krea Style */}
+      <div className="flex items-start gap-2">
+        {/* Compact Input */}
+        <div className="flex-1 relative">
+          <Textarea
+            placeholder="Describe an image and click generate..."
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="resize-none min-h-[56px] max-h-[120px] pr-3 py-3 rounded-2xl bg-muted/50 border border-border focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary transition-all"
+            disabled={generating}
+          />
         </div>
+        
+        {/* Generate Button - Compact */}
+        <Button
+          onClick={handleSubmit}
+          disabled={!prompt.trim() || generating}
+          size="default"
+          className="h-[56px] px-6 rounded-2xl shadow-sm font-medium"
+        >
+          <Wand2 className="mr-2 h-4 w-4" />
+          {generating ? 'Generating...' : 'Generate'}
+        </Button>
       </div>
 
-      {/* Parameter Controls using shadcn Select */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {/* Aspect Ratio Select */}
+      {/* Parameter Controls - Compact Row */}
+      <div className="flex items-center gap-1.5 px-1">
+        {/* Aspect Ratio Select - Compact */}
         <Select
           value={parameters.aspectRatio}
           onValueChange={(value) =>
             onParametersChange({ ...parameters, aspectRatio: value })
           }
         >
-          <SelectTrigger className="w-[120px] h-10 border-2 bg-background">
-            <Ratio className="h-4 w-4 mr-2" />
+          <SelectTrigger className="w-[90px] h-8 text-xs rounded-full border bg-muted/50">
+            <Ratio className="h-3 w-3 mr-1.5" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {ASPECT_RATIOS.map((ratio) => (
-              <SelectItem key={ratio} value={ratio}>
+              <SelectItem key={ratio} value={ratio} className="text-xs">
                 {ratio}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        {/* Resolution Select */}
+        {/* Resolution Select - Compact */}
         <Select
           value={parameters.resolution.toString()}
           onValueChange={(value) =>
             onParametersChange({ ...parameters, resolution: parseInt(value) })
           }
         >
-          <SelectTrigger className="w-[120px] h-10 border-2 bg-background">
-            <Grid3x3 className="h-4 w-4 mr-2" />
+          <SelectTrigger className="w-[90px] h-8 text-xs rounded-full border bg-muted/50">
+            <Grid3x3 className="h-3 w-3 mr-1.5" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {RESOLUTIONS.map((res) => (
-              <SelectItem key={res} value={res.toString()}>
+              <SelectItem key={res} value={res.toString()} className="text-xs">
                 {res}px
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        {/* Image Count Select */}
+        {/* Image Count Select - Compact */}
         {generationType === 'image' && (
           <Select
             value={parameters.numOutputs.toString()}
@@ -138,30 +139,30 @@ export function ChatInput({
               onParametersChange({ ...parameters, numOutputs: parseInt(value) })
             }
           >
-            <SelectTrigger className="w-[100px] h-10 border-2 bg-background">
-              <ImageIcon className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-[80px] h-8 text-xs rounded-full border bg-muted/50">
+              <ImageIcon className="h-3 w-3 mr-1.5" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {OUTPUT_COUNTS.map((count) => (
-                <SelectItem key={count} value={count.toString()}>
-                  {count} {count === 1 ? 'image' : 'images'}
+                <SelectItem key={count} value={count.toString()} className="text-xs">
+                  {count}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         )}
 
-        {/* Image Upload Button */}
+        {/* Image Upload Button - Compact */}
         <Button
           variant="outline"
           size="sm"
           onClick={() => fileInputRef.current?.click()}
           disabled={generating}
-          className="h-10 border-2 bg-background font-medium"
+          className="h-8 text-xs px-3 rounded-full border bg-muted/50"
         >
-          <ImagePlus className="h-4 w-4 mr-2" />
-          {referenceImage ? referenceImage.name.substring(0, 15) + '...' : 'Image prompt'}
+          <ImagePlus className="h-3 w-3 mr-1.5" />
+          {referenceImage ? 'Image' : 'Image'}
         </Button>
         <input
           ref={fileInputRef}
@@ -171,21 +172,21 @@ export function ChatInput({
           onChange={handleFileSelect}
         />
 
-        {/* Keyboard Shortcut Hint */}
-        <span className="text-xs text-muted-foreground ml-auto hidden sm:inline font-medium">
-          <kbd className="px-2 py-1 bg-muted rounded-md text-xs font-medium">⌘</kbd> + <kbd className="px-2 py-1 bg-muted rounded-md text-xs font-medium">Enter</kbd>
+        {/* Keyboard Shortcut Hint - Compact */}
+        <span className="text-[10px] text-muted-foreground ml-auto hidden lg:inline">
+          <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px]">⌘</kbd>+<kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px]">↵</kbd>
         </span>
       </div>
 
-      {/* Reference Image Preview */}
+      {/* Reference Image Preview - Minimal */}
       {referenceImage && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>Reference: {referenceImage.name}</span>
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground px-1">
+          <span className="truncate max-w-[200px]">{referenceImage.name}</span>
           <button
             onClick={() => setReferenceImage(null)}
-            className="text-destructive hover:underline"
+            className="text-destructive hover:underline text-[11px]"
           >
-            Remove
+            ×
           </button>
         </div>
       )}

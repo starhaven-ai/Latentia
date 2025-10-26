@@ -70,7 +70,7 @@ export default function SignupPage() {
           <CardHeader>
             <CardTitle className="text-center">Check your email</CardTitle>
             <CardDescription className="text-center">
-              We've sent you a confirmation link to {email}
+              We&apos;ve sent you a confirmation link to {email}
             </CardDescription>
           </CardHeader>
           <CardContent>

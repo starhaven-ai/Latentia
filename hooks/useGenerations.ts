@@ -18,6 +18,12 @@ export function useGenerations(sessionId: string | null) {
     enabled: !!sessionId, // Only run if sessionId exists
     staleTime: 0, // Always refetch when invalidated
     refetchOnMount: true, // Refetch on component mount
+    refetchInterval: (query) => {
+      // Poll every 3 seconds if there are processing generations
+      const data = query.state.data as GenerationWithOutputs[] | undefined
+      const hasProcessingGenerations = data?.some(gen => gen.status === 'processing')
+      return hasProcessingGenerations ? 3000 : false
+    },
   })
 }
 

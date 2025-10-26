@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Lock, Users, Globe, User, Pencil, Check } from 'lucide-react'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
@@ -19,8 +19,50 @@ export function ProjectCard({ project, currentUserId, onProjectUpdate }: Project
   const [updating, setUpdating] = useState(false)
   const [isEditingName, setIsEditingName] = useState(false)
   const [editedName, setEditedName] = useState(project.name)
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null)
 
   const isOwner = currentUserId && project.ownerId === currentUserId
+
+  // Fetch latest generation thumbnail
+  useEffect(() => {
+    const fetchThumbnail = async () => {
+      try {
+        // Get all sessions for this project
+        const sessionsResponse = await fetch(`/api/sessions?projectId=${project.id}`)
+        if (!sessionsResponse.ok) return
+        
+        const sessions = await sessionsResponse.json()
+        if (!sessions || sessions.length === 0) return
+
+        // Get the latest session (sorted by createdAt desc)
+        const latestSession = sessions.sort((a: any, b: any) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )[0]
+
+        // Get generations for the latest session
+        const generationsResponse = await fetch(`/api/generations?sessionId=${latestSession.id}`)
+        if (!generationsResponse.ok) return
+        
+        const generations = await generationsResponse.json()
+        if (!generations || generations.length === 0) return
+
+        // Get the latest generation with an image output
+        const latestGeneration = generations
+          .filter((g: any) => g.outputs && g.outputs.length > 0 && g.outputs[0].fileType === 'image')
+          .sort((a: any, b: any) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )[0]
+
+        if (latestGeneration && latestGeneration.outputs && latestGeneration.outputs[0]) {
+          setThumbnailUrl(latestGeneration.outputs[0].fileUrl)
+        }
+      } catch (error) {
+        console.error('Error fetching thumbnail:', error)
+      }
+    }
+
+    fetchThumbnail()
+  }, [project.id])
 
   const handleClick = () => {
     if (!isEditingName) {
@@ -129,9 +171,9 @@ export function ProjectCard({ project, currentUserId, onProjectUpdate }: Project
     >
       <CardContent className="p-0">
         <div className="aspect-video bg-muted relative overflow-hidden">
-          {project.coverImageUrl ? (
+          {thumbnailUrl ? (
             <img
-              src={project.coverImageUrl}
+              src={thumbnailUrl}
               alt={project.name}
               className="w-full h-full object-cover"
             />

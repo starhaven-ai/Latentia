@@ -165,16 +165,19 @@ export class FalAdapter extends BaseModelAdapter {
         await new Promise(resolve => setTimeout(resolve, 5000)) // Wait 5 seconds
 
         const statusResponse = await fetch(
-          `https://queue.fal.run/${endpoint}/requests/${requestId}`,
+          `https://queue.fal.run/requests/${requestId}/status`,
           {
+            method: 'GET',
             headers: {
               'Authorization': `Key ${FAL_API_KEY}`,
+              'Content-Type': 'application/json',
             },
           }
         )
 
         if (!statusResponse.ok) {
-          throw new Error(`FAL API status check failed: ${statusResponse.statusText}`)
+          const errorText = await statusResponse.text()
+          throw new Error(`FAL API status check failed (${statusResponse.status}): ${errorText || statusResponse.statusText}`)
         }
 
         const statusData = await statusResponse.json()

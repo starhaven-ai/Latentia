@@ -114,7 +114,7 @@ export function SessionSidebar({
   }
 
   return (
-    <div className="w-60 border-r border-border/50 bg-muted/20 flex flex-col p-3 gap-3">
+    <div className="w-72 border-r border-border/50 bg-muted/20 flex flex-col p-3 gap-3">
       {/* New Session Card */}
       <div className="bg-card border border-border rounded-lg p-3 shadow-sm">
         <Button

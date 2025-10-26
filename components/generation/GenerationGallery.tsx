@@ -394,7 +394,7 @@ export function GenerationGallery({
               </div>
 
             {/* Right Side: Outputs in 2-Column Grid - Smaller Images */}
-            <div className="flex-1 grid grid-cols-2 gap-3 max-w-2xl">
+            <div className="flex-1 grid grid-cols-2 gap-3 max-w-4xl">
               {generation.outputs.map((output) => {
                 const aspectRatio = (generation.parameters as any)?.aspectRatio || '1:1'
                 return (

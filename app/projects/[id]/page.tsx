@@ -161,8 +161,8 @@ export default function ProjectPage() {
           {/* Left side - Logo + Project Info */}
           <div className="flex items-center gap-3 flex-1">
             <img 
-              src={theme === 'light' ? "/images/Loop Prism (Black).svg" : "/images/Loop Prism (White).svg"}
-              alt="Loop Prism Logo" 
+              src={theme === 'light' ? "/images/Loop Vesper (Black).svg" : "/images/Loop Vesper (White).svg"}
+              alt="Loop Vesper Logo" 
               className="h-7 object-contain cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => router.push('/projects')}
               title="Back to Projects"
@@ -182,8 +182,8 @@ export default function ProjectPage() {
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -204,8 +204,8 @@ export default function ProjectPage() {
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"

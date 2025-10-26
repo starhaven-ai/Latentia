@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Prism - Your Intelligent AI Canvas",
+  title: "Loop Vesper - Your Intelligent AI Canvas",
   description: "Generate images and videos with state-of-the-art AI models",
   icons: {
     icon: '/images/Loop-Favicon-(Mint).png',

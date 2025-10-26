@@ -54,13 +54,6 @@ export function ChatInput({
     { label: '2048px', value: 2048 },
   ]
   
-  // Get output count options from model config or use defaults
-  const outputCountOptions = modelParameters.find(p => p.name === 'numOutputs')?.options || [
-    { label: '1', value: 1 },
-    { label: '2', value: 2 },
-    { label: '4', value: 4 },
-  ]
-  
   // Update parameters when model changes if current values aren't supported
   useEffect(() => {
     if (modelConfig) {
@@ -237,27 +230,6 @@ export function ChatInput({
             </div>
           </PopoverContent>
         </Popover>
-
-        {generationType === 'image' && (
-          <Select
-            value={parameters.numOutputs.toString()}
-            onValueChange={(value) =>
-              onParametersChange({ ...parameters, numOutputs: parseInt(value) })
-            }
-          >
-            <SelectTrigger className="w-[80px] h-8 text-xs rounded-lg border bg-background">
-              <ImageIcon className="h-3.5 w-3.5 mr-1.5" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {outputCountOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value.toString()} className="text-xs">
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
 
         {/* Keyboard Shortcut */}
         <span className="text-xs text-muted-foreground ml-auto hidden lg:inline-flex items-center gap-1">

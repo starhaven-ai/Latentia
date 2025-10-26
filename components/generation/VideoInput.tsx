@@ -62,11 +62,6 @@ export function VideoInput({
   const durationOptions = modelParameters.find(p => p.name === 'duration')?.options || []
   const hasDuration = durationOptions.length > 0
   
-  // Get output count options from model config or use defaults
-  const outputCountOptions = modelParameters.find(p => p.name === 'numOutputs')?.options || [
-    { label: '1', value: 1 },
-  ]
-  
   // Update parameters when model changes if current values aren't supported
   useEffect(() => {
     if (modelConfig) {
@@ -294,24 +289,6 @@ export function VideoInput({
             </SelectContent>
           </Select>
         )}
-
-        {/* Number of Outputs */}
-        <Select
-          value={String(parameters.numOutputs)}
-          onValueChange={(value) => onParametersChange({ ...parameters, numOutputs: parseInt(value) })}
-          disabled={generating}
-        >
-          <SelectTrigger className="h-8 text-xs px-3 rounded-lg w-auto min-w-[60px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {outputCountOptions.map(option => (
-              <SelectItem key={option.value} value={String(option.value)}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       {referenceImage && (

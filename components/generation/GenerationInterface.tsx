@@ -40,6 +40,14 @@ export function GenerationInterface({
   // Use React Query mutation for generating
   const generateMutation = useGenerateMutation()
 
+  // Set numOutputs based on generationType
+  useEffect(() => {
+    const defaultNumOutputs = generationType === 'image' ? 4 : 1
+    if (parameters.numOutputs !== defaultNumOutputs) {
+      setParameters({ numOutputs: defaultNumOutputs })
+    }
+  }, [generationType])
+
   // Auto-scroll to bottom when generations load or update
   useEffect(() => {
     if (!isLoading && generations.length > 0 && scrollContainerRef.current) {

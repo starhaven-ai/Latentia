@@ -59,6 +59,13 @@ DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.xxxxx.supabase.co:5432/pos
 
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# AI Model API Keys
+# Google Gemini (for Nano Banana and Veo models)
+GOOGLE_API_KEY=your-google-api-key-here
+
+# FAL.ai (for Seedream and other FAL models)
+FAL_API_KEY=your-fal-api-key-here
 ```
 
 **Note**: For the DATABASE_URL, replace `[YOUR-PASSWORD]` with your database password, keeping the square brackets removed.

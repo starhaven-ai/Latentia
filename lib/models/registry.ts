@@ -4,6 +4,10 @@ import {
   NANO_BANANA_CONFIG,
   VEO_3_1_CONFIG,
 } from './adapters/gemini'
+import {
+  FalAdapter,
+  SEEDREAM_V4_CONFIG,
+} from './adapters/fal'
 
 /**
  * Model Registry
@@ -22,6 +26,9 @@ class ModelRegistry {
     // Register Google Gemini models
     this.register(NANO_BANANA_CONFIG, GeminiAdapter)
     this.register(VEO_3_1_CONFIG, GeminiAdapter)
+    
+    // Register FAL.ai models
+    this.register(SEEDREAM_V4_CONFIG, FalAdapter)
   }
 
   /**

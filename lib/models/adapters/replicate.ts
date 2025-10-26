@@ -63,12 +63,11 @@ export const REVE_CONFIG: ModelConfig = {
   name: 'Reve',
   provider: 'Reve (Replicate)',
   type: 'image',
-  description: 'High-quality image generation and editing model with advanced capabilities',
-  supportedAspectRatios: ['1:1', '16:9', '9:16', '4:3', '3:4'],
+  description: 'High-quality image generation with professional-level editing via natural language prompts',
+  supportedAspectRatios: ['1:1', '16:9', '9:16', '4:3', '3:4', '3:2', '2:3'],
   defaultAspectRatio: '1:1',
   maxResolution: 2048,
   capabilities: {
-    editing: true,
     'text-2-image': true,
   },
   parameters: [
@@ -155,34 +154,7 @@ export class ReplicateAdapter extends BaseModelAdapter {
     const aspectRatio = parameters?.aspectRatio || request.aspectRatio || '1:1'
     const numOutputs = parameters?.numOutputs || request.numOutputs || 1
 
-    // Map aspect ratio to size resolution
-    // Replicate Seedream 4 supports: 1K (1024px), 2K (2048px), 4K (4096px)
-    const size = '2K' // Use 2K as default (2048px)
-
     try {
-      // Convert data URL to file URL if needed
-      let imageInput: string[] = []
-      if (referenceImage) {
-        // Replicate can accept data URLs directly
-        imageInput = [referenceImage]
-      }
-
-      // Prepare input for Replicate API
-      const input: any = {
-        prompt,
-        aspect_ratio: aspectRatioMap[aspectRatio] || aspectRatio,
-        size,
-        sequential_image_generation: numOutputs > 1 ? 'auto' : 'disabled',
-        max_images: numOutputs,
-      }
-
-      // Add image input if provided
-      if (imageInput.length > 0) {
-        input.image_input = imageInput
-      }
-
-      console.log('Submitting to Replicate:', input)
-
       // Determine which Replicate model to use based on config
       let modelPath: string
       if (this.config.id === 'replicate-seedream-4') {
@@ -192,6 +164,28 @@ export class ReplicateAdapter extends BaseModelAdapter {
       } else {
         throw new Error(`Unknown Replicate model: ${this.config.id}`)
       }
+
+      // Prepare model-specific input
+      const input: any = {
+        prompt,
+        aspect_ratio: aspectRatioMap[aspectRatio] || aspectRatio,
+      }
+
+      // Seedream-specific parameters
+      if (this.config.id === 'replicate-seedream-4') {
+        const size = '2K' // Replicate Seedream 4 supports: 1K (1024px), 2K (2048px), 4K (4096px)
+        input.size = size
+        input.sequential_image_generation = numOutputs > 1 ? 'auto' : 'disabled'
+        input.max_images = numOutputs
+
+        // Add image input if provided
+        if (referenceImage) {
+          input.image_input = [referenceImage]
+        }
+      }
+      // Reve model doesn't support image input or multiple outputs
+
+      console.log('Submitting to Replicate:', input)
 
       // First, fetch the latest version for the model
       const modelResponse = await fetch(`${this.baseUrl}/models/${modelPath}`, {

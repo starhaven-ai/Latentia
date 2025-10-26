@@ -100,6 +100,7 @@ export function useGenerateMutation() {
           
           return old.map((gen) => {
             if (gen.id === context?.optimisticId) {
+              console.log('✓ Found optimistic generation to replace:', context.optimisticId)
               if (data.status === 'completed' && data.outputs) {
                 return {
                   ...gen,

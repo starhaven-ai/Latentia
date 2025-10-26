@@ -291,12 +291,6 @@ export function VideoInput({
         )}
       </div>
 
-      {referenceImage && (
-        <div className="text-xs text-muted-foreground">
-          Reference: {referenceImage.name}
-        </div>
-      )}
-
       {/* Image Browse Modal */}
       <ImageBrowseModal
         isOpen={browseModalOpen}

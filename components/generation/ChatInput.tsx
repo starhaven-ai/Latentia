@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Image as ImageIcon, Wand2, ImagePlus, Ratio, ChevronDown, Upload, FolderOpen } from 'lucide-react'
+import { Image as ImageIcon, Wand2, ImagePlus, Ratio, ChevronDown, Upload, FolderOpen, X } from 'lucide-react'
 import { useModelCapabilities } from '@/hooks/useModelCapabilities'
 import { AspectRatioSelector } from './AspectRatioSelector'
 import { ModelPicker } from './ModelPicker'
@@ -39,6 +39,7 @@ export function ChatInput({
 }: ChatInputProps) {
   const params = useParams()
   const [referenceImage, setReferenceImage] = useState<File | null>(null)
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
   const [browseModalOpen, setBrowseModalOpen] = useState(false)
   const [stylePopoverOpen, setStylePopoverOpen] = useState(false)
@@ -82,6 +83,11 @@ export function ChatInput({
     try {
       await onGenerate(prompt, referenceImage || undefined)
       onPromptChange('')
+      // Clean up preview URL
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl)
+      }
+      setImagePreviewUrl(null)
       setReferenceImage(null)
     } catch (error) {
       console.error('Generation error:', error)
@@ -100,6 +106,13 @@ export function ChatInput({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && file.type.startsWith('image/')) {
+      // Clean up old preview URL
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl)
+      }
+      // Create new preview URL
+      const previewUrl = URL.createObjectURL(file)
+      setImagePreviewUrl(previewUrl)
       setReferenceImage(file)
     }
   }
@@ -110,11 +123,27 @@ export function ChatInput({
       const response = await fetch(imageUrl)
       const blob = await response.blob()
       const file = new File([blob], 'reference.png', { type: blob.type })
+      
+      // Clean up old preview URL
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl)
+      }
+      // Set the imageUrl as preview (it's already a valid URL)
+      setImagePreviewUrl(imageUrl)
       setReferenceImage(file)
     } catch (error) {
       console.error('Error loading image from URL:', error)
     }
   }
+
+  // Cleanup preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl)
+      }
+    }
+  }, [imagePreviewUrl])
 
   return (
     <div className="space-y-3">
@@ -131,6 +160,32 @@ export function ChatInput({
             disabled={generating}
           />
         </div>
+
+        {/* Reference Image Thumbnail - Left of Generate Button */}
+        {referenceImage && imagePreviewUrl && (
+          <div className="relative group">
+            <div className="w-[52px] h-[52px] rounded-lg overflow-hidden border-2 border-primary shadow-md">
+              <img
+                src={imagePreviewUrl}
+                alt="Reference"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <button
+              onClick={() => {
+                if (imagePreviewUrl) {
+                  URL.revokeObjectURL(imagePreviewUrl)
+                }
+                setImagePreviewUrl(null)
+                setReferenceImage(null)
+              }}
+              className="absolute -top-2 -right-2 bg-background border border-border rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-destructive hover:text-destructive-foreground"
+              title="Remove reference image"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        )}
         
         {/* Generate Button */}
         <Button
@@ -238,22 +293,6 @@ export function ChatInput({
           <kbd className="px-2 py-0.5 bg-muted rounded text-[10px] border">Enter</kbd>
         </span>
       </div>
-
-      {/* Reference Image Preview */}
-      {referenceImage && (
-        <div className="flex items-center gap-2">
-          <div className="inline-flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/30 rounded-lg text-xs shadow-sm">
-            <ImagePlus className="h-4 w-4 text-primary" />
-            <span className="text-foreground font-medium truncate max-w-[200px]">{referenceImage.name}</span>
-            <button
-              onClick={() => setReferenceImage(null)}
-              className="text-muted-foreground hover:text-destructive transition-colors ml-1 text-base leading-none"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Image Browse Modal */}
       <ImageBrowseModal

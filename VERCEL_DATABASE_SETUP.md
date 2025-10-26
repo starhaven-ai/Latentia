@@ -17,10 +17,15 @@ Use Supabase's **Session Pooler** (NOT Transaction Pooler) for IPv4 compatibilit
 5. **Important**: Select **Session pooler** method (this provides free IPv4 proxying)
 6. Copy the **URI** connection string
 
-It should look like:
+It should look like (with connection pooling parameters):
 ```
-postgresql://postgres.rcssplhcspjpvwdtwqwl:YOUR_ACTUAL_PASSWORD_HERE@aws-0-REGION.pooler.supabase.com:5432/postgres
+postgresql://postgres.rcssplhcspjpvwdtwqwl:YOUR_ACTUAL_PASSWORD_HERE@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?pgbouncer=true&connection_limit=50&pool_timeout=30
 ```
+
+**Important parameters**:
+- `?pgbouncer=true` - Enable connection pooling
+- `connection_limit=50` - Increase from default 5 to 50 connections
+- `pool_timeout=30` - Increase timeout from 10 to 30 seconds
 
 **Critical**: Replace `YOUR_ACTUAL_PASSWORD_HERE` with your **real database password** (same password you use in `.env.local` for local development).
 

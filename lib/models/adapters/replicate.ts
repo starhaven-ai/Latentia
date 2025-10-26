@@ -1,9 +1,12 @@
 import { BaseModelAdapter, ModelConfig, GenerationRequest, GenerationResponse } from '../base'
 
 // Support both REPLICATE_API_TOKEN (official) and REPLICATE_API_KEY (legacy)
-const REPLICATE_API_KEY = process.env.REPLICATE_API_TOKEN || process.env.REPLICATE_API_KEY
+// Only check env vars on server side (they're not available in browser)
+const REPLICATE_API_KEY = typeof window === 'undefined' 
+  ? (process.env.REPLICATE_API_TOKEN || process.env.REPLICATE_API_KEY)
+  : null
 
-if (!REPLICATE_API_KEY) {
+if (typeof window === 'undefined' && !REPLICATE_API_KEY) {
   console.warn('REPLICATE_API_TOKEN is not set. Replicate models will not work. Get your key from: https://replicate.com/account/api-tokens')
 }
 

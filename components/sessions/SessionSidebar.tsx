@@ -178,9 +178,9 @@ export function SessionSidebar({
                   </div>
                 </div>
               ) : (
-                <button
+                <div
                   onClick={() => onSessionSelect(session)}
-                  className="w-full text-left"
+                  className="w-full text-left cursor-pointer"
                 >
                   <div className="p-3">
                     <div className="flex items-start gap-2">
@@ -259,7 +259,7 @@ export function SessionSidebar({
                       </div>
                     </div>
                   </div>
-                </button>
+                </div>
               )}
             </div>
           ))

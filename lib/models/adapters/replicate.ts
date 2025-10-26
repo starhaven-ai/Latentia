@@ -133,16 +133,37 @@ export class ReplicateAdapter extends BaseModelAdapter {
 
       console.log('Submitting to Replicate:', input)
 
+      // First, fetch the latest version for the model
+      const modelResponse = await fetch(`${this.baseUrl}/models/bytedance/seedream-4`, {
+        headers: {
+          'Authorization': `Token ${this.apiKey}`,
+        },
+      })
+
+      if (!modelResponse.ok) {
+        const errorText = await modelResponse.text()
+        console.error('Failed to fetch model info:', errorText)
+        throw new Error(`Failed to fetch model info: ${errorText}`)
+      }
+
+      const modelData = await modelResponse.json()
+      const versionHash = modelData.latest_version?.id
+
+      if (!versionHash) {
+        throw new Error('Could not determine latest version for the model')
+      }
+
+      console.log('Using version:', versionHash)
+
       // Submit prediction to Replicate
-      // Using model identifier instead of version hash to always use the latest version
       const response = await fetch(`${this.baseUrl}/predictions`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          'Authorization': `Token ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'bytedance/seedream-4',
+          version: versionHash,
           input,
         }),
       })
@@ -168,7 +189,7 @@ export class ReplicateAdapter extends BaseModelAdapter {
         const statusResponse = await fetch(`${this.baseUrl}/predictions/${predictionId}`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            'Authorization': `Token ${this.apiKey}`,
           },
         })
 

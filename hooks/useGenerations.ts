@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import type { GenerationWithOutputs } from '@/types/generation'
 
-async function fetchGenerations(sessionId: string): Promise<GenerationWithOutputs[]> {
-  const response = await fetch(`/api/generations?sessionId=${sessionId}`)
+async function fetchGenerations(sessionId: string, limit: number = 50): Promise<GenerationWithOutputs[]> {
+  const response = await fetch(`/api/generations?sessionId=${sessionId}&limit=${limit}`)
   
   if (!response.ok) {
     throw new Error('Failed to fetch generations')
@@ -11,10 +11,10 @@ async function fetchGenerations(sessionId: string): Promise<GenerationWithOutput
   return response.json()
 }
 
-export function useGenerations(sessionId: string | null) {
+export function useGenerations(sessionId: string | null, limit: number = 50) {
   return useQuery({
-    queryKey: ['generations', sessionId],
-    queryFn: () => fetchGenerations(sessionId!),
+    queryKey: ['generations', sessionId, limit],
+    queryFn: () => fetchGenerations(sessionId!, limit),
     enabled: !!sessionId, // Only run if sessionId exists
     staleTime: 30000, // Cache for 30 seconds - data is fresh for 30s
     gcTime: 300000, // Keep in cache for 5 minutes

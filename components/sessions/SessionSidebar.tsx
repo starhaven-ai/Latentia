@@ -40,9 +40,9 @@ export function SessionSidebar({
     if (session.id === activeSession?.id) return
     
     queryClient.prefetchQuery({
-      queryKey: ['generations', session.id],
+      queryKey: ['generations', session.id, 50],
       queryFn: async () => {
-        const response = await fetch(`/api/generations?sessionId=${session.id}`)
+        const response = await fetch(`/api/generations?sessionId=${session.id}&limit=50`)
         if (!response.ok) throw new Error('Failed to fetch')
         return response.json()
       },

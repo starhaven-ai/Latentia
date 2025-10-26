@@ -80,7 +80,7 @@ export class FalAdapter extends BaseModelAdapter {
     const {
       modelId,
       prompt,
-      parameters,
+      parameters = {},
       referenceImage,
     } = request
 
@@ -106,11 +106,15 @@ export class FalAdapter extends BaseModelAdapter {
     // FAL models can accept data URLs directly, so we'll use them as-is
     // If this doesn't work, FAL will return an error and we can adjust
     
+    // Get aspect ratio with safe fallback
+    const aspectRatio = parameters?.aspectRatio || request.aspectRatio || '1:1'
+    const numOutputs = parameters?.numOutputs || request.numOutputs || 1
+    
     // Prepare request body
     const body: any = {
       prompt,
-      image_size: aspectRatioMap[parameters.aspectRatio] || 'square',
-      num_images: parameters.numOutputs || 1,
+      image_size: aspectRatioMap[aspectRatio] || 'square',
+      num_images: numOutputs,
       enable_safety_checker: true,
       image_urls: [imageUrl],
     }

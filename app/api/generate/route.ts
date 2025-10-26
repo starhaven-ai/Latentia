@@ -74,7 +74,8 @@ export async function POST(request: NextRequest) {
       prompt,
       negativePrompt,
       referenceImage,
-      ...otherParameters,
+      parameters: otherParameters, // Pass parameters as an object
+      ...otherParameters, // Also spread at top level for backward compatibility
     })
 
     // Update generation status

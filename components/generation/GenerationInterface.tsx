@@ -68,6 +68,17 @@ export function GenerationInterface({
     const pendingId = `pending-${Date.now()}`
 
     try {
+      // Convert referenceImage File to base64 data URL if provided
+      let referenceImageData: string | undefined
+      if (referenceImage) {
+        referenceImageData = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(referenceImage)
+        })
+      }
+
       const result = await generateMutation.mutateAsync({
         sessionId: session.id,
         modelId: selectedModel,
@@ -77,6 +88,7 @@ export function GenerationInterface({
           resolution: parameters.resolution,
           numOutputs: parameters.numOutputs,
           ...(parameters.duration && { duration: parameters.duration }),
+          ...(referenceImageData && { referenceImage: referenceImageData }),
         },
       })
       

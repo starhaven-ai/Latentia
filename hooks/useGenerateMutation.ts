@@ -47,46 +47,95 @@ export function useGenerateMutation() {
 
   return useMutation({
     mutationFn: generateImage,
-    onSuccess: (data, variables) => {
-      // Invalidate and refetch generations for this session
+    onMutate: async (variables) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['generations', variables.sessionId] })
+
+      // Snapshot the previous value
+      const previousGenerations = queryClient.getQueryData<GenerationWithOutputs[]>([
+        'generations',
+        variables.sessionId,
+      ])
+
+      // Optimistically add a pending generation
+      const optimisticGeneration: GenerationWithOutputs = {
+        id: `temp-${Date.now()}`,
+        sessionId: variables.sessionId,
+        userId: '',
+        modelId: variables.modelId,
+        prompt: variables.prompt,
+        negativePrompt: variables.negativePrompt,
+        parameters: variables.parameters,
+        status: 'processing',
+        createdAt: new Date(),
+        outputs: [],
+      }
+
+      // Add pending generation to cache (at the end)
+      queryClient.setQueryData<GenerationWithOutputs[]>(
+        ['generations', variables.sessionId],
+        (old) => (old ? [...old, optimisticGeneration] : [optimisticGeneration])
+      )
+
+      // Return context with previous state for rollback
+      return { previousGenerations, optimisticId: optimisticGeneration.id }
+    },
+    onSuccess: (data, variables, context) => {
+      // Remove optimistic generation and add real one
+      queryClient.setQueryData<GenerationWithOutputs[]>(
+        ['generations', variables.sessionId],
+        (old) => {
+          if (!old) return []
+          
+          // Remove the optimistic placeholder
+          const withoutOptimistic = old.filter(gen => gen.id !== context?.optimisticId)
+          
+          // Add the real generation if completed
+          if (data.status === 'completed' && data.outputs) {
+            const newGeneration: GenerationWithOutputs = {
+              id: data.id,
+              sessionId: variables.sessionId,
+              userId: '',
+              modelId: variables.modelId,
+              prompt: variables.prompt,
+              negativePrompt: variables.negativePrompt,
+              parameters: variables.parameters,
+              status: 'completed',
+              createdAt: new Date(),
+              outputs: data.outputs.map((output, index) => ({
+                id: `${data.id}-${index}`,
+                generationId: data.id,
+                fileUrl: output.url,
+                fileType: 'image',
+                width: output.width,
+                height: output.height,
+                duration: output.duration,
+                isStarred: false,
+                createdAt: new Date(),
+              })),
+            }
+            return [...withoutOptimistic, newGeneration]
+          }
+          
+          return withoutOptimistic
+        }
+      )
+
+      // Refetch to ensure consistency
       queryClient.invalidateQueries({
         queryKey: ['generations', variables.sessionId],
       })
-
-      // Optionally add optimistic update
-      if (data.status === 'completed' && data.outputs) {
-        const newGeneration: GenerationWithOutputs = {
-          id: data.id,
-          sessionId: variables.sessionId,
-          userId: '', // Will be populated by the backend
-          modelId: variables.modelId,
-          prompt: variables.prompt,
-          negativePrompt: variables.negativePrompt,
-          parameters: variables.parameters,
-          status: 'completed',
-          createdAt: new Date(),
-          outputs: data.outputs.map((output, index) => ({
-            id: `${data.id}-${index}`,
-            generationId: data.id,
-            fileUrl: output.url,
-            fileType: 'image',
-            width: output.width,
-            height: output.height,
-            duration: output.duration,
-            isStarred: false,
-            createdAt: new Date(),
-          })),
-        }
-
-        // Update cache optimistically - add to end (bottom)
-        queryClient.setQueryData<GenerationWithOutputs[]>(
+    },
+    onError: (error: Error, variables, context) => {
+      console.error('Generation failed:', error)
+      
+      // Rollback to previous state on error
+      if (context?.previousGenerations) {
+        queryClient.setQueryData(
           ['generations', variables.sessionId],
-          (old) => (old ? [...old, newGeneration] : [newGeneration])
+          context.previousGenerations
         )
       }
-    },
-    onError: (error: Error) => {
-      console.error('Generation failed:', error)
     },
   })
 }

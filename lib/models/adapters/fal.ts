@@ -96,22 +96,46 @@ export class FalAdapter extends BaseModelAdapter {
     // Determine the FAL endpoint based on model
     let endpoint = 'fal-ai/bytedance/seedream/v4/edit'
     
+    // Handle reference image - convert data URL to FAL storage URL if needed
+    let imageUrl = referenceImage
+    
+    if (!imageUrl) {
+      throw new Error('Seedream requires at least one reference image. Please upload or select an image.')
+    }
+
+    // If it's a data URL, we need to upload it to FAL storage first
+    if (typeof imageUrl === 'string' && imageUrl.startsWith('data:')) {
+      try {
+        // Upload to FAL storage
+        const uploadResponse = await fetch('https://fal.run/storage/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Key ${FAL_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            data_url: imageUrl,
+          }),
+        })
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload reference image to FAL storage')
+        }
+
+        const uploadData = await uploadResponse.json()
+        imageUrl = uploadData.url
+      } catch (error: any) {
+        throw new Error(`Failed to upload image: ${error.message}`)
+      }
+    }
+    
     // Prepare request body
     const body: any = {
       prompt,
       image_size: aspectRatioMap[parameters.aspectRatio] || 'square',
       num_images: parameters.numOutputs || 1,
       enable_safety_checker: true,
-    }
-
-    // Seedream requires image_urls (reference images)
-    if (referenceImage) {
-      // If a reference image is provided, we'll need to upload it to FAL storage
-      // For now, we'll expect the referenceImage to be a URL
-      body.image_urls = [referenceImage]
-    } else {
-      // Seedream requires at least one input image
-      throw new Error('Seedream requires at least one reference image. Please upload or select an image.')
+      image_urls: [imageUrl],
     }
 
     try {
@@ -128,8 +152,24 @@ export class FalAdapter extends BaseModelAdapter {
       })
 
       if (!submitResponse.ok) {
-        const error = await submitResponse.text()
-        throw new Error(`FAL API submit error: ${error}`)
+        const errorText = await submitResponse.text()
+        let errorMessage = `FAL API error: ${errorText}`
+        
+        // Parse common FAL.ai error messages
+        try {
+          const errorJson = JSON.parse(errorText)
+          if (errorJson.detail) {
+            errorMessage = errorJson.detail
+          }
+          // Check for common credit/payment errors
+          if (errorText.includes('credit') || errorText.includes('payment') || errorText.includes('balance')) {
+            errorMessage = 'FAL.ai credits required. Please add credits to your FAL.ai account at https://fal.ai/dashboard/keys'
+          }
+        } catch (e) {
+          // Use raw text if not JSON
+        }
+        
+        throw new Error(errorMessage)
       }
 
       const submitData = await submitResponse.json()

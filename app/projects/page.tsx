@@ -109,11 +109,10 @@ export default function ProjectsPage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
-              src="/images/loop logo_standalone - white.png" 
-              alt="Loop Logo" 
-              className="w-10 h-10 object-contain"
+              src={theme === 'light' ? "/images/Loop Prism (Black).svg" : "/images/Loop Prism (White).svg"}
+              alt="Loop Prism Logo" 
+              className="h-8 object-contain"
             />
-            <h1 className="text-2xl font-bold tracking-wide">PRISM</h1>
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={() => setShowNewProject(true)}>

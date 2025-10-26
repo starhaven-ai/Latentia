@@ -238,18 +238,22 @@ When you're ready to integrate AI models, you'll need API keys from:
 2. Register for API access
 3. Get your API key
 
-### Seedream
-1. Go to Seedream's website
-2. Apply for API access
-3. Get your API key
+### Replicate (Seedream 4)
 
-Add these to your `.env.local`:
+Replicate is used to access AI models like Seedream 4 by ByteDance.
+
+1. Go to [Replicate](https://replicate.com)
+2. Sign up for an account
+3. Get your API token from [Account Settings](https://replicate.com/account/api-tokens)
+
+Add to your `.env.local`:
 ```env
-REPLICATE_API_KEY=your-key-here
-BLACK_FOREST_LABS_API_KEY=your-key-here
-MINIMAX_API_KEY=your-key-here
-SEEDREAM_API_KEY=your-key-here
+REPLICATE_API_TOKEN=r8_your_token_here
 ```
+
+**Note:** We support both `REPLICATE_API_TOKEN` (recommended) and `REPLICATE_API_KEY` (legacy).
+
+For detailed information about how the Replicate integration works, see [REPLICATE_SETUP.md](./REPLICATE_SETUP.md).
 
 ## Step 10: Run the Development Server
 

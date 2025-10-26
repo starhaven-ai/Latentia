@@ -336,14 +336,19 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
 SUPABASE_SERVICE_ROLE_KEY=xxx
 
 # Model APIs
-REPLICATE_API_KEY=xxx
+REPLICATE_API_TOKEN=xxx          # For Replicate models (recommended)
+REPLICATE_API_KEY=xxx           # Legacy support
 BLACK_FOREST_LABS_API_KEY=xxx
 MINIMAX_API_KEY=xxx
-SEEDREAM_API_KEY=xxx
 
 # Others
 NEXT_PUBLIC_APP_URL=https://latentia.ai
 ```
+
+**Model Integration Documentation:**
+- [Replicate Setup](./REPLICATE_SETUP.md) - Detailed guide for Replicate integration
+- [FAL.ai Setup](./FAL_SETUP.md) - FAL.ai adapter guide
+- [Gemini Setup](./GEMINI_SETUP.md) - Google Gemini integration
 
 ### Vercel Configuration
 ```json

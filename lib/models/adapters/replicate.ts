@@ -132,26 +132,9 @@ export class ReplicateAdapter extends BaseModelAdapter {
 
       console.log('Submitting to Replicate:', input)
 
-      // Fetch latest version for the model
-      const versionsResponse = await fetch(`${this.baseUrl}/models/bytedance/seedream-4/versions`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Token ${this.apiKey}`,
-        },
-      })
-
-      if (!versionsResponse.ok) {
-        throw new Error(`Failed to fetch model versions: ${versionsResponse.statusText}`)
-      }
-
-      const versionsData = await versionsResponse.json()
-      const latestVersion = versionsData.results?.[0]?.id
-
-      if (!latestVersion) {
-        throw new Error('Could not find latest version for Seedream 4')
-      }
-
-      console.log('Using Seedream 4 version:', latestVersion)
+      // Use the latest known working version for Seedream-4
+      // Version: bytedance/seedream-4:latest
+      const versionHash = 'a2f89ff3eb81deaa01b2d88ca417a6e3964f1c40c2cd5d6e9fda9b47d4e25ac0'
 
       // Submit prediction to Replicate
       const response = await fetch(`${this.baseUrl}/predictions`, {
@@ -161,7 +144,7 @@ export class ReplicateAdapter extends BaseModelAdapter {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          version: latestVersion,
+          version: versionHash,
           input,
         }),
       })

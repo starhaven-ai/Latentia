@@ -19,8 +19,10 @@ Use Supabase's **Session Pooler** (NOT Transaction Pooler) for IPv4 compatibilit
 
 It should look like:
 ```
-postgresql://postgres.rcssplhcspjpvwdtwqwl:YOUR_PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres
+postgresql://postgres.rcssplhcspjpvwdtwqwl:YOUR_ACTUAL_PASSWORD_HERE@aws-0-REGION.pooler.supabase.com:5432/postgres
 ```
+
+**Critical**: Replace `YOUR_ACTUAL_PASSWORD_HERE` with your **real database password** (same password you use in `.env.local` for local development).
 
 **Important**: 
 - Use **Session pooler**, NOT Transaction pooler
@@ -33,18 +35,27 @@ postgresql://postgres.rcssplhcspjpvwdtwqwl:YOUR_PASSWORD@aws-0-REGION.pooler.sup
 - Recommended for Vercel deployments
 - Uses port 5432
 
-### 2. Update DATABASE_URL in Vercel
+### 2. Get Your Database Password
+
+The password is stored in Supabase:
+
+1. Go to **Settings** → **Database** → **Database Password**
+2. Copy your password (or reset it if needed)
+3. This is the **same password** you use in `.env.local`
+
+### 3. Update DATABASE_URL in Vercel
 
 1. Go to [https://vercel.com/dashboard](https://vercel.com/dashboard)
 2. Select your project (loopvesper)
 3. Go to **Settings** → **Environment Variables**
 4. Find `DATABASE_URL` and click the three dots (`...`)
 5. Click **Edit**
-6. Paste the connection pooler URL
-7. Click **Save**
-8. **Redeploy** the project (go to Deployments → ... → Redeploy)
+6. Replace `[YOUR-PASSWORD]` with your actual password from Supabase
+7. Paste the **complete** connection string (with real password)
+8. Click **Save**
+9. **Redeploy** the project (go to Deployments → ... → Redeploy)
 
-### 3. Alternative: Enable Direct Connection (NOT Recommended)
+### 4. Alternative: Enable Direct Connection (NOT Recommended)
 
 If connection pooler doesn't work, you can enable direct connections:
 

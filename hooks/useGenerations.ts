@@ -16,8 +16,10 @@ export function useGenerations(sessionId: string | null) {
     queryKey: ['generations', sessionId],
     queryFn: () => fetchGenerations(sessionId!),
     enabled: !!sessionId, // Only run if sessionId exists
-    staleTime: 0, // Always refetch when invalidated
-    refetchOnMount: true, // Refetch on component mount
+    staleTime: 30000, // Cache for 30 seconds - data is fresh for 30s
+    gcTime: 300000, // Keep in cache for 5 minutes
+    refetchOnMount: false, // Use cached data if available
+    refetchOnWindowFocus: false, // Don't refetch on window focus
     refetchInterval: (query) => {
       // Poll every 3 seconds if there are processing generations
       const data = query.state.data as GenerationWithOutputs[] | undefined

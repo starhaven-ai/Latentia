@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Plus, Image, Video, Pencil, Check, X, Lock, Globe } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
+import { useQueryClient } from '@tanstack/react-query'
 import type { Session } from '@/types/project'
 
 interface SessionSidebarProps {
@@ -27,11 +28,27 @@ export function SessionSidebar({
   onSessionUpdate,
 }: SessionSidebarProps) {
   const { toast } = useToast()
+  const queryClient = useQueryClient()
   const [renamingSessionId, setRenamingSessionId] = useState<string | null>(null)
   const [newSessionName, setNewSessionName] = useState('')
   
   const filteredSessions = sessions.filter((s) => s.type === generationType)
   const isOwner = currentUserId === projectOwnerId
+
+  // Prefetch generations on hover
+  const handlePrefetch = async (session: Session) => {
+    if (session.id === activeSession?.id) return
+    
+    queryClient.prefetchQuery({
+      queryKey: ['generations', session.id],
+      queryFn: async () => {
+        const response = await fetch(`/api/generations?sessionId=${session.id}`)
+        if (!response.ok) throw new Error('Failed to fetch')
+        return response.json()
+      },
+      staleTime: 30000,
+    })
+  }
 
   const handleRenameStart = (session: Session, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -180,6 +197,7 @@ export function SessionSidebar({
               ) : (
                 <div
                   onClick={() => onSessionSelect(session)}
+                  onMouseEnter={() => handlePrefetch(session)}
                   className="w-full text-left cursor-pointer"
                 >
                   <div className="p-3">

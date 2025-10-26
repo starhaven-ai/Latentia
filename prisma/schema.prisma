@@ -96,6 +96,7 @@ model Generation {
 
   @@index([sessionId])
   @@index([userId])
+  @@index([sessionId, userId]) // Composite index for the query
   @@map("generations")
 }
 

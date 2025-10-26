@@ -44,6 +44,7 @@ export function VideoInput({
 }: VideoInputProps) {
   const params = useParams()
   const [referenceImage, setReferenceImage] = useState<File | null>(null)
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
   const [browseModalOpen, setBrowseModalOpen] = useState(false)
   const [stylePopoverOpen, setStylePopoverOpen] = useState(false)
@@ -90,6 +91,11 @@ export function VideoInput({
     try {
       await onGenerate(prompt, referenceImage || undefined)
       onPromptChange('')
+      // Clean up preview URL
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl)
+      }
+      setImagePreviewUrl(null)
       setReferenceImage(null)
     } catch (error) {
       console.error('Generation error:', error)
@@ -108,15 +114,44 @@ export function VideoInput({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && file.type.startsWith('image/')) {
+      // Clean up old preview URL
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl)
+      }
+      // Create new preview URL
+      const previewUrl = URL.createObjectURL(file)
+      setImagePreviewUrl(previewUrl)
       setReferenceImage(file)
     }
   }
 
-  const handleBrowseSelect = (imageUrl: string) => {
-    if (onSetReferenceImageUrl) {
-      onSetReferenceImageUrl(imageUrl)
+  const handleBrowseSelect = async (imageUrl: string) => {
+    // Convert URL to File for consistent handling
+    try {
+      const response = await fetch(imageUrl)
+      const blob = await response.blob()
+      const file = new File([blob], 'reference.png', { type: blob.type })
+      
+      // Clean up old preview URL
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl)
+      }
+      // Set the imageUrl as preview (it's already a valid URL)
+      setImagePreviewUrl(imageUrl)
+      setReferenceImage(file)
+    } catch (error) {
+      console.error('Error loading image from URL:', error)
     }
   }
+
+  // Cleanup preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl)
+      }
+    }
+  }, [imagePreviewUrl])
 
   return (
     <div className="space-y-3">
@@ -135,17 +170,23 @@ export function VideoInput({
         </div>
 
         {/* Reference Image Thumbnail - Left of Generate Button */}
-        {referenceImageUrl && (
+        {(referenceImage || imagePreviewUrl) && (
           <div className="relative group">
             <div className="w-[52px] h-[52px] rounded-lg overflow-hidden border-2 border-primary shadow-md">
               <img
-                src={referenceImageUrl}
+                src={imagePreviewUrl || ''}
                 alt="Reference"
                 className="w-full h-full object-cover"
               />
             </div>
             <button
-              onClick={onClearReferenceImage}
+              onClick={() => {
+                if (imagePreviewUrl) {
+                  URL.revokeObjectURL(imagePreviewUrl)
+                }
+                setImagePreviewUrl(null)
+                setReferenceImage(null)
+              }}
               className="absolute -top-2 -right-2 bg-background border border-border rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-destructive hover:text-destructive-foreground"
               title="Remove reference image"
             >

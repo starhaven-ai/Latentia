@@ -109,14 +109,6 @@ export function GenerationProgress({
           {GENERATION_STAGES[currentStage]?.name || 'Processing...'}
         </p>
       </div>
-      
-      {/* Progress bar at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-muted/50">
-        <div
-          className="h-full bg-primary transition-all duration-300 ease-out"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
     </div>
   )
 }

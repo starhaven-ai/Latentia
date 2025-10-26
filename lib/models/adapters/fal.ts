@@ -74,7 +74,7 @@ export class FalAdapter extends BaseModelAdapter {
 
   private async generateImage(request: GenerationRequest): Promise<GenerationResponse> {
     if (!FAL_API_KEY) {
-      throw new Error('FAL_API_KEY is not configured')
+      throw new Error('FAL_API_KEY is not configured. Please add your FAL API key to .env.local and restart the dev server. Get your key from: https://fal.ai/dashboard/keys')
     }
 
     const {
@@ -119,7 +119,24 @@ export class FalAdapter extends BaseModelAdapter {
         })
 
         if (!uploadResponse.ok) {
-          throw new Error('Failed to upload reference image to FAL storage')
+          const errorText = await uploadResponse.text()
+          let errorMessage = 'Failed to upload reference image to FAL storage'
+          
+          // Check for authentication errors
+          if (uploadResponse.status === 401 || uploadResponse.status === 403) {
+            errorMessage = 'Invalid FAL API key. Please check your FAL_API_KEY in .env.local and restart the dev server. Get your key from: https://fal.ai/dashboard/keys'
+          } else if (errorText) {
+            try {
+              const errorJson = JSON.parse(errorText)
+              if (errorJson.detail) {
+                errorMessage = `FAL upload error: ${errorJson.detail}`
+              }
+            } catch (e) {
+              errorMessage = `FAL upload error: ${errorText}`
+            }
+          }
+          
+          throw new Error(errorMessage)
         }
 
         const uploadData = await uploadResponse.json()

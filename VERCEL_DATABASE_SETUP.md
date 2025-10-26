@@ -4,28 +4,34 @@
 Vercel serverless functions can't reach Supabase database on port 5432.
 
 ## Solution
-Use Supabase's **Connection Pooler** instead of direct connection.
+Use Supabase's **Session Pooler** (NOT Transaction Pooler) for IPv4 compatibility with Vercel.
 
 ## Steps to Fix:
 
-### 1. Get Connection Pooler URL from Supabase
+### 1. Get Session Pooler URL from Supabase
 
 1. Go to [https://supabase.com/dashboard](https://supabase.com/dashboard)
 2. Select your project
 3. Go to **Settings** → **Database**
 4. Scroll to **Connection String** section
-5. Select **Transaction pooler** method
+5. **Important**: Select **Session pooler** method (this provides free IPv4 proxying)
 6. Copy the **URI** connection string
 
 It should look like:
 ```
-postgresql://postgres.rcssplhcspjpvwdtwqwl:YOUR_PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres
+postgresql://postgres.rcssplhcspjpvwdtwqwl:YOUR_PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres
 ```
 
 **Important**: 
-- Use port `6543` (connection pooler), NOT `5432` (direct connection)
-- Note the `.rcssplhcspjpvwdtwqwl` after `postgres` in the hostname
-- The hostname should be `aws-0-REGION.pooler.supabase.com` (uses IPv4)
+- Use **Session pooler**, NOT Transaction pooler
+- Use port `5432` (Session pooler), NOT `6543` (Transaction pooler)
+- The hostname should be `aws-0-REGION.pooler.supabase.com`
+- Session pooler provides **free IPv4 proxying** and is recommended for Vercel
+
+**Why Session Pooler?**
+- Free IPv4 proxying (no $4/month add-on needed)
+- Recommended for Vercel deployments
+- Uses port 5432
 
 ### 2. Update DATABASE_URL in Vercel
 

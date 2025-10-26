@@ -132,10 +132,18 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json(project, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating project:', error)
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+    })
     return NextResponse.json(
-      { error: 'Failed to create project' },
+      { 
+        error: 'Failed to create project',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      },
       { status: 500 }
     )
   }

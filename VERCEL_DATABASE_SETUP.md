@@ -14,15 +14,18 @@ Use Supabase's **Connection Pooler** instead of direct connection.
 2. Select your project
 3. Go to **Settings** → **Database**
 4. Scroll to **Connection String** section
-5. Click **Connection Pooling** tab
+5. Select **Transaction pooler** method
 6. Copy the **URI** connection string
 
 It should look like:
 ```
-postgresql://postgres:YOUR_PASSWORD@aws-0-us-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+postgresql://postgres.rcssplhcspjpvwdtwqwl:YOUR_PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres
 ```
 
-**Important**: Use port `6543` (connection pooler), NOT `5432` (direct connection).
+**Important**: 
+- Use port `6543` (connection pooler), NOT `5432` (direct connection)
+- Note the `.rcssplhcspjpvwdtwqwl` after `postgres` in the hostname
+- The hostname should be `aws-0-REGION.pooler.supabase.com` (uses IPv4)
 
 ### 2. Update DATABASE_URL in Vercel
 

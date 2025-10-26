@@ -169,9 +169,6 @@ export default function ProjectPage() {
             />
             <div className="border-l border-border pl-3">
               <h1 className="font-semibold">{projectName}</h1>
-              <p className="text-xs text-muted-foreground">
-                {activeSession?.name || 'No session'}
-              </p>
             </div>
           </div>
 

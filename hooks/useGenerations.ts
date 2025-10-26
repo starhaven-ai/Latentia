@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import type { GenerationWithOutputs } from '@/types/generation'
 
-async function fetchGenerations(sessionId: string, limit: number = 50): Promise<GenerationWithOutputs[]> {
+async function fetchGenerations(sessionId: string, limit: number = 20): Promise<GenerationWithOutputs[]> {
   const response = await fetch(`/api/generations?sessionId=${sessionId}&limit=${limit}`)
   
   if (!response.ok) {
@@ -11,7 +11,7 @@ async function fetchGenerations(sessionId: string, limit: number = 50): Promise<
   return response.json()
 }
 
-export function useGenerations(sessionId: string | null, limit: number = 50) {
+export function useGenerations(sessionId: string | null, limit: number = 20) {
   return useQuery({
     queryKey: ['generations', sessionId, limit],
     queryFn: () => fetchGenerations(sessionId!, limit),

@@ -408,6 +408,7 @@ export function GenerationGallery({
                       src={output.fileUrl}
                       alt="Generated content"
                       className="w-full h-full object-cover cursor-pointer"
+                      loading="lazy"
                       onClick={() => setLightboxData({
                         imageUrl: output.fileUrl,
                         output: output,

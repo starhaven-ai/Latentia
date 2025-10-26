@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('sessionId')
-    const limit = parseInt(searchParams.get('limit') || '100') // Default to 100, max 500
+    const limit = parseInt(searchParams.get('limit') || '20') // Default to 20 for performance, max 100
 
     if (!sessionId) {
       return NextResponse.json(
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       orderBy: {
         createdAt: 'desc', // Newest first for pagination
       },
-      take: Math.min(limit, 100), // Limit to 100 generations max
+      take: Math.min(limit, 100), // Max 100 generations
     })
 
     // Fetch bookmarks separately for efficiency

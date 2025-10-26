@@ -70,101 +70,50 @@ export function GenerationProgress({
       style={{ aspectRatio: getAspectRatioStyle(aspectRatio) }}
     >
       {/* Main content */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-8 p-8">
-        {/* Chip Animation */}
-        <div className="relative w-32 h-32">
-          {/* Circuit lines - animated */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 128 128">
-            {/* Horizontal lines */}
-            <line x1="0" y1="40" x2="128" y2="40" stroke="currentColor" strokeWidth="1" className="text-green-500/30" />
-            <line x1="0" y1="64" x2="128" y2="64" stroke="currentColor" strokeWidth="1" className="text-green-500/30" />
-            <line x1="0" y1="88" x2="128" y2="88" stroke="currentColor" strokeWidth="1" className="text-green-500/30" />
-            
-            {/* Vertical lines */}
-            <line x1="40" y1="0" x2="40" y2="128" stroke="currentColor" strokeWidth="1" className="text-green-500/30" />
-            <line x1="64" y1="0" x2="64" y2="128" stroke="currentColor" strokeWidth="1" className="text-green-500/30" />
-            <line x1="88" y1="0" x2="88" y2="128" stroke="currentColor" strokeWidth="1" className="text-green-500/30" />
-            
-            {/* Animated progress lines */}
-            <line x1="0" y1="40" x2={`${progress * 1.28}`} y2="40" stroke="currentColor" strokeWidth="2" className="text-green-500 transition-all duration-300" />
-            <line x1="0" y1="88" x2={`${progress * 1.28}`} y2="88" stroke="currentColor" strokeWidth="2" className="text-green-500 transition-all duration-300" />
+      <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
+        {/* Simple circular progress indicator */}
+        <div className="relative w-24 h-24">
+          <svg className="w-full h-full -rotate-90">
+            {/* Background circle */}
+            <circle
+              cx="48"
+              cy="48"
+              r="42"
+              stroke="currentColor"
+              strokeWidth="6"
+              fill="none"
+              className="text-muted-foreground/20"
+              strokeLinecap="round"
+            />
+            {/* Progress circle */}
+            <circle
+              cx="48"
+              cy="48"
+              r="42"
+              stroke="currentColor"
+              strokeWidth="6"
+              fill="none"
+              strokeDasharray={`${2 * Math.PI * 42}`}
+              strokeDashoffset={`${2 * Math.PI * 42 * (1 - progress / 100)}`}
+              className="text-primary transition-all duration-300"
+              strokeLinecap="round"
+            />
           </svg>
-          
-          {/* Chip */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative w-20 h-20 bg-gradient-to-br from-muted to-muted/50 rounded-lg border-2 border-border shadow-lg">
-              {/* Chip pins */}
-              <div className="absolute -left-2 top-2 w-2 h-1 bg-border rounded-l" />
-              <div className="absolute -left-2 top-6 w-2 h-1 bg-border rounded-l" />
-              <div className="absolute -left-2 top-10 w-2 h-1 bg-border rounded-l" />
-              <div className="absolute -left-2 top-14 w-2 h-1 bg-border rounded-l" />
-              
-              <div className="absolute -right-2 top-2 w-2 h-1 bg-border rounded-r" />
-              <div className="absolute -right-2 top-6 w-2 h-1 bg-border rounded-r" />
-              <div className="absolute -right-2 top-10 w-2 h-1 bg-border rounded-r" />
-              <div className="absolute -right-2 top-14 w-2 h-1 bg-border rounded-r" />
-              
-              <div className="absolute -top-2 left-2 h-2 w-1 bg-border rounded-t" />
-              <div className="absolute -top-2 left-6 h-2 w-1 bg-border rounded-t" />
-              <div className="absolute -top-2 left-10 h-2 w-1 bg-border rounded-t" />
-              <div className="absolute -top-2 left-14 h-2 w-1 bg-border rounded-t" />
-              
-              <div className="absolute -bottom-2 left-2 h-2 w-1 bg-border rounded-b" />
-              <div className="absolute -bottom-2 left-6 h-2 w-1 bg-border rounded-b" />
-              <div className="absolute -bottom-2 left-10 h-2 w-1 bg-border rounded-b" />
-              <div className="absolute -bottom-2 left-14 h-2 w-1 bg-border rounded-b" />
-              
-              {/* Chip center with progress ring */}
-              <div className="absolute inset-2 rounded flex items-center justify-center">
-                <div className="relative w-12 h-12">
-                  <svg className="w-full h-full -rotate-90">
-                    <circle
-                      cx="24"
-                      cy="24"
-                      r="20"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      fill="none"
-                      className="text-muted-foreground/20"
-                    />
-                    <circle
-                      cx="24"
-                      cy="24"
-                      r="20"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      fill="none"
-                      strokeDasharray={`${2 * Math.PI * 20}`}
-                      strokeDashoffset={`${2 * Math.PI * 20 * (1 - progress / 100)}`}
-                      className="text-green-500 transition-all duration-300"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center text-xs font-mono text-green-500">
-                    {Math.round(progress)}%
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="absolute inset-0 flex items-center justify-center text-lg font-semibold text-primary">
+            {Math.round(progress)}%
           </div>
         </div>
 
-        {/* Time remaining */}
-        <div className="text-center space-y-1">
-          <p className="text-2xl font-semibold text-foreground">
-            {remainingMinutes > 0 && `${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''} `}
-            {remainingSeconds > 0 && `${remainingSeconds} second${remainingSeconds > 1 ? 's' : ''}`}
-            {' '}remaining
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {GENERATION_STAGES[currentStage]?.name || 'Processing...'}
-          </p>
-        </div>
+        {/* Stage text below */}
+        <p className="text-sm text-muted-foreground mt-4">
+          {GENERATION_STAGES[currentStage]?.name || 'Processing...'}
+        </p>
       </div>
       
-      {/* Green progress bar at bottom */}
+      {/* Progress bar at bottom */}
       <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-muted/50">
         <div
-          className="h-full bg-gradient-to-r from-green-500 to-green-400 transition-all duration-300 ease-out shadow-lg shadow-green-500/50"
+          className="h-full bg-primary transition-all duration-300 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>

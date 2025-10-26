@@ -503,43 +503,71 @@ export function GenerationGallery({
 
         {/* Show pending generations at the bottom */}
         {isGenerating && pendingCount > 0 && (
-          <div className="flex gap-6 items-start">
-            {/* Left Side: Generating message */}
-            <div className="w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 border-green-500/30 flex flex-col">
-              <div className="flex-1">
-                <p className="text-base font-normal leading-relaxed text-foreground/90 mb-4">
-                  Generating...
-                </p>
-              </div>
-              <div className="space-y-2 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Info className="h-3.5 w-3.5 text-green-500" />
-                  <span className="font-medium text-green-500">In Progress</span>
+          <>
+            {pendingIsVideo ? (
+              // Video layout: Prompt above, preview below
+              <div className="space-y-3 max-w-4xl mx-auto">
+                {/* Prompt above */}
+                <div className="bg-muted/30 rounded-lg px-4 py-3 border border-border/50 border-primary/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Info className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-sm font-medium text-primary">Generating...</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {pendingCount} {pendingCount === 1 ? 'video' : 'videos'}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground/70">Outputs:</span>
-                  <span className="font-medium">
-                    {pendingCount} {pendingCount === 1 
-                      ? (pendingIsVideo ? 'video' : 'image') 
-                      : (pendingIsVideo ? 'videos' : 'images')
-                    }
-                  </span>
-                </div>
-              </div>
-            </div>
 
-          {/* Right Side: Progress placeholders in 2-column grid */}
-          <div className="flex-1 grid grid-cols-2 gap-3 max-w-2xl">
-            {Array.from({ length: pendingCount }).map((_, idx) => (
-              <GenerationProgress 
-                key={`pending-${idx}`} 
-                estimatedTime={pendingEstimatedTime} 
-                aspectRatio={pendingAspectRatio}
-                isVideo={pendingIsVideo}
-              />
-            ))}
-          </div>
-          </div>
+                {/* Progress preview below */}
+                <div className="grid grid-cols-1 gap-4">
+                  {Array.from({ length: pendingCount }).map((_, idx) => (
+                    <GenerationProgress 
+                      key={`pending-${idx}`} 
+                      estimatedTime={pendingEstimatedTime} 
+                      aspectRatio={pendingAspectRatio}
+                      isVideo={pendingIsVideo}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              // Image layout: Prompt on left, previews on right
+              <div className="flex gap-6 items-start">
+                {/* Left Side: Generating message */}
+                <div className="w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 border-primary/30 flex flex-col">
+                  <div className="flex-1">
+                    <p className="text-base font-normal leading-relaxed text-foreground/90 mb-4">
+                      Generating...
+                    </p>
+                  </div>
+                  <div className="space-y-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <Info className="h-3.5 w-3.5 text-primary" />
+                      <span className="font-medium text-primary">In Progress</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground/70">Outputs:</span>
+                      <span className="font-medium">
+                        {pendingCount} {pendingCount === 1 ? 'image' : 'images'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Side: Progress placeholders in 2-column grid */}
+                <div className="flex-1 grid grid-cols-2 gap-3 max-w-2xl">
+                  {Array.from({ length: pendingCount }).map((_, idx) => (
+                    <GenerationProgress 
+                      key={`pending-${idx}`} 
+                      estimatedTime={pendingEstimatedTime} 
+                      aspectRatio={pendingAspectRatio}
+                      isVideo={pendingIsVideo}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

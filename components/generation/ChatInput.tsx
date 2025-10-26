@@ -48,6 +48,9 @@ export function ChatInput({
   // Get model-specific capabilities
   const { modelConfig, supportedAspectRatios, maxResolution, parameters: modelParameters } = useModelCapabilities(selectedModel)
   
+  // Check if model supports image editing (reference images)
+  const supportsImageEditing = modelConfig?.capabilities?.editing === true
+  
   // Get resolution options from model config or use defaults
   const resolutionOptions = modelParameters.find(p => p.name === 'resolution')?.options || [
     { label: '512px', value: 512 },
@@ -68,6 +71,15 @@ export function ChatInput({
       // Check resolution
       if (parameters.resolution > maxResolution) {
         updates.resolution = maxResolution
+      }
+      
+      // Clear reference image if switching to a model that doesn't support editing
+      if (!supportsImageEditing && referenceImage) {
+        if (imagePreviewUrl) {
+          URL.revokeObjectURL(imagePreviewUrl)
+        }
+        setImagePreviewUrl(null)
+        setReferenceImage(null)
       }
       
       if (Object.keys(updates).length > 0) {
@@ -210,47 +222,49 @@ export function ChatInput({
           />
         </div>
 
-        {/* Style/Image Input - Popover with Upload/Browse */}
-        <Popover open={stylePopoverOpen} onOpenChange={setStylePopoverOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={generating}
-              className="h-8 px-3 rounded-lg"
-            >
-              <ImagePlus className="h-3.5 w-3.5" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-40 p-2" align="start">
-            <div className="flex flex-col gap-1">
+        {/* Style/Image Input - Popover with Upload/Browse - Only show if model supports editing */}
+        {supportsImageEditing && (
+          <Popover open={stylePopoverOpen} onOpenChange={setStylePopoverOpen}>
+            <PopoverTrigger asChild>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="w-full justify-start h-8 text-xs"
-                onClick={() => {
-                  fileInputRef.current?.click()
-                  setStylePopoverOpen(false)
-                }}
+                disabled={generating}
+                className="h-8 px-3 rounded-lg"
               >
-                <Upload className="h-3.5 w-3.5 mr-2" />
-                Upload
+                <ImagePlus className="h-3.5 w-3.5" />
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start h-8 text-xs"
-                onClick={() => {
-                  setBrowseModalOpen(true)
-                  setStylePopoverOpen(false)
-                }}
-              >
-                <FolderOpen className="h-3.5 w-3.5 mr-2" />
-                Browse
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
+            </PopoverTrigger>
+            <PopoverContent className="w-40 p-2" align="start">
+              <div className="flex flex-col gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start h-8 text-xs"
+                  onClick={() => {
+                    fileInputRef.current?.click()
+                    setStylePopoverOpen(false)
+                  }}
+                >
+                  <Upload className="h-3.5 w-3.5 mr-2" />
+                  Upload
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start h-8 text-xs"
+                  onClick={() => {
+                    setBrowseModalOpen(true)
+                    setStylePopoverOpen(false)
+                  }}
+                >
+                  <FolderOpen className="h-3.5 w-3.5 mr-2" />
+                  Browse
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
         <input
           ref={fileInputRef}
           type="file"

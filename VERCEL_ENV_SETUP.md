@@ -64,6 +64,22 @@ NEXT_PUBLIC_APP_URL=https://loopvesper.vercel.app
 
 ## Troubleshooting
 
+### Connection to database server error (port 6543)
+
+**Error**: `Can't reach database server at db.xxxxx.supabase.co:6543`
+
+**Cause**: Using Transaction pooler (port 6543) instead of Session pooler (port 5432)
+
+**Solution**: Update `DATABASE_URL` to use the Session pooler format:
+```
+postgresql://postgres.rcssplhcspjpvwdtwqwl:-Z%40nkWLbjajtMfUvMwgTt82dpkhBtkwW6uqis%2A%2Af%40o4@aws-1-eu-west-1.pooler.supabase.com:5432/postgres
+```
+
+**Important**:
+- Must use port `5432` (Session pooler)
+- Hostname must be `aws-1-eu-west-1.pooler.supabase.com` (NOT `db.xxxxx.supabase.co`)
+- After updating, **redeploy** your application
+
 ### "Session not found" or "Unauthorized" errors
 
 **Cause**: Missing `NEXT_PUBLIC_SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_ANON_KEY`

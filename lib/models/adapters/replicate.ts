@@ -261,11 +261,28 @@ export class ReplicateAdapter extends BaseModelAdapter {
         console.log(`Replicate status: ${statusData.status} (attempt ${attempts + 1})`)
 
         if (statusData.status === 'succeeded') {
-          // Parse output URLs
-          const outputUrls = statusData.output || []
+          // Parse output URLs - handle different output formats
+          let outputUrls: string[] = []
+          
+          if (statusData.output) {
+            if (Array.isArray(statusData.output)) {
+              // Multiple outputs (array of URLs)
+              outputUrls = statusData.output
+            } else if (typeof statusData.output === 'string') {
+              // Single output (single URL)
+              outputUrls = [statusData.output]
+            } else if (Array.isArray(statusData.output.urls)) {
+              // Some models return { urls: [...] } format
+              outputUrls = statusData.output.urls
+            } else {
+              // Try to extract URLs from object output
+              console.error('Unexpected output format:', statusData.output)
+              outputUrls = []
+            }
+          }
           
           if (!outputUrls.length) {
-            throw new Error('No images generated')
+            throw new Error('No images generated - unexpected output format')
           }
 
           return {

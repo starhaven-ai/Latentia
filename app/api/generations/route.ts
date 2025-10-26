@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       orderBy: {
         createdAt: 'desc', // Newest first for pagination
       },
-      take: Math.min(limit, 500), // Limit results
+      take: Math.min(limit, 100), // Limit to 100 generations max
     })
 
     // Fetch bookmarks separately for efficiency

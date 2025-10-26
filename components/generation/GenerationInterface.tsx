@@ -35,8 +35,8 @@ export function GenerationInterface({
   // Use Zustand store for UI state
   const { selectedModel, parameters, setSelectedModel, setParameters } = useUIStore()
   
-  // Use React Query for data fetching
-  const { data: generations = [], isLoading } = useGenerations(session?.id || null)
+  // Use React Query for data fetching (limit to 50 for performance)
+  const { data: generations = [], isLoading } = useGenerations(session?.id || null, 50)
   
   // Use React Query mutation for generating
   const generateMutation = useGenerateMutation()

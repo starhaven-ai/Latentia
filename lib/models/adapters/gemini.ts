@@ -37,6 +37,9 @@ export class GeminiAdapter extends BaseModelAdapter {
   }
 
   private async generateImage(request: GenerationRequest): Promise<GenerationResponse> {
+    console.log('Nano Banana: Starting image generation')
+    console.log('Nano Banana: Prompt:', request.prompt)
+    console.log('Nano Banana: Has reference image:', !!request.referenceImage)
     // Gemini 2.5 Flash Image (Nano Banana) endpoint
     const endpoint = `${this.baseUrl}/models/gemini-2.5-flash-image:generateContent`
 

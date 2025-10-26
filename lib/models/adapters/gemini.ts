@@ -88,6 +88,9 @@ export class GeminiAdapter extends BaseModelAdapter {
             data: base64Data,
           },
         })
+      } else {
+        console.error('Invalid reference image format. Expected data URL format: data:image/png;base64,...')
+        throw new Error('Invalid reference image format. Please upload the image again.')
       }
     }
     

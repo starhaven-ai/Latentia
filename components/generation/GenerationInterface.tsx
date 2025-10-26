@@ -167,6 +167,9 @@ export function GenerationInterface({
   // Get video sessions
   const videoSessions = allSessions.filter(s => s.type === 'video')
   
+  // Get all processing generations (in-progress)
+  const processingGenerations = generations.filter(g => g.status === 'processing')
+  
   // Get model name for pending generation display
   const allModels = getAllModels()
   const currentModelConfig = allModels.find(m => m.id === selectedModel)
@@ -198,20 +201,10 @@ export function GenerationInterface({
           <div className="p-6 flex justify-center">
             <div className="w-full max-w-7xl">
               <GenerationGallery
-                generations={generations}
+                generations={generations.filter(g => g.status !== 'processing')}
                 sessionId={session?.id || null}
                 onReuseParameters={handleReuseParameters}
-                isGenerating={generateMutation.isPending}
-                pendingCount={generateMutation.isPending ? parameters.numOutputs : 0}
-                pendingPrompt={generateMutation.isPending ? prompt : undefined}
-                pendingModelName={generateMutation.isPending ? modelName : undefined}
-                pendingAspectRatio={parameters.aspectRatio}
-                pendingEstimatedTime={
-                  generationType === 'video'
-                    ? 30 + (parameters.duration || 8) * 5 + (parameters.resolution === 1080 ? 30 : 0)
-                    : 25
-                }
-                pendingIsVideo={generationType === 'video'}
+                processingGenerations={processingGenerations}
                 videoSessions={videoSessions}
                 onConvertToVideo={handleConvertToVideo}
                 onCreateVideoSession={onSessionCreate}

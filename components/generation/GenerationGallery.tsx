@@ -8,18 +8,13 @@ import { useQueryClient } from '@tanstack/react-query'
 import { GenerationProgress } from './GenerationProgress'
 import { ImageLightbox } from './ImageLightbox'
 import { VideoSessionSelector } from './VideoSessionSelector'
+import { getAllModels } from '@/lib/models/registry'
 
 interface GenerationGalleryProps {
   generations: GenerationWithOutputs[]
   sessionId: string | null
   onReuseParameters: (generation: GenerationWithOutputs) => void
-  pendingCount?: number
-  isGenerating?: boolean
-  pendingPrompt?: string
-  pendingModelName?: string
-  pendingAspectRatio?: string
-  pendingEstimatedTime?: number
-  pendingIsVideo?: boolean
+  processingGenerations?: GenerationWithOutputs[]
   videoSessions?: Session[]
   onConvertToVideo?: (generation: GenerationWithOutputs, videoSessionId: string, imageUrl?: string) => void
   onCreateVideoSession?: ((type: 'image' | 'video', name: string) => Promise<Session | null>) | undefined
@@ -30,13 +25,7 @@ export function GenerationGallery({
   generations,
   sessionId,
   onReuseParameters,
-  pendingCount = 0,
-  isGenerating = false,
-  pendingPrompt,
-  pendingModelName,
-  pendingAspectRatio = '1:1',
-  pendingEstimatedTime = 25,
-  pendingIsVideo = false,
+  processingGenerations = [],
   videoSessions = [],
   onConvertToVideo,
   onCreateVideoSession,
@@ -180,7 +169,7 @@ export function GenerationGallery({
   }
 
 
-  if (generations.length === 0 && !isGenerating) {
+  if (generations.length === 0 && processingGenerations.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center text-muted-foreground">
@@ -505,90 +494,59 @@ export function GenerationGallery({
           )
         })}
 
-        {/* Show pending generations at the bottom */}
-        {isGenerating && pendingCount > 0 && (
-          <>
-            {pendingIsVideo ? (
-              // Video layout: Prompt above, preview below
-              <div className="space-y-3 max-w-4xl mx-auto">
-                {/* Prompt above */}
-                <div className="bg-muted/30 rounded-lg px-4 py-3 border border-border/50 border-primary/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Info className="h-3.5 w-3.5 text-primary" />
-                    <span className="text-sm font-medium text-primary">Generating...</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {pendingCount} {pendingCount === 1 ? 'video' : 'videos'}
+        {/* Show processing generations */}
+        {processingGenerations.map((procGen) => {
+          const allModels = getAllModels()
+          const modelConfig = allModels.find(m => m.id === procGen.modelId)
+          const modelName = modelConfig?.name || 'Unknown Model'
+          const numOutputs = procGen.parameters.numOutputs || 1
+          
+          return (
+            <div key={procGen.id} className="flex gap-6 items-start mb-6">
+              {/* Left Side: Prompt and metadata */}
+              <div className="w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 border-primary/30 flex flex-col">
+                <div className="flex-1 mb-4">
+                  <p className="text-base font-normal leading-relaxed text-foreground/90">
+                    {procGen.prompt}
                   </p>
                 </div>
-
-                {/* Progress preview below */}
-                <div className="grid grid-cols-1 gap-4">
-                  {Array.from({ length: pendingCount }).map((_, idx) => (
-                    <GenerationProgress 
-                      key={`pending-${idx}`} 
-                      estimatedTime={pendingEstimatedTime} 
-                      aspectRatio={pendingAspectRatio}
-                      isVideo={pendingIsVideo}
-                    />
-                  ))}
-                </div>
-              </div>
-            ) : (
-              // Image layout: Prompt on left, previews on right
-              <div className="flex gap-6 items-start">
-                {/* Left Side: Generating with prompt and metadata */}
-                <div className="w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 border-primary/30 flex flex-col">
-                  <div className="flex-1 mb-4">
-                    {/* Show prompt if available, otherwise show placeholder */}
-                    <p className="text-base font-normal leading-relaxed text-foreground/90">
-                      {pendingPrompt || 'Generating...'}
-                    </p>
+                <div className="space-y-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <Wand2 className="h-3.5 w-3.5 text-primary" />
+                    <span className="font-medium">{modelName}</span>
                   </div>
-                  <div className="space-y-2 text-xs text-muted-foreground">
-                    {/* Model info if available */}
-                    {pendingModelName && (
-                      <div className="flex items-center gap-2">
-                        <Wand2 className="h-3.5 w-3.5 text-primary" />
-                        <span className="font-medium">{pendingModelName}</span>
-                      </div>
-                    )}
-                    {/* Aspect Ratio */}
-                    <div className="flex items-center gap-2">
-                      <Ratio className="h-3.5 w-3.5 text-muted-foreground/70" />
-                      <span className="text-muted-foreground/70">Aspect Ratio:</span>
-                      <span className="font-medium">{pendingAspectRatio}</span>
-                    </div>
-                    {/* Output count */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground/70">Outputs:</span>
-                      <span className="font-medium">
-                        {pendingCount} {pendingCount === 1 ? 'image' : 'images'}
-                      </span>
-                    </div>
-                    {/* Generation date */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground/70">Generated:</span>
-                      <span className="font-medium">{new Date().toLocaleDateString()}</span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Ratio className="h-3.5 w-3.5 text-muted-foreground/70" />
+                    <span className="text-muted-foreground/70">Aspect Ratio:</span>
+                    <span className="font-medium">{procGen.parameters.aspectRatio}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground/70">Outputs:</span>
+                    <span className="font-medium">
+                      {numOutputs} {numOutputs === 1 ? 'image' : 'images'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground/70">Generated:</span>
+                    <span className="font-medium">{new Date(procGen.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
-
-                {/* Right Side: Progress placeholders in 2-column grid */}
-                <div className="flex-1 grid grid-cols-2 gap-3 max-w-2xl">
-                  {Array.from({ length: pendingCount }).map((_, idx) => (
-                    <GenerationProgress 
-                      key={`pending-${idx}`} 
-                      estimatedTime={pendingEstimatedTime} 
-                      aspectRatio={pendingAspectRatio}
-                      isVideo={pendingIsVideo}
-                    />
-                  ))}
-                </div>
               </div>
-            )}
-          </>
-        )}
+
+              {/* Right Side: Progress placeholders */}
+              <div className="flex-1 grid grid-cols-2 gap-3 max-w-2xl">
+                {Array.from({ length: numOutputs }).map((_, idx) => (
+                  <GenerationProgress 
+                    key={`${procGen.id}-${idx}`}
+                    estimatedTime={25}
+                    aspectRatio={procGen.parameters.aspectRatio}
+                    isVideo={false}
+                  />
+                ))}
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       {/* Image Lightbox */}

@@ -1,9 +1,10 @@
 import { BaseModelAdapter, ModelConfig, GenerationRequest, GenerationResponse } from '../base'
 
-const REPLICATE_API_KEY = process.env.REPLICATE_API_KEY
+// Support both REPLICATE_API_TOKEN (official) and REPLICATE_API_KEY (legacy)
+const REPLICATE_API_KEY = process.env.REPLICATE_API_TOKEN || process.env.REPLICATE_API_KEY
 
 if (!REPLICATE_API_KEY) {
-  console.warn('REPLICATE_API_KEY is not set. Replicate models will not work.')
+  console.warn('REPLICATE_API_TOKEN is not set. Replicate models will not work. Get your key from: https://replicate.com/account/api-tokens')
 }
 
 /**
@@ -82,7 +83,7 @@ export class ReplicateAdapter extends BaseModelAdapter {
 
   private async generateImage(request: GenerationRequest): Promise<GenerationResponse> {
     if (!this.apiKey) {
-      throw new Error('REPLICATE_API_KEY is not configured. Please add your Replicate API key to .env.local and restart the dev server. Get your key from: https://replicate.com/account/api-tokens')
+      throw new Error('REPLICATE_API_TOKEN is not configured. Please add your Replicate API token to .env.local and restart the dev server. Get your token from: https://replicate.com/account/api-tokens')
     }
 
     const {
@@ -132,19 +133,16 @@ export class ReplicateAdapter extends BaseModelAdapter {
 
       console.log('Submitting to Replicate:', input)
 
-      // Use the latest known working version for Seedream-4
-      // Version: bytedance/seedream-4:latest
-      const versionHash = 'a2f89ff3eb81deaa01b2d88ca417a6e3964f1c40c2cd5d6e9fda9b47d4e25ac0'
-
       // Submit prediction to Replicate
+      // Using model identifier instead of version hash to always use the latest version
       const response = await fetch(`${this.baseUrl}/predictions`, {
         method: 'POST',
         headers: {
-          'Authorization': `Token ${this.apiKey}`,
+          'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          version: versionHash,
+          model: 'bytedance/seedream-4',
           input,
         }),
       })
@@ -170,7 +168,7 @@ export class ReplicateAdapter extends BaseModelAdapter {
         const statusResponse = await fetch(`${this.baseUrl}/predictions/${predictionId}`, {
           method: 'GET',
           headers: {
-            'Authorization': `Token ${this.apiKey}`,
+            'Authorization': `Bearer ${this.apiKey}`,
           },
         })
 

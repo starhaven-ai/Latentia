@@ -150,6 +150,8 @@ function ModelCard({
   onSelect,
   onTogglePin,
 }: ModelCardProps) {
+  const capabilities = model.capabilities || {}
+  
   return (
     <button
       onClick={() => onSelect(model.id)}
@@ -161,8 +163,22 @@ function ModelCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h4 className="font-semibold">{model.name}</h4>
+            
+            {/* Capability badges */}
+            {capabilities.editing && (
+              <span className="text-xs px-2 py-0.5 rounded bg-primary text-primary-foreground font-medium">
+                editing
+              </span>
+            )}
+            {capabilities['text-2-image'] && (
+              <span className="text-xs px-2 py-0.5 rounded bg-primary text-primary-foreground font-medium">
+                text-2-image
+              </span>
+            )}
+            
+            {/* Speed badge */}
             <span className={`text-xs px-2 py-0.5 rounded-full ${
               model.speed === 'fast'
                 ? 'bg-green-500/10 text-green-500'

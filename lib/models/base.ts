@@ -23,6 +23,12 @@ export interface ModelConfig {
   maxResolution?: number
   defaultAspectRatio?: string
   supportedAspectRatios?: string[]
+  capabilities?: {
+    editing?: boolean
+    'text-2-image'?: boolean
+    'image-2-image'?: boolean
+    'text-2-video'?: boolean
+  }
   pricing?: {
     perImage?: number
     perSecond?: number

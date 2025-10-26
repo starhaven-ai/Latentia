@@ -21,6 +21,56 @@ export const SEEDREAM_4_CONFIG: ModelConfig = {
   supportedAspectRatios: ['1:1', '16:9', '9:16', '4:3', '3:4'],
   defaultAspectRatio: '1:1',
   maxResolution: 4096,
+  capabilities: {
+    editing: true,
+    'text-2-image': true,
+  },
+  parameters: [
+    {
+      name: 'aspectRatio',
+      type: 'select',
+      label: 'Aspect Ratio',
+      options: [
+        { label: '1:1 (Square)', value: '1:1' },
+        { label: '16:9 (Landscape)', value: '16:9' },
+        { label: '9:16 (Portrait)', value: '9:16' },
+        { label: '4:3 (Landscape)', value: '4:3' },
+        { label: '3:4 (Portrait)', value: '3:4' },
+      ],
+    },
+    {
+      name: 'numOutputs',
+      type: 'number',
+      label: 'Number of outputs',
+      min: 1,
+      max: 4,
+      default: 1,
+      options: [
+        { label: '1', value: 1 },
+        { label: '4', value: 4 },
+      ],
+    },
+  ],
+}
+
+/**
+ * Reve Model Configuration
+ * Image generation model from Reve via Replicate
+ * Documentation: https://replicate.com/reve/create
+ */
+export const REVE_CONFIG: ModelConfig = {
+  id: 'replicate-reve',
+  name: 'Reve',
+  provider: 'Reve (Replicate)',
+  type: 'image',
+  description: 'High-quality image generation and editing model with advanced capabilities',
+  supportedAspectRatios: ['1:1', '16:9', '9:16', '4:3', '3:4'],
+  defaultAspectRatio: '1:1',
+  maxResolution: 2048,
+  capabilities: {
+    editing: true,
+    'text-2-image': true,
+  },
   parameters: [
     {
       name: 'aspectRatio',
@@ -133,8 +183,18 @@ export class ReplicateAdapter extends BaseModelAdapter {
 
       console.log('Submitting to Replicate:', input)
 
+      // Determine which Replicate model to use based on config
+      let modelPath: string
+      if (this.config.id === 'replicate-seedream-4') {
+        modelPath = 'bytedance/seedream-4'
+      } else if (this.config.id === 'replicate-reve') {
+        modelPath = 'reve/create'
+      } else {
+        throw new Error(`Unknown Replicate model: ${this.config.id}`)
+      }
+
       // First, fetch the latest version for the model
-      const modelResponse = await fetch(`${this.baseUrl}/models/bytedance/seedream-4`, {
+      const modelResponse = await fetch(`${this.baseUrl}/models/${modelPath}`, {
         headers: {
           'Authorization': `Token ${this.apiKey}`,
         },

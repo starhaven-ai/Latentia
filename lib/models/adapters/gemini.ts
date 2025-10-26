@@ -282,6 +282,10 @@ export const NANO_BANANA_CONFIG: ModelConfig = {
   defaultAspectRatio: '1:1',
   // All 10 supported aspect ratios from official Gemini API documentation
   supportedAspectRatios: ['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9'],
+  capabilities: {
+    editing: true,
+    'text-2-image': true,
+  },
   pricing: {
     perImage: 0.01,
     currency: 'USD',

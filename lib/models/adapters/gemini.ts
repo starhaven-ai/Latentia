@@ -116,6 +116,7 @@ export class GeminiAdapter extends BaseModelAdapter {
       }
     }
 
+    console.log('Nano Banana: Sending request to Gemini API')
     const response = await fetch(`${endpoint}?key=${this.apiKey}`, {
       method: 'POST',
       headers: {
@@ -124,12 +125,16 @@ export class GeminiAdapter extends BaseModelAdapter {
       body: JSON.stringify(payload),
     })
 
+    console.log('Nano Banana: Response status:', response.status)
+
     if (!response.ok) {
       const error = await response.json()
       console.error('Gemini API error:', error)
       console.error('Request payload:', JSON.stringify(payload, null, 2))
       throw new Error(error.error?.message || 'Image generation failed')
     }
+    
+    console.log('Nano Banana: Response OK, parsing data')
 
     const data = await response.json()
 

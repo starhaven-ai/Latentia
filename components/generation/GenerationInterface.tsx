@@ -10,6 +10,7 @@ import { useGenerations } from '@/hooks/useGenerations'
 import { useGenerateMutation } from '@/hooks/useGenerateMutation'
 import { useUIStore } from '@/store/uiStore'
 import { useToast } from '@/components/ui/use-toast'
+import { getAllModels } from '@/lib/models/registry'
 
 interface GenerationInterfaceProps {
   session: Session | null
@@ -165,6 +166,11 @@ export function GenerationInterface({
 
   // Get video sessions
   const videoSessions = allSessions.filter(s => s.type === 'video')
+  
+  // Get model name for pending generation display
+  const allModels = getAllModels()
+  const currentModelConfig = allModels.find(m => m.id === selectedModel)
+  const modelName = currentModelConfig?.name || 'Unknown Model'
 
   if (!session) {
     return (
@@ -197,6 +203,8 @@ export function GenerationInterface({
                 onReuseParameters={handleReuseParameters}
                 isGenerating={generateMutation.isPending}
                 pendingCount={generateMutation.isPending ? parameters.numOutputs : 0}
+                pendingPrompt={generateMutation.isPending ? prompt : undefined}
+                pendingModelName={generateMutation.isPending ? modelName : undefined}
                 pendingAspectRatio={parameters.aspectRatio}
                 pendingEstimatedTime={
                   generationType === 'video'

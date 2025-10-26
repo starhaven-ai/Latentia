@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, RotateCcw, Info, Copy, Bookmark, Check, Video } from 'lucide-react'
+import { Download, RotateCcw, Info, Copy, Bookmark, Check, Video, Wand2, Ratio } from 'lucide-react'
 import type { GenerationWithOutputs } from '@/types/generation'
 import type { Session } from '@/types/project'
 import { useUpdateOutputMutation } from '@/hooks/useOutputMutations'
@@ -15,6 +15,8 @@ interface GenerationGalleryProps {
   onReuseParameters: (generation: GenerationWithOutputs) => void
   pendingCount?: number
   isGenerating?: boolean
+  pendingPrompt?: string
+  pendingModelName?: string
   pendingAspectRatio?: string
   pendingEstimatedTime?: number
   pendingIsVideo?: boolean
@@ -30,6 +32,8 @@ export function GenerationGallery({
   onReuseParameters,
   pendingCount = 0,
   isGenerating = false,
+  pendingPrompt,
+  pendingModelName,
   pendingAspectRatio = '1:1',
   pendingEstimatedTime = 25,
   pendingIsVideo = false,
@@ -533,23 +537,39 @@ export function GenerationGallery({
             ) : (
               // Image layout: Prompt on left, previews on right
               <div className="flex gap-6 items-start">
-                {/* Left Side: Generating message */}
+                {/* Left Side: Generating with prompt and metadata */}
                 <div className="w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 border-primary/30 flex flex-col">
-                  <div className="flex-1">
-                    <p className="text-base font-normal leading-relaxed text-foreground/90 mb-4">
-                      Generating...
+                  <div className="flex-1 mb-4">
+                    {/* Show prompt if available, otherwise show placeholder */}
+                    <p className="text-base font-normal leading-relaxed text-foreground/90">
+                      {pendingPrompt || 'Generating...'}
                     </p>
                   </div>
                   <div className="space-y-2 text-xs text-muted-foreground">
+                    {/* Model info if available */}
+                    {pendingModelName && (
+                      <div className="flex items-center gap-2">
+                        <Wand2 className="h-3.5 w-3.5 text-primary" />
+                        <span className="font-medium">{pendingModelName}</span>
+                      </div>
+                    )}
+                    {/* Aspect Ratio */}
                     <div className="flex items-center gap-2">
-                      <Info className="h-3.5 w-3.5 text-primary" />
-                      <span className="font-medium text-primary">In Progress</span>
+                      <Ratio className="h-3.5 w-3.5 text-muted-foreground/70" />
+                      <span className="text-muted-foreground/70">Aspect Ratio:</span>
+                      <span className="font-medium">{pendingAspectRatio}</span>
                     </div>
+                    {/* Output count */}
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground/70">Outputs:</span>
                       <span className="font-medium">
                         {pendingCount} {pendingCount === 1 ? 'image' : 'images'}
                       </span>
+                    </div>
+                    {/* Generation date */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground/70">Generated:</span>
+                      <span className="font-medium">{new Date().toLocaleDateString()}</span>
                     </div>
                   </div>
                 </div>

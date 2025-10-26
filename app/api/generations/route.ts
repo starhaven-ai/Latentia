@@ -34,7 +34,16 @@ export async function GET(request: NextRequest) {
         sessionId,
         userId: session.user.id, // Only fetch user's own generations
       },
-      include: {
+      select: {
+        id: true,
+        sessionId: true,
+        userId: true,
+        modelId: true,
+        prompt: true,
+        negativePrompt: true,
+        parameters: true,
+        status: true,
+        createdAt: true,
         user: {
           select: {
             id: true,
@@ -43,13 +52,18 @@ export async function GET(request: NextRequest) {
           },
         },
         outputs: {
-          include: {
-            bookmarks: {
-              where: {
-                userId: session.user.id,
-              },
-            },
-          } as any, // Type assertion for Prisma relation
+          select: {
+            id: true,
+            generationId: true,
+            fileUrl: true,
+            fileType: true,
+            width: true,
+            height: true,
+            duration: true,
+            isStarred: true,
+            isApproved: true,
+            createdAt: true,
+          },
           orderBy: {
             createdAt: 'asc',
           },
@@ -60,13 +74,28 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    // Fetch bookmarks separately for efficiency
+    const outputIds = generations.flatMap(g => g.outputs.map(o => o.id))
+    const bookmarks = outputIds.length > 0
+      ? await prisma.bookmark.findMany({
+          where: {
+            outputId: { in: outputIds },
+            userId: session.user.id,
+          },
+          select: {
+            outputId: true,
+          },
+        })
+      : []
+
+    const bookmarkedOutputIds = new Set(bookmarks.map(b => b.outputId))
+
     // Add isBookmarked field to outputs
     const generationsWithBookmarks = generations.map((generation: any) => ({
       ...generation,
       outputs: generation.outputs.map((output: any) => ({
         ...output,
-        isBookmarked: output.bookmarks.length > 0,
-        bookmarks: undefined, // Remove bookmarks array from response
+        isBookmarked: bookmarkedOutputIds.has(output.id),
       })),
     }))
 

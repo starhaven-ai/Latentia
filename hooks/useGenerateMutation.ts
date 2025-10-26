@@ -58,8 +58,10 @@ export function useGenerateMutation() {
       ])
 
       // Optimistically add a pending generation
+      // Use a timestamp to ensure unique IDs
+      const timestamp = Date.now()
       const optimisticGeneration: GenerationWithOutputs = {
-        id: `temp-${Date.now()}`,
+        id: `temp-${timestamp}`,
         sessionId: variables.sessionId,
         userId: '',
         modelId: variables.modelId,
@@ -70,6 +72,9 @@ export function useGenerateMutation() {
         createdAt: new Date(),
         outputs: [],
       }
+      
+      // Store the optimistic ID in context for later matching
+      const optimisticId = optimisticGeneration.id
 
       // Add pending generation to cache ONLY if it doesn't already exist
       queryClient.setQueryData<GenerationWithOutputs[]>(
@@ -84,19 +89,18 @@ export function useGenerateMutation() {
       )
 
       // Return context with previous state for rollback
-      return { previousGenerations, optimisticId: optimisticGeneration.id }
+      return { previousGenerations, optimisticId }
     },
     onSuccess: (data, variables, context) => {
-      // Update the specific generation in the cache
+      // Update the cache by replacing the optimistic generation with the real one
       queryClient.setQueryData<GenerationWithOutputs[]>(
         ['generations', variables.sessionId],
         (old) => {
           if (!old) return []
           
-          // Find and update the specific optimistic generation
+          // Find and replace the optimistic generation
           return old.map((gen) => {
             if (gen.id === context?.optimisticId) {
-              // Replace with the real result
               if (data.status === 'completed' && data.outputs) {
                 return {
                   ...gen,
@@ -106,7 +110,7 @@ export function useGenerateMutation() {
                     id: `${data.id}-${index}`,
                     generationId: data.id,
                     fileUrl: output.url,
-                    fileType: 'image',
+                    fileType: 'image' as const,
                     width: output.width,
                     height: output.height,
                     duration: output.duration,
@@ -130,9 +134,6 @@ export function useGenerateMutation() {
           })
         }
       )
-
-      // Don't invalidate immediately - let individual generations complete naturally
-      // This allows parallel generations to coexist without interfering
     },
     onError: (error: Error, variables, context) => {
       console.error('Generation failed:', error)

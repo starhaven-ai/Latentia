@@ -90,7 +90,7 @@ export function useGenerateMutation() {
           // Remove the optimistic placeholder
           const withoutOptimistic = old.filter(gen => gen.id !== context?.optimisticId)
           
-          // Add the real generation if completed
+          // Add the real generation (completed or failed)
           if (data.status === 'completed' && data.outputs) {
             const newGeneration: GenerationWithOutputs = {
               id: data.id,
@@ -115,6 +115,24 @@ export function useGenerateMutation() {
               })),
             }
             return [...withoutOptimistic, newGeneration]
+          } else if (data.status === 'failed') {
+            // Keep the generation in the list but mark it as failed
+            const failedGeneration: GenerationWithOutputs = {
+              id: data.id,
+              sessionId: variables.sessionId,
+              userId: '',
+              modelId: variables.modelId,
+              prompt: variables.prompt,
+              negativePrompt: variables.negativePrompt,
+              parameters: {
+                ...variables.parameters,
+                error: data.error,
+              },
+              status: 'failed',
+              createdAt: new Date(),
+              outputs: [],
+            }
+            return [...withoutOptimistic, failedGeneration]
           }
           
           return withoutOptimistic
@@ -129,13 +147,27 @@ export function useGenerateMutation() {
     onError: (error: Error, variables, context) => {
       console.error('Generation failed:', error)
       
-      // Rollback to previous state on error
-      if (context?.previousGenerations) {
-        queryClient.setQueryData(
-          ['generations', variables.sessionId],
-          context.previousGenerations
-        )
-      }
+      // Instead of rolling back, update the optimistic generation to show the error
+      queryClient.setQueryData<GenerationWithOutputs[]>(
+        ['generations', variables.sessionId],
+        (old) => {
+          if (!old) return []
+          
+          return old.map((gen) => {
+            if (gen.id === context?.optimisticId) {
+              return {
+                ...gen,
+                status: 'failed' as const,
+                parameters: {
+                  ...gen.parameters,
+                  error: error.message,
+                },
+              }
+            }
+            return gen
+          })
+        }
+      )
     },
   })
 }

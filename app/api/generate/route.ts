@@ -7,6 +7,9 @@ import { getModel } from '@/lib/models/registry'
 const prisma = new PrismaClient()
 
 export async function POST(request: NextRequest) {
+  let generation: any = null
+  let parameters: any = null
+  
   try {
     const supabase = createRouteHandlerClient({ cookies })
 
@@ -29,8 +32,10 @@ export async function POST(request: NextRequest) {
       modelId,
       prompt,
       negativePrompt,
-      parameters,
+      parameters: requestParameters,
     } = body
+    
+    parameters = requestParameters
 
     // Validate required fields
     if (!sessionId || !modelId || !prompt) {
@@ -50,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create generation record in database using Prisma
-    const generation = await prisma.generation.create({
+    generation = await prisma.generation.create({
       data: {
         sessionId,
         userId: user.id,
@@ -63,10 +68,13 @@ export async function POST(request: NextRequest) {
     })
 
     // Generate using the model
+    // Extract referenceImage from parameters and pass it at the top level
+    const { referenceImage, ...otherParameters } = parameters || {}
     const result = await model.generate({
       prompt,
       negativePrompt,
-      ...parameters,
+      referenceImage,
+      ...otherParameters,
     })
 
     // Update generation status

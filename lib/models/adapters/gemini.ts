@@ -69,14 +69,32 @@ export class GeminiAdapter extends BaseModelAdapter {
   }
 
   private async generateSingleImage(endpoint: string, request: GenerationRequest): Promise<any> {
+    const parts: any[] = []
+    
+    // Add text prompt
+    parts.push({
+      text: request.prompt,
+    })
+    
+    // Add reference image if provided (for image editing)
+    if (request.referenceImage) {
+      // Extract base64 data and mime type from data URL
+      const dataUrlMatch = request.referenceImage.match(/^data:([^;]+);base64,(.+)$/)
+      if (dataUrlMatch) {
+        const [, mimeType, base64Data] = dataUrlMatch
+        parts.push({
+          inlineData: {
+            mimeType,
+            data: base64Data,
+          },
+        })
+      }
+    }
+    
     const payload: any = {
       contents: [
         {
-          parts: [
-            {
-              text: request.prompt,
-            },
-          ],
+          parts,
         },
       ],
       generationConfig: {

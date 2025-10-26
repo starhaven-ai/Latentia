@@ -198,6 +198,57 @@ export function GenerationGallery({
         {generations.map((generation) => {
           const isVideo = isVideoGeneration(generation)
           
+          // Failed generation layout
+          if (generation.status === 'failed') {
+            const errorMessage = (generation.parameters as any)?.error || 'Generation failed'
+            return (
+              <div key={generation.id} className="flex gap-6 items-start">
+                {/* Left Side: Prompt Display with Error State */}
+                <div className="w-96 h-64 flex-shrink-0 bg-destructive/10 rounded-xl p-6 border border-destructive/50 flex flex-col">
+                  <div className="flex-1 overflow-hidden hover:overflow-y-auto transition-all group relative">
+                    <p 
+                      className="text-base font-normal leading-relaxed text-foreground/90 cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => handleCopyPrompt(generation.prompt)}
+                      title="Click to copy"
+                    >
+                      {generation.prompt}
+                    </p>
+                    <Copy className="h-3.5 w-3.5 absolute top-0 right-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                  <div className="space-y-2 text-xs text-muted-foreground mt-4">
+                    <div className="flex items-center gap-2 text-destructive">
+                      <Info className="h-3.5 w-3.5" />
+                      <span className="font-medium">Failed</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground/70">Model:</span>
+                      <span className="font-medium">{generation.modelId.replace('gemini-', '').replace('fal-', '')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground/70">Generated:</span>
+                      <span className="font-medium">{new Date(generation.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Side: Error Message */}
+                <div className="flex-1 max-w-2xl">
+                  <div className="bg-destructive/10 rounded-xl p-6 border border-destructive/50">
+                    <h3 className="text-lg font-semibold text-destructive mb-2">Generation Failed</h3>
+                    <p className="text-sm text-foreground/80 mb-4">{errorMessage}</p>
+                    <button
+                      onClick={() => onReuseParameters(generation)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      Try Again
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          
           // Video layout: Prompt above, video below with more space
           if (isVideo) {
             return (

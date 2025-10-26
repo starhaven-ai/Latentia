@@ -105,6 +105,8 @@ export function GenerationInterface({
         description: error.message || 'Failed to generate. Please try again.',
         variant: "destructive",
       })
+      // Re-throw the error so the ChatInput knows not to clear the prompt
+      throw error
     }
   }
 

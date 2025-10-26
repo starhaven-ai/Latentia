@@ -99,8 +99,9 @@ export function useGenerateMutation() {
           if (!old) return []
           
           // Find and replace the optimistic generation
-          return old.map((gen) => {
+          const updated = old.map((gen) => {
             if (gen.id === context?.optimisticId) {
+              console.log('Replacing optimistic generation:', context?.optimisticId, 'with completed:', data.id)
               if (data.status === 'completed' && data.outputs) {
                 return {
                   ...gen,
@@ -132,6 +133,11 @@ export function useGenerateMutation() {
             }
             return gen
           })
+          
+          console.log('Updated generations count:', updated.length)
+          console.log('Statuses:', updated.map(g => ({ id: g.id, status: g.status })))
+          
+          return updated
         }
       )
     },

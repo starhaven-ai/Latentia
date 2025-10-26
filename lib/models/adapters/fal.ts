@@ -96,55 +96,15 @@ export class FalAdapter extends BaseModelAdapter {
     // Determine the FAL endpoint based on model
     let endpoint = 'fal-ai/bytedance/seedream/v4/edit'
     
-    // Handle reference image - convert data URL to FAL storage URL if needed
+    // Handle reference image
     let imageUrl = referenceImage
     
     if (!imageUrl) {
       throw new Error('Seedream requires at least one reference image. Please upload or select an image.')
     }
 
-    // If it's a data URL, we need to upload it to FAL storage first
-    if (typeof imageUrl === 'string' && imageUrl.startsWith('data:')) {
-      try {
-        // Upload to FAL storage
-        const uploadResponse = await fetch('https://fal.run/storage/upload', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Key ${FAL_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            data_url: imageUrl,
-          }),
-        })
-
-        if (!uploadResponse.ok) {
-          const errorText = await uploadResponse.text()
-          let errorMessage = 'Failed to upload reference image to FAL storage'
-          
-          // Check for authentication errors
-          if (uploadResponse.status === 401 || uploadResponse.status === 403) {
-            errorMessage = 'Invalid FAL API key. Please check your FAL_API_KEY in .env.local and restart the dev server. Get your key from: https://fal.ai/dashboard/keys'
-          } else if (errorText) {
-            try {
-              const errorJson = JSON.parse(errorText)
-              if (errorJson.detail) {
-                errorMessage = `FAL upload error: ${errorJson.detail}`
-              }
-            } catch (e) {
-              errorMessage = `FAL upload error: ${errorText}`
-            }
-          }
-          
-          throw new Error(errorMessage)
-        }
-
-        const uploadData = await uploadResponse.json()
-        imageUrl = uploadData.url
-      } catch (error: any) {
-        throw new Error(`Failed to upload image: ${error.message}`)
-      }
-    }
+    // FAL models can accept data URLs directly, so we'll use them as-is
+    // If this doesn't work, FAL will return an error and we can adjust
     
     // Prepare request body
     const body: any = {

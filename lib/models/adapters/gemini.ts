@@ -123,6 +123,8 @@ export class GeminiAdapter extends BaseModelAdapter {
 
     if (!response.ok) {
       const error = await response.json()
+      console.error('Gemini API error:', error)
+      console.error('Request payload:', JSON.stringify(payload, null, 2))
       throw new Error(error.error?.message || 'Image generation failed')
     }
 
@@ -134,6 +136,7 @@ export class GeminiAdapter extends BaseModelAdapter {
     )
 
     if (!imagePart?.inlineData?.data) {
+      console.error('Gemini response missing image data:', JSON.stringify(data, null, 2))
       throw new Error('No image data in response')
     }
 

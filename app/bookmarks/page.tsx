@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Bookmark as BookmarkIcon } from 'lucide-react'
+import { Bookmark as BookmarkIcon } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 
 interface BookmarkedItem {
@@ -34,6 +34,15 @@ export default function BookmarksPage() {
   const { toast } = useToast()
   const [bookmarks, setBookmarks] = useState<BookmarkedItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+
+  // Initialize theme from localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+    if (savedTheme) {
+      setTheme(savedTheme)
+    }
+  }, [])
 
   useEffect(() => {
     fetchBookmarks()
@@ -99,14 +108,14 @@ export default function BookmarksPage() {
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
+            <img 
+              src={theme === 'light' ? "/images/Loop Prism (Black).svg" : "/images/Loop Prism (White).svg"}
+              alt="Loop Prism Logo" 
+              className="h-8 object-contain cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => router.push('/projects')}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
+              title="Back to Projects"
+            />
+            <div className="border-l border-border pl-3">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Bookmarks
               </h1>

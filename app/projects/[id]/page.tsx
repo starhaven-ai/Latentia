@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Settings, Sun, Moon, Bookmark } from 'lucide-react'
+import { Settings, Sun, Moon, Bookmark } from 'lucide-react'
 import { SessionSidebar } from '@/components/sessions/SessionSidebar'
 import { GenerationInterface } from '@/components/generation/GenerationInterface'
 import { ProfileSettings } from '@/components/settings/ProfileSettings'
@@ -158,16 +158,16 @@ export default function ProjectPage() {
       {/* Header */}
       <header className="border-b border-border px-4 py-3">
         <div className="flex items-center justify-between">
-          {/* Left side */}
+          {/* Left side - Logo + Project Info */}
           <div className="flex items-center gap-3 flex-1">
-            <Button
-              variant="ghost"
-              size="icon"
+            <img 
+              src={theme === 'light' ? "/images/Loop Prism (Black).svg" : "/images/Loop Prism (White).svg"}
+              alt="Loop Prism Logo" 
+              className="h-7 object-contain cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => router.push('/projects')}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
+              title="Back to Projects"
+            />
+            <div className="border-l border-border pl-3">
               <h1 className="font-semibold">{projectName}</h1>
               <p className="text-xs text-muted-foreground">
                 {activeSession?.name || 'No session'}

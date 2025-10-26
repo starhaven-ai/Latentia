@@ -25,6 +25,7 @@ interface ChatInputProps {
   generationType: 'image' | 'video'
   selectedModel: string
   onModelSelect: (modelId: string) => void
+  isGenerating?: boolean
 }
 
 export function ChatInput({
@@ -36,11 +37,11 @@ export function ChatInput({
   generationType,
   selectedModel,
   onModelSelect,
+  isGenerating = false,
 }: ChatInputProps) {
   const params = useParams()
   const [referenceImage, setReferenceImage] = useState<File | null>(null)
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
-  const [generating, setGenerating] = useState(false)
   const [browseModalOpen, setBrowseModalOpen] = useState(false)
   const [stylePopoverOpen, setStylePopoverOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -91,7 +92,6 @@ export function ChatInput({
   const handleSubmit = async () => {
     if (!prompt.trim()) return
 
-    setGenerating(true)
     try {
       await onGenerate(prompt, referenceImage || undefined)
       onPromptChange('')
@@ -103,8 +103,6 @@ export function ChatInput({
       setReferenceImage(null)
     } catch (error) {
       console.error('Generation error:', error)
-    } finally {
-      setGenerating(false)
     }
   }
 
@@ -169,7 +167,7 @@ export function ChatInput({
             onChange={(e) => onPromptChange(e.target.value)}
             onKeyDown={handleKeyDown}
             className="resize-none min-h-[52px] max-h-[104px] px-4 py-3 text-sm rounded-lg bg-muted/50 border border-border focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary transition-all"
-            disabled={generating}
+            disabled={isGenerating}
           />
         </div>
 
@@ -202,12 +200,12 @@ export function ChatInput({
         {/* Generate Button */}
         <Button
           onClick={handleSubmit}
-          disabled={!prompt.trim() || generating}
+          disabled={!prompt.trim() || isGenerating}
           size="default"
           className="h-[52px] px-8 rounded-lg font-semibold shadow-sm hover:shadow transition-all"
         >
           <Wand2 className="mr-2 h-4 w-4" />
-          {generating ? 'Generating...' : 'Generate'}
+          {isGenerating ? 'Generating...' : 'Generate'}
         </Button>
       </div>
 
@@ -229,7 +227,7 @@ export function ChatInput({
               <Button
                 variant="outline"
                 size="sm"
-                disabled={generating}
+                disabled={isGenerating}
                 className="h-8 px-3 rounded-lg"
               >
                 <ImagePlus className="h-3.5 w-3.5" />
@@ -279,7 +277,7 @@ export function ChatInput({
             <Button
               variant="outline"
               size="sm"
-              disabled={generating}
+              disabled={isGenerating}
               className="h-8 text-xs px-3 rounded-lg"
             >
               <Ratio className="h-3.5 w-3.5 mr-1.5" />

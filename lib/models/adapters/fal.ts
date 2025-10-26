@@ -156,7 +156,7 @@ export class FalAdapter extends BaseModelAdapter {
       const submitData = await submitResponse.json()
       const requestId = submitData.request_id
 
-      // Poll for results
+      // Poll for results using the correct endpoint pattern
       let result
       let attempts = 0
       const maxAttempts = 60 // 5 minutes max
@@ -164,8 +164,9 @@ export class FalAdapter extends BaseModelAdapter {
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 5000)) // Wait 5 seconds
 
+        // Correct endpoint: includes model path in the URL
         const statusResponse = await fetch(
-          `https://queue.fal.run/requests/${requestId}/status`,
+          `https://queue.fal.run/${endpoint}/requests/${requestId}/status`,
           {
             method: 'GET',
             headers: {
@@ -196,9 +197,9 @@ export class FalAdapter extends BaseModelAdapter {
         throw new Error('Generation timeout - request took too long')
       }
 
-      // Parse response
-      const output = result.data || result.output
-      const images = output.images || []
+      // Parse response - the result is in responseData.data
+      const responseData = result.response_data || result.data || result.output || {}
+      const images = responseData.images || []
 
       if (!images.length) {
         throw new Error('No images generated')
@@ -216,7 +217,7 @@ export class FalAdapter extends BaseModelAdapter {
           height: img.height || 1024,
         })),
         metadata: {
-          seed: output.seed,
+          seed: responseData.seed,
           model: request.modelId,
           estimatedTime,
         },

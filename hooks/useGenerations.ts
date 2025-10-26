@@ -26,11 +26,7 @@ export function useGenerations(sessionId: string | null) {
       // Check if any generations are processing
       const hasProcessingGenerations = data.some(gen => gen.status === 'processing')
       
-      console.log('Polling check:', {
-        generationsCount: data.length,
-        processingCount: data.filter(g => g.status === 'processing').length,
-        willPoll: hasProcessingGenerations
-      })
+      // Silently poll - don't log on every check to avoid spam
       
       return hasProcessingGenerations ? 3000 : false
     },

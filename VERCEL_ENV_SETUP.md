@@ -26,10 +26,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 ### 2. Database Connection (Already Configured)
 
 ```
-DATABASE_URL=postgresql://postgres.rcssplhcspjpvwdtwqwl:YOUR_PASSWORD@aws-1-eu-west-1.pooler.supabase.com:5432/postgres
+DATABASE_URL=postgresql://postgres.rcssplhcspjpvwdtwqwl:YOUR_PASSWORD@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require
 ```
 
-**Important**: Replace `YOUR_PASSWORD` with your actual database password (URL-encoded).
+**Important**: 
+- Replace `YOUR_PASSWORD` with your actual database password (URL-encoded)
+- The `?sslmode=require` parameter is required for secure connections
 
 ### 3. AI Model API Keys
 
@@ -70,9 +72,9 @@ NEXT_PUBLIC_APP_URL=https://loopvesper.vercel.app
 
 **Cause**: Using Transaction pooler (port 6543) instead of Session pooler (port 5432)
 
-**Solution**: Update `DATABASE_URL` to use the Session pooler format:
+**Solution**: Update `DATABASE_URL` to use the Session pooler format with SSL:
 ```
-postgresql://postgres.rcssplhcspjpvwdtwqwl:-Z%40nkWLbjajtMfUvMwgTt82dpkhBtkwW6uqis%2A%2Af%40o4@aws-1-eu-west-1.pooler.supabase.com:5432/postgres
+postgresql://postgres.rcssplhcspjpvwdtwqwl:-Z%40nkWLbjajtMfUvMwgTt82dpkhBtkwW6uqis%2A%2Af%40o4@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require
 ```
 
 **Important**:
@@ -97,4 +99,6 @@ postgresql://postgres.rcssplhcspjpvwdtwqwl:-Z%40nkWLbjajtMfUvMwgTt82dpkhBtkwW6uq
 1. Check Vercel logs for errors
 2. Verify `DATABASE_URL` is set correctly in Vercel
 3. Verify the connection string uses Session pooler format (port 5432)
+4. Make sure `?sslmode=require` is added to the DATABASE_URL
+5. Check for extra spaces in environment variable values (especially `NEXT_PUBLIC_APP_URL`)
 

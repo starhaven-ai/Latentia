@@ -132,7 +132,8 @@ export class ReplicateAdapter extends BaseModelAdapter {
 
       console.log('Submitting to Replicate:', input)
 
-      // Submit prediction to Replicate
+      // Submit prediction to Replicate using model identifier (owner/model-name)
+      // This automatically uses the latest version
       const response = await fetch(`${this.baseUrl}/predictions`, {
         method: 'POST',
         headers: {
@@ -140,7 +141,7 @@ export class ReplicateAdapter extends BaseModelAdapter {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          version: 'a2f89ff3eb81deaa01b2d88ca417a6e3964f1c40c2cd5d6e9fda9b47d4e25ac0', // Seedream 4 version
+          model: 'bytedance/seedream-4',
           input,
         }),
       })

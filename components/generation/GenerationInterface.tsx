@@ -242,7 +242,7 @@ export function GenerationInterface({
                 generationType={generationType}
                 selectedModel={selectedModel}
                 onModelSelect={setSelectedModel}
-                isGenerating={generateMutation.isPending}
+                isGenerating={false}
               />
             )}
           </div>

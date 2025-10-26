@@ -120,14 +120,17 @@ export class FalAdapter extends BaseModelAdapter {
     }
 
     try {
-      // Submit generation request to FAL queue using official API
-      const submitResponse = await fetch(`https://queue.fal.ai/${endpoint}`, {
+      // Submit generation request to FAL queue
+      // Based on official docs: https://fal.ai/models/fal-ai/bytedance/seedream/v4/edit/api
+      const submitResponse = await fetch(`https://queue.fal.run/${endpoint}`, {
         method: 'POST',
         headers: {
           'Authorization': `Key ${FAL_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          input: body,
+        }),
       })
 
       if (!submitResponse.ok) {
@@ -162,8 +165,8 @@ export class FalAdapter extends BaseModelAdapter {
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 5000)) // Wait 5 seconds
 
-        // Status endpoint - use queue.fal.ai instead of queue.fal.run
-        const statusUrl = `https://queue.fal.ai/${endpoint}/requests/${requestId}`
+        // Status endpoint - use queue.fal.run (correct domain)
+        const statusUrl = `https://queue.fal.run/${endpoint}/requests/${requestId}`
         console.log(`Checking status at: ${statusUrl}`)
         
         const statusResponse = await fetch(statusUrl, {

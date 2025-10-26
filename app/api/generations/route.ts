@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('sessionId')
+    const limit = parseInt(searchParams.get('limit') || '100') // Default to 100, max 500
 
     if (!sessionId) {
       return NextResponse.json(
@@ -28,12 +29,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch generations with their outputs and user profile
+    // Fetch generations with their outputs and user profile (paginated)
     const generations = await prisma.generation.findMany({
       where: {
         sessionId,
         userId: session.user.id, // Only fetch user's own generations
       },
+      take: Math.min(limit, 500), // Max 500
       select: {
         id: true,
         sessionId: true,
@@ -70,8 +72,9 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: {
-        createdAt: 'asc', // Oldest first, newest at bottom
+        createdAt: 'desc', // Newest first for pagination
       },
+      take: Math.min(limit, 500), // Limit results
     })
 
     // Fetch bookmarks separately for efficiency

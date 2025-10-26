@@ -134,6 +134,15 @@ export function useGenerateMutation() {
           })
         }
       )
+      
+      // Log generations after update to debug restart issue
+      setTimeout(() => {
+        const currentData = queryClient.getQueryData<GenerationWithOutputs[]>(['generations', variables.sessionId])
+        console.log('After mutation update:', {
+          count: currentData?.length || 0,
+          statuses: currentData?.map(g => ({ id: g.id.substring(0, 20), status: g.status }))
+        })
+      }, 50)
     },
     onError: (error: Error, variables, context) => {
       console.error('Generation failed:', error)

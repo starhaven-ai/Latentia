@@ -35,7 +35,6 @@ export async function GET(request: NextRequest) {
         sessionId,
         userId: session.user.id, // Only fetch user's own generations
       },
-      take: Math.min(limit, 500), // Max 500
       select: {
         id: true,
         sessionId: true,

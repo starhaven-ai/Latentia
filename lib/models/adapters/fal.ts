@@ -164,8 +164,8 @@ export class FalAdapter extends BaseModelAdapter {
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 5000)) // Wait 5 seconds
 
-        // Correct endpoint: includes model path in the URL
-        const statusUrl = `https://queue.fal.run/${endpoint}/requests/${requestId}/status`
+        // Status endpoint should NOT include /status in the path
+        const statusUrl = `https://queue.fal.run/${endpoint}/requests/${requestId}`
         console.log(`Checking status at: ${statusUrl}`)
         
         const statusResponse = await fetch(statusUrl, {

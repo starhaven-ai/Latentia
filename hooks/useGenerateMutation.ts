@@ -71,83 +71,73 @@ export function useGenerateMutation() {
         outputs: [],
       }
 
-      // Add pending generation to cache (at the end)
+      // Add pending generation to cache ONLY if it doesn't already exist
       queryClient.setQueryData<GenerationWithOutputs[]>(
         ['generations', variables.sessionId],
-        (old) => (old ? [...old, optimisticGeneration] : [optimisticGeneration])
+        (old) => {
+          if (!old) return [optimisticGeneration]
+          // Check if this exact optimistic generation already exists
+          const exists = old.some(gen => gen.id === optimisticGeneration.id)
+          if (exists) return old
+          return [...old, optimisticGeneration]
+        }
       )
 
       // Return context with previous state for rollback
       return { previousGenerations, optimisticId: optimisticGeneration.id }
     },
     onSuccess: (data, variables, context) => {
-      // Remove optimistic generation and add real one
+      // Update the specific generation in the cache
       queryClient.setQueryData<GenerationWithOutputs[]>(
         ['generations', variables.sessionId],
         (old) => {
           if (!old) return []
           
-          // Remove the optimistic placeholder
-          const withoutOptimistic = old.filter(gen => gen.id !== context?.optimisticId)
-          
-          // Add the real generation (completed or failed)
-          if (data.status === 'completed' && data.outputs) {
-            const newGeneration: GenerationWithOutputs = {
-              id: data.id,
-              sessionId: variables.sessionId,
-              userId: '',
-              modelId: variables.modelId,
-              prompt: variables.prompt,
-              negativePrompt: variables.negativePrompt,
-              parameters: variables.parameters,
-              status: 'completed',
-              createdAt: new Date(),
-              outputs: data.outputs.map((output, index) => ({
-                id: `${data.id}-${index}`,
-                generationId: data.id,
-                fileUrl: output.url,
-                fileType: 'image',
-                width: output.width,
-                height: output.height,
-                duration: output.duration,
-                isStarred: false,
-                createdAt: new Date(),
-              })),
+          // Find and update the specific optimistic generation
+          return old.map((gen) => {
+            if (gen.id === context?.optimisticId) {
+              // Replace with the real result
+              if (data.status === 'completed' && data.outputs) {
+                return {
+                  ...gen,
+                  id: data.id,
+                  status: 'completed' as const,
+                  outputs: data.outputs.map((output, index) => ({
+                    id: `${data.id}-${index}`,
+                    generationId: data.id,
+                    fileUrl: output.url,
+                    fileType: 'image',
+                    width: output.width,
+                    height: output.height,
+                    duration: output.duration,
+                    isStarred: false,
+                    createdAt: new Date(),
+                  })),
+                }
+              } else if (data.status === 'failed') {
+                return {
+                  ...gen,
+                  id: data.id,
+                  status: 'failed' as const,
+                  parameters: {
+                    ...gen.parameters,
+                    error: data.error,
+                  },
+                }
+              }
             }
-            return [...withoutOptimistic, newGeneration]
-          } else if (data.status === 'failed') {
-            // Keep the generation in the list but mark it as failed
-            const failedGeneration: GenerationWithOutputs = {
-              id: data.id,
-              sessionId: variables.sessionId,
-              userId: '',
-              modelId: variables.modelId,
-              prompt: variables.prompt,
-              negativePrompt: variables.negativePrompt,
-              parameters: {
-                ...variables.parameters,
-                error: data.error,
-              },
-              status: 'failed',
-              createdAt: new Date(),
-              outputs: [],
-            }
-            return [...withoutOptimistic, failedGeneration]
-          }
-          
-          return withoutOptimistic
+            return gen
+          })
         }
       )
 
-      // Refetch to ensure consistency
-      queryClient.invalidateQueries({
-        queryKey: ['generations', variables.sessionId],
-      })
+      // Don't invalidate immediately - let individual generations complete naturally
+      // This allows parallel generations to coexist without interfering
     },
     onError: (error: Error, variables, context) => {
       console.error('Generation failed:', error)
       
-      // Instead of rolling back, update the optimistic generation to show the error
+      // Update the optimistic generation to show the error
       queryClient.setQueryData<GenerationWithOutputs[]>(
         ['generations', variables.sessionId],
         (old) => {

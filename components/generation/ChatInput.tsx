@@ -126,6 +126,11 @@ export function ChatInput({
       setImagePreviewUrl(previewUrl)
       setReferenceImage(file)
     }
+    
+    // Reset input value so the same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   const handleBrowseSelect = async (imageUrl: string) => {
@@ -142,6 +147,11 @@ export function ChatInput({
       // Set the imageUrl as preview (it's already a valid URL)
       setImagePreviewUrl(imageUrl)
       setReferenceImage(file)
+      
+      // Reset file input so a new image can be selected
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     } catch (error) {
       console.error('Error loading image from URL:', error)
     }
@@ -203,6 +213,11 @@ export function ChatInput({
                 }
                 setImagePreviewUrl(null)
                 setReferenceImage(null)
+                
+                // Reset file input so a new image can be selected
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = ''
+                }
               }}
               className="absolute -top-2 -right-2 bg-background border border-border rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-destructive hover:text-destructive-foreground"
               title="Remove reference image"

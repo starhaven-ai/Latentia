@@ -11,6 +11,16 @@ import { ImageLightbox } from './ImageLightbox'
 import { VideoSessionSelector } from './VideoSessionSelector'
 import { getAllModels } from '@/lib/models/registry'
 
+// Safe date formatter
+const formatDate = (date: Date | string | undefined): string => {
+  if (!date) return 'Unknown date'
+  try {
+    return new Date(date).toLocaleDateString()
+  } catch (error) {
+    return 'Invalid date'
+  }
+}
+
 interface GenerationGalleryProps {
   generations: GenerationWithOutputs[]
   sessionId: string | null
@@ -251,7 +261,7 @@ export function GenerationGallery({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground/70">Generated:</span>
-                      <span className="font-medium">{new Date(generation.createdAt).toLocaleDateString()}</span>
+                      <span className="font-medium">{formatDate(generation.createdAt)}</span>
                     </div>
                   </div>
                 </div>
@@ -589,7 +599,7 @@ export function GenerationGallery({
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground/70">Generated:</span>
-                    <span className="font-medium">{new Date(procGen.createdAt).toLocaleDateString()}</span>
+                    <span className="font-medium">{formatDate(procGen.createdAt)}</span>
                   </div>
                 </div>
               </div>

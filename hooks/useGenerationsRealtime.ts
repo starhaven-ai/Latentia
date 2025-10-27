@@ -32,9 +32,13 @@ export function useGenerationsRealtime(sessionId: string | null, userId: string 
           const newData = payload.new as any
           console.log('🔴 Generation change detected:', payload.eventType, newData?.id)
 
-          // Invalidate and refetch generations to get the latest data with outputs
+          // Invalidate both old and new query keys for generations
           queryClient.invalidateQueries({ 
             queryKey: ['generations', sessionId],
+            refetchType: 'active'
+          })
+          queryClient.invalidateQueries({ 
+            queryKey: ['generations', 'infinite', sessionId],
             refetchType: 'active'
           })
         }
@@ -60,6 +64,10 @@ export function useGenerationsRealtime(sessionId: string | null, userId: string 
           // We'll refetch to be safe
           queryClient.invalidateQueries({ 
             queryKey: ['generations', sessionId],
+            refetchType: 'active'
+          })
+          queryClient.invalidateQueries({ 
+            queryKey: ['generations', 'infinite', sessionId],
             refetchType: 'active'
           })
         }

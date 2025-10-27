@@ -535,7 +535,6 @@ export function GenerationGallery({
         })}
 
         {/* Show processing generations */}
-        {console.log('🔵 Rendering processing generations:', processingGenerations.length)}
         {(processingGenerations || []).map((procGen) => {
           const allModels = getAllModels()
           const modelConfig = allModels.find(m => m.id === procGen.modelId)

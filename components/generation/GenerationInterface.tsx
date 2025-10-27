@@ -72,7 +72,10 @@ export function GenerationInterface({
   // Flatten all pages into a single array
   const generations = infiniteData?.pages.flatMap((page) => page.data) || []
   
-  console.log('🟢 Generations from infinite query:', generations.length, generations.map(g => ({ id: g.id, status: g.status })))
+  console.log('🟢 Generations from infinite query:', generations.length)
+  if (generations.length > 0) {
+    console.log('🟢 Sample generation:', { id: generations[0].id, status: generations[0].status, outputs: (generations[0].outputs || []).length })
+  }
   
   // Subscribe to real-time updates
   useGenerationsRealtime(session?.id || null, userId)

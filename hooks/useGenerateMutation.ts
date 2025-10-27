@@ -1,5 +1,11 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient, InfiniteData } from '@tanstack/react-query'
 import type { GenerationWithOutputs } from '@/types/generation'
+
+interface PaginatedGenerationsResponse {
+  data: GenerationWithOutputs[]
+  nextCursor?: string
+  hasMore: boolean
+}
 
 interface GenerateParams {
   sessionId: string
@@ -101,71 +107,114 @@ export function useGenerateMutation() {
           return [...old, optimisticGeneration]
         }
       )
+      
+      // Also update the infinite query cache
+      queryClient.setQueryData(
+        ['generations', 'infinite', variables.sessionId],
+        (old: InfiniteData<PaginatedGenerationsResponse> | undefined) => {
+          if (!old || !old.pages.length) return undefined
+          
+          return {
+            ...old,
+            pages: old.pages.map((page, pageIndex) => {
+              if (pageIndex === 0) {
+                const exists = page.data.some(gen => gen.id === optimisticGeneration.id)
+                if (exists) return page
+                return { ...page, data: [optimisticGeneration, ...page.data] }
+              }
+              return page
+            }),
+          }
+        }
+      )
 
       // Return context with previous state for rollback
       return { previousGenerations, optimisticId }
     },
     onSuccess: (data, variables, context) => {
-      // Update the optimistic generation with real ID and status
+      console.log(`[${data.id}] Generation mutation success - status: ${data.status}`)
+      
+      // Helper to create the updated generation object
+      const createUpdatedGeneration = (original: GenerationWithOutputs): GenerationWithOutputs => {
+        if (data.status === 'processing') {
+          return {
+            ...original,
+            id: data.id,
+            status: 'processing' as const,
+          }
+        } else if (data.status === 'completed' && data.outputs) {
+          return {
+            ...original,
+            id: data.id,
+            status: 'completed' as const,
+            outputs: data.outputs.map((output, index) => ({
+              id: `${data.id}-${index}`,
+              generationId: data.id,
+              fileUrl: output.url,
+              fileType: 'image' as const,
+              width: output.width,
+              height: output.height,
+              duration: output.duration,
+              isStarred: false,
+              createdAt: new Date(),
+            })),
+          }
+        } else if (data.status === 'failed') {
+          return {
+            ...original,
+            id: data.id,
+            status: 'failed' as const,
+            parameters: {
+              ...original.parameters,
+              error: data.error,
+            },
+          }
+        }
+        return original
+      }
+      
+      // Update the regular generations cache
       queryClient.setQueryData<GenerationWithOutputs[]>(
         ['generations', variables.sessionId],
         (old) => {
           if (!old) return []
-          
           return old.map((gen) => {
             if (gen.id === context?.optimisticId) {
               console.log('✓ Replacing optimistic generation:', context.optimisticId, '→', data.id)
-              
-              // Handle different statuses from async API
-              if (data.status === 'processing') {
-                // Generation is processing in background - update ID and keep status
-                return {
-                  ...gen,
-                  id: data.id,
-                  status: 'processing' as const,
-                }
-              } else if (data.status === 'completed' && data.outputs) {
-                // Synchronous completion (shouldn't happen with new API, but handle it)
-                return {
-                  ...gen,
-                  id: data.id,
-                  status: 'completed' as const,
-                  outputs: data.outputs.map((output, index) => ({
-                    id: `${data.id}-${index}`,
-                    generationId: data.id,
-                    fileUrl: output.url,
-                    fileType: 'image' as const,
-                    width: output.width,
-                    height: output.height,
-                    duration: output.duration,
-                    isStarred: false,
-                    createdAt: new Date(),
-                  })),
-                }
-              } else if (data.status === 'failed') {
-                return {
-                  ...gen,
-                  id: data.id,
-                  status: 'failed' as const,
-                  parameters: {
-                    ...gen.parameters,
-                    error: data.error,
-                  },
-                }
-              }
+              return createUpdatedGeneration(gen)
             }
             return gen
           })
         }
       )
       
-      // Trigger immediate refetch to start polling for processing generations
+      // Update the infinite generations cache
+      queryClient.setQueryData(
+        ['generations', 'infinite', variables.sessionId],
+        (old: InfiniteData<PaginatedGenerationsResponse> | undefined) => {
+          if (!old) return undefined
+          
+          return {
+            ...old,
+            pages: old.pages.map((page) => {
+              const foundIndex = page.data.findIndex(gen => gen.id === context?.optimisticId)
+              if (foundIndex !== -1) {
+                console.log('✓ Replacing optimistic generation in infinite cache:', context.optimisticId, '→', data.id)
+                const newData = [...page.data]
+                newData[foundIndex] = createUpdatedGeneration(newData[foundIndex])
+                return { ...page, data: newData }
+              }
+              return page
+            }),
+          }
+        }
+      )
+      
+      // Trigger refetch to get latest data
       queryClient.invalidateQueries({ 
-        queryKey: ['generations', variables.sessionId],
+        queryKey: ['generations', 'infinite', variables.sessionId],
         refetchType: 'active'
       })
-      
-      console.log(`[${data.id}] Generation mutation success - status: ${data.status}`)
     },
     onError: (error: Error, variables, context) => {
       console.error('Generation failed:', error)

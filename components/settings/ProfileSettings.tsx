@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useToast } from '@/components/ui/use-toast'
 import { User } from 'lucide-react'
@@ -29,7 +28,6 @@ export function ProfileSettings({ isOpen, onClose }: ProfileSettingsProps) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [username, setUsername] = useState('')
-  const [role, setRole] = useState('studio')
 
   useEffect(() => {
     if (isOpen) {
@@ -46,7 +44,6 @@ export function ProfileSettings({ isOpen, onClose }: ProfileSettingsProps) {
         setProfile(data)
         setDisplayName(data.displayName || '')
         setUsername(data.username || '')
-        setRole(data.role || 'studio')
       }
     } catch (error) {
       console.error('Error fetching profile:', error)
@@ -78,7 +75,6 @@ export function ProfileSettings({ isOpen, onClose }: ProfileSettingsProps) {
         body: JSON.stringify({
           displayName: displayName.trim(),
           username: username.trim() || null,
-          role,
         }),
       })
 
@@ -113,7 +109,7 @@ export function ProfileSettings({ isOpen, onClose }: ProfileSettingsProps) {
             Profile Settings
           </DialogTitle>
           <DialogDescription>
-            Set your display name and role for collaboration features.
+            Update your display name and username.
           </DialogDescription>
         </DialogHeader>
 
@@ -150,24 +146,6 @@ export function ProfileSettings({ isOpen, onClose }: ProfileSettingsProps) {
               />
               <p className="text-xs text-muted-foreground">
                 Optional unique identifier
-              </p>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="role">Role</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger id="role" className="text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="studio">Studio Team</SelectItem>
-                  <SelectItem value="art_director">Art Director</SelectItem>
-                  <SelectItem value="creative_director">Creative Director</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Your role in the team
               </p>
             </div>
           </div>

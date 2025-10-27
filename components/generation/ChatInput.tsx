@@ -178,6 +178,7 @@ export function ChatInput({
           <PromptEnhancementButton
             prompt={prompt}
             modelId={selectedModel}
+            referenceImage={referenceImage}
             onEnhancementComplete={(enhancedPrompt) => {
               setIsEnhancing(true)
               onPromptChange(enhancedPrompt)

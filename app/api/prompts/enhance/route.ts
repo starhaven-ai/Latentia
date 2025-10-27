@@ -67,15 +67,78 @@ Return ONLY the enhanced prompt text. Nothing else.`
       apiKey: process.env.ANTHROPIC_API_KEY,
     })
 
-    // Build the enhancement request
+    // Build the enhancement request with model-specific guidance
     let requestContent: string
+    
     if (referenceImage) {
-      requestContent = `User's prompt: "${prompt}"
-User has provided a reference image for editing.
-Please enhance this prompt following image editing best practices.`
+      // Image editing mode - get model-specific guidance
+      if (modelId === 'gemini-nano-banana') {
+        requestContent = `User wants to edit an image. Their instruction: "${prompt}"
+Reference image will be provided.
+
+IMPORTANT: For Nano Banana image editing:
+- Describe ONLY the specific changes to make
+- Use precise, action-oriented language
+- Reference the provided image as "the provided image" or "this image"
+- Focus on what to add, remove, or modify
+- Be concise and specific about placement and style
+
+Enhance this edit instruction to be clearer and more effective. Return ONLY the enhanced edit instruction.`
+      } else if (modelId === 'fal-seedream-v4' || modelId === 'replicate-seedream-4') {
+        requestContent = `User wants to edit an image. Their instruction: "${prompt}"
+Reference image will be provided.
+
+IMPORTANT: For Seedream 4 image editing:
+- Describe the desired transformation artistically
+- Focus on scene composition and mood
+- Use conceptual language about spatial relationships
+- Reference lighting and atmosphere
+- Maintain coherence with the provided image
+
+Enhance this edit instruction to be clearer and more effective. Return ONLY the enhanced edit instruction.`
+      } else {
+        // Generic image editing
+        requestContent = `User wants to edit an image. Their instruction: "${prompt}"
+Reference image will be provided.
+
+Enhance this edit instruction to be clearer and more effective. Return ONLY the enhanced edit instruction.`
+      }
     } else {
+      // Text-to-image mode
       requestContent = `User's prompt: "${prompt}"
-Please enhance this text-to-image prompt while respecting the user's creative vision.`
+Please enhance this text-to-image prompt while respecting the user's creative vision.
+
+Guidelines:
+- Add helpful details (lighting, camera, framing) if appropriate
+- Clarify ambiguous elements
+- Keep the original tone and style
+- Don't add unnecessary complexity
+
+Return ONLY the enhanced prompt text. Nothing else.`
+    }
+
+    // Prepare message content
+    const messageContent: any[] = []
+    
+    if (referenceImage) {
+      // Add image for analysis
+      messageContent.push({
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: 'image/png',
+          data: referenceImage.split(',')[1], // Remove data URL prefix
+        },
+      })
+      messageContent.push({
+        type: 'text',
+        text: requestContent,
+      })
+    } else {
+      messageContent.push({
+        type: 'text',
+        text: requestContent,
+      })
     }
 
     const message = await anthropic.messages.create({
@@ -86,7 +149,7 @@ Please enhance this text-to-image prompt while respecting the user's creative vi
       messages: [
         {
           role: 'user',
-          content: requestContent,
+          content: messageContent,
         },
       ],
     })

@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/use-toast'
 interface PromptEnhancementButtonProps {
   prompt: string
   modelId: string
+  referenceImage?: string | File | null
   onEnhancementComplete: (enhancedPrompt: string) => void
   disabled?: boolean
 }
@@ -15,6 +16,7 @@ interface PromptEnhancementButtonProps {
 export function PromptEnhancementButton({
   prompt,
   modelId,
+  referenceImage,
   onEnhancementComplete,
   disabled = false,
 }: PromptEnhancementButtonProps) {
@@ -29,6 +31,21 @@ export function PromptEnhancementButton({
     setEnhancing(true)
     
     try {
+      // Convert reference image to base64 if it's a File
+      let imageData = null
+      if (referenceImage) {
+        if (referenceImage instanceof File) {
+          imageData = await new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(reader.result as string)
+            reader.onerror = () => resolve('')
+            reader.readAsDataURL(referenceImage)
+          })
+        } else if (typeof referenceImage === 'string') {
+          imageData = referenceImage
+        }
+      }
+      
       const response = await fetch('/api/prompts/enhance', {
         method: 'POST',
         headers: {
@@ -37,6 +54,7 @@ export function PromptEnhancementButton({
         body: JSON.stringify({
           prompt,
           modelId,
+          referenceImage: imageData,
         }),
       })
 

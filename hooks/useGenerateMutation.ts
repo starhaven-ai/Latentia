@@ -36,11 +36,24 @@ async function generateImage(params: GenerateParams): Promise<GenerateResponse> 
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Generation failed')
+    let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+    try {
+      const errorData = await response.json()
+      errorMessage = errorData.error || errorData.message || errorMessage
+    } catch {
+      // If response is not JSON, try to get text
+      try {
+        const text = await response.text()
+        errorMessage = text || errorMessage
+      } catch {
+        // Last resort: use status
+      }
+    }
+    throw new Error(errorMessage)
   }
 
-  return response.json()
+  const data = await response.json()
+  return data
 }
 
 export function useGenerateMutation() {

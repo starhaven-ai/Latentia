@@ -45,6 +45,7 @@ export function ChatInput({
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
   const [browseModalOpen, setBrowseModalOpen] = useState(false)
   const [stylePopoverOpen, setStylePopoverOpen] = useState(false)
+  const [isEnhancing, setIsEnhancing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   // Get model-specific capabilities
@@ -168,12 +169,20 @@ export function ChatInput({
             value={prompt}
             onChange={(e) => onPromptChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="resize-none min-h-[52px] max-h-[104px] px-4 py-3 text-sm rounded-lg bg-muted/50 border border-border focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary transition-all pr-10"
+            className={`resize-none min-h-[52px] max-h-[104px] px-4 py-3 text-sm rounded-lg bg-muted/50 border transition-all pr-10 ${
+              isEnhancing 
+                ? 'border-primary/50 bg-primary/5 shadow-lg shadow-primary/10' 
+                : 'border-border focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary'
+            }`}
           />
           <PromptEnhancementButton
             prompt={prompt}
             modelId={selectedModel}
-            onEnhancementComplete={(enhancedPrompt) => onPromptChange(enhancedPrompt)}
+            onEnhancementComplete={(enhancedPrompt) => {
+              setIsEnhancing(true)
+              onPromptChange(enhancedPrompt)
+              setTimeout(() => setIsEnhancing(false), 1500)
+            }}
             disabled={isGenerating}
           />
         </div>

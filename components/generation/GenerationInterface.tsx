@@ -84,11 +84,52 @@ export function GenerationInterface({
 
     try {
       // Convert referenceImage File to base64 data URL if provided
+      // COMPRESS to prevent HTTP 413 errors (Vercel limit: 4.5MB)
       let referenceImageData: string | undefined
       if (referenceImage) {
         referenceImageData = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader()
-          reader.onload = () => resolve(reader.result as string)
+          reader.onload = () => {
+            const dataUrl = reader.result as string
+            
+            // Check size and compress if necessary
+            const img = new Image()
+            img.onload = () => {
+              const canvas = document.createElement('canvas')
+              const ctx = canvas.getContext('2d')
+              
+              if (!ctx) {
+                resolve(dataUrl) // Fallback to original if canvas not supported
+                return
+              }
+              
+              // Calculate new dimensions (max 2048px to keep size reasonable)
+              let { width, height } = img
+              if (width > 2048 || height > 2048) {
+                const ratio = 2048 / Math.max(width, height)
+                width = Math.floor(width * ratio)
+                height = Math.floor(height * ratio)
+              }
+              
+              canvas.width = width
+              canvas.height = height
+              ctx.drawImage(img, 0, 0, width, height)
+              
+              // Convert to JPEG at 85% quality for better compression
+              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85)
+              
+              // Final size check - reject if still too large
+              const sizeInMB = compressedDataUrl.length / (1024 * 1024)
+              if (sizeInMB > 3.5) {
+                console.warn('Compressed image still too large, using original')
+                resolve(dataUrl)
+              } else {
+                resolve(compressedDataUrl)
+              }
+            }
+            img.onerror = () => resolve(dataUrl) // Fallback on error
+            img.src = dataUrl
+          }
           reader.onerror = reject
           reader.readAsDataURL(referenceImage)
         })

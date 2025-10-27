@@ -186,9 +186,9 @@ model PromptEnhancementPrompt {
   id           String   @id @default(uuid()) @db.Uuid
   name         String
   description  String?  @db.Text
-  systemPrompt String   @map("system_prompt") @db.Text
+  systemPrompt String   @db.Text
   is_active    Boolean  @default(true)
-  modelIds     String[] @map("model_ids")
+  modelIds     String[]
   createdBy    String   @db.Uuid
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")

@@ -226,9 +226,16 @@ export class ReplicateAdapter extends BaseModelAdapter {
       })
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Replicate API error:', errorText)
-        throw new Error(`Replicate API error: ${errorText}`)
+        let errorMessage = 'Replicate API request failed'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.detail || errorData.error || JSON.stringify(errorData)
+        } catch {
+          const errorText = await response.text()
+          errorMessage = errorText || `HTTP ${response.status}: ${response.statusText}`
+        }
+        console.error('Replicate API error:', errorMessage)
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()
@@ -251,7 +258,15 @@ export class ReplicateAdapter extends BaseModelAdapter {
         })
 
         if (!statusResponse.ok) {
-          throw new Error(`Failed to check prediction status: ${statusResponse.statusText}`)
+          let errorMessage = `Failed to check prediction status (${statusResponse.status})`
+          try {
+            const errorData = await statusResponse.json()
+            errorMessage = errorData.detail || errorData.error || errorMessage
+          } catch {
+            // If response is not JSON, use status text
+            errorMessage = `${statusResponse.status}: ${statusResponse.statusText}`
+          }
+          throw new Error(errorMessage)
         }
 
         const statusData = await statusResponse.json()

@@ -19,7 +19,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('sessionId')
     const limit = parseInt(searchParams.get('limit') || '20') // Default to 20 for performance
-    const cursor = searchParams.get('cursor') // Cursor for pagination (generation ID)
 
     if (!sessionId) {
       return NextResponse.json(
@@ -28,22 +27,12 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Build where clause with cursor for pagination
-    const where: any = {
-      sessionId,
-      userId: session.user.id, // Only fetch user's own generations
-    }
-
-    // If cursor is provided, fetch generations older than the cursor
-    if (cursor) {
-      where.id = {
-        lt: cursor, // Less than cursor (older generations)
-      }
-    }
-
-    // Fetch generations with their outputs and user profile (paginated)
+    // Fetch generations with their outputs and user profile
     const generations = await prisma.generation.findMany({
-      where,
+      where: {
+        sessionId,
+        userId: session.user.id, // Only fetch user's own generations
+      },
       select: {
         id: true,
         sessionId: true,
@@ -79,18 +68,13 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: {
-        createdAt: 'desc', // Newest first for pagination
+        createdAt: 'desc', // Newest first
       },
-      take: Math.min(limit + 1, 51), // Fetch one extra to determine if there are more results (max 50)
+      take: Math.min(limit, 50), // Max 50 generations for performance
     })
 
-    // Check if there are more results
-    const hasMore = generations.length > limit
-    const items = hasMore ? generations.slice(0, limit) : generations
-    const nextCursor = hasMore ? items[items.length - 1].id : null
-
     // Fetch bookmarks separately for efficiency
-    const outputIds = items.flatMap((g: any) => g.outputs.map((o: any) => o.id))
+    const outputIds = generations.flatMap((g: any) => g.outputs.map((o: any) => o.id))
     const bookmarks = outputIds.length > 0
       ? await (prisma as any).bookmark.findMany({
           where: {
@@ -106,7 +90,7 @@ export async function GET(request: NextRequest) {
     const bookmarkedOutputIds = new Set(bookmarks.map((b: any) => b.outputId))
 
     // Add isBookmarked field to outputs
-    const generationsWithBookmarks = items.map((generation: any) => ({
+    const generationsWithBookmarks = generations.map((generation: any) => ({
       ...generation,
       outputs: generation.outputs.map((output: any) => ({
         ...output,
@@ -114,15 +98,7 @@ export async function GET(request: NextRequest) {
       })),
     }))
 
-    // Return data with pagination metadata
-    return NextResponse.json({
-      data: generationsWithBookmarks,
-      pagination: {
-        hasMore,
-        nextCursor,
-        limit,
-      },
-    })
+    return NextResponse.json(generationsWithBookmarks)
   } catch (error) {
     console.error('Error fetching generations:', error)
     return NextResponse.json(

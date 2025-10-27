@@ -1,50 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
 import type { GenerationWithOutputs } from '@/types/generation'
 
-interface GenerationsResponse {
-  data: GenerationWithOutputs[]
-  pagination: {
-    hasMore: boolean
-    nextCursor: string | null
-    limit: number
-  }
-}
-
-async function fetchGenerations(sessionId: string, limit: number = 20, cursor?: string): Promise<GenerationsResponse> {
-  const params = new URLSearchParams({
-    sessionId,
-    limit: limit.toString(),
-  })
-  
-  if (cursor) {
-    params.append('cursor', cursor)
-  }
-  
-  const response = await fetch(`/api/generations?${params}`)
+async function fetchGenerations(sessionId: string, limit: number = 20): Promise<GenerationWithOutputs[]> {
+  const response = await fetch(`/api/generations?sessionId=${sessionId}&limit=${limit}`)
   
   if (!response.ok) {
     throw new Error('Failed to fetch generations')
   }
   
-  const result = await response.json()
-  
-  // Handle backward compatibility - if API returns array directly, wrap it
-  if (Array.isArray(result)) {
-    return {
-      data: result,
-      pagination: {
-        hasMore: false,
-        nextCursor: null,
-        limit,
-      },
-    }
-  }
-  
-  return result
+  return response.json()
 }
 
 export function useGenerations(sessionId: string | null, limit: number = 20) {
-  const query = useQuery({
+  return useQuery({
     queryKey: ['generations', sessionId],
     queryFn: () => fetchGenerations(sessionId!, limit),
     enabled: !!sessionId, // Only run if sessionId exists
@@ -54,11 +22,11 @@ export function useGenerations(sessionId: string | null, limit: number = 20) {
     refetchOnWindowFocus: false, // Don't refetch on window focus
     refetchInterval: (query) => {
       // Poll more frequently if there are processing generations
-      const response = query.state.data as GenerationsResponse | undefined
-      if (!response?.data) return false
+      const data = query.state.data as GenerationWithOutputs[] | undefined
+      if (!data) return false
       
       // Check if any generations are processing
-      const processingGenerations = response.data.filter(gen => gen.status === 'processing')
+      const processingGenerations = data.filter(gen => gen.status === 'processing')
       const hasProcessingGenerations = processingGenerations.length > 0
       
       if (hasProcessingGenerations) {
@@ -73,9 +41,6 @@ export function useGenerations(sessionId: string | null, limit: number = 20) {
       
       return false
     },
-    select: (response) => response.data, // Extract just the data array for easier consumption
   })
-  
-  return query
 }
 

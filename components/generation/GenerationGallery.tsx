@@ -214,7 +214,7 @@ export function GenerationGallery({
 
   // Check if this is a video generation
   const isVideoGeneration = (gen: GenerationWithOutputs) => {
-    return gen.outputs.some(output => output.fileType === 'video')
+    return gen.outputs?.some(output => output.fileType === 'video') ?? false
   }
 
   return (

@@ -153,7 +153,7 @@ export function AnalyticsSettings() {
             More Analytics Coming Soon
           </CardTitle>
           <CardDescription>
-            We're working on adding more detailed analytics including:
+            We&apos;re working on adding more detailed analytics including:
           </CardDescription>
         </CardHeader>
         <CardContent>

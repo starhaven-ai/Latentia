@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Image from 'next/image'
-import { Download, RotateCcw, Info, Copy, Bookmark, Check, Video, Wand2, Ratio } from 'lucide-react'
+import { Download, RotateCcw, Info, Copy, Bookmark, Check, Video, Wand2, Ratio, X } from 'lucide-react'
 import type { GenerationWithOutputs } from '@/types/generation'
 import type { Session } from '@/types/project'
 import { useUpdateOutputMutation } from '@/hooks/useOutputMutations'
@@ -111,6 +111,35 @@ export function GenerationGallery({
       toast({
         title: "Error",
         description: "Failed to update approval status",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleCancelGeneration = async (generationId: string) => {
+    if (!sessionId) return
+    
+    try {
+      const response = await fetch(`/api/generations/${generationId}/cancel`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!response.ok) throw new Error('Failed to cancel generation')
+      
+      toast({
+        title: "Generation cancelled",
+        description: "The generation has been stopped",
+        variant: "default",
+      })
+      
+      // Invalidate queries to refetch
+      queryClient.invalidateQueries({ queryKey: ['generations', sessionId] })
+    } catch (error) {
+      console.error('Error cancelling generation:', error)
+      toast({
+        title: "Error",
+        description: "Failed to cancel generation",
         variant: "destructive",
       })
     }
@@ -509,7 +538,29 @@ export function GenerationGallery({
           return (
             <div key={procGen.id} className="flex gap-6 items-start mb-6">
               {/* Left Side: Prompt and metadata */}
-              <div className="w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 border-primary/30 flex flex-col">
+              <div className={`w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border flex flex-col relative group ${
+                procGen.status === 'cancelled' 
+                  ? 'border-destructive/50' 
+                  : 'border-border/50 border-primary/30'
+              }`}>
+                {/* Cancel button - top left, only visible on hover when processing */}
+                {procGen.status === 'processing' && (
+                  <button
+                    onClick={() => handleCancelGeneration(procGen.id)}
+                    className="absolute top-2 left-2 p-1.5 bg-destructive/90 hover:bg-destructive rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    title="Cancel generation"
+                  >
+                    <X className="h-4 w-4 text-white" />
+                  </button>
+                )}
+                
+                {/* Cancelled badge */}
+                {procGen.status === 'cancelled' && (
+                  <div className="absolute top-2 left-2 px-2 py-1 bg-destructive/20 text-destructive text-xs font-medium rounded">
+                    Cancelled
+                  </div>
+                )}
+                
                 <div className="flex-1 mb-4 scrollable-prompt">
                   <p className="text-base font-normal leading-relaxed text-foreground/90">
                     {procGen.prompt}

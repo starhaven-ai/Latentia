@@ -6,7 +6,7 @@ export interface Generation {
   prompt: string
   negativePrompt?: string
   parameters: Record<string, any>
-  status: 'queued' | 'processing' | 'completed' | 'failed'
+  status: 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled'
   createdAt: Date
 }
 

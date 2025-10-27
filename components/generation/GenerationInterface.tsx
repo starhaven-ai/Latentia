@@ -218,7 +218,9 @@ export function GenerationInterface({
   const videoSessions = allSessions.filter(s => s.type === 'video')
   
   // Get all processing generations (in-progress)
-  const processingGenerations = generations.filter(g => g.status === 'processing')
+  const processingGenerations = generations.filter(g => 
+    g.status === 'processing' || g.status === 'cancelled'
+  )
   
   // Get model name for pending generation display
   const allModels = getAllModels()

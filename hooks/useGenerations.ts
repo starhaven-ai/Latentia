@@ -16,8 +16,8 @@ export function useGenerations(sessionId: string | null, limit: number = 20) {
     queryKey: ['generations', sessionId],
     queryFn: () => fetchGenerations(sessionId!, limit),
     enabled: !!sessionId, // Only run if sessionId exists
-    staleTime: 10000, // Cache for 10 seconds - reduce to see updates faster
-    gcTime: 300000, // Keep in cache for 5 minutes
+    staleTime: 10 * 1000, // 10 seconds - generations update frequently during processing
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     refetchOnMount: 'always', // Always refetch to get latest status
     refetchOnWindowFocus: false, // Don't refetch on window focus
     refetchInterval: (query) => {

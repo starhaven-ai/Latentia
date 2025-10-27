@@ -56,15 +56,15 @@ export default function ProjectsPage() {
 
       setCurrentUserId(user.id)
 
-      // Fetch projects from API
-      console.log('Fetching projects from API...')
-      const response = await fetch('/api/projects')
+      // Use optimized endpoint with thumbnails
+      console.log('Fetching projects with thumbnails from API...')
+      const response = await fetch('/api/projects/with-thumbnails')
       
       console.log('API response status:', response.status)
       
       if (response.ok) {
         const fetchedProjects = await response.json()
-        console.log('Fetched projects:', fetchedProjects)
+        console.log('Fetched projects with thumbnails:', fetchedProjects)
         
         // Parse dates from strings to Date objects
         const parsedProjects = fetchedProjects.map((p: any) => ({

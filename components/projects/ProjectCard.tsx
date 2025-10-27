@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Lock, Users, Globe, User, Pencil, Check } from 'lucide-react'
+import { Lock, Users, Globe, User, Pencil, Check, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/use-toast'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import type { Project } from '@/types/project'
 
 interface ProjectCardProps {
@@ -20,6 +21,8 @@ export function ProjectCard({ project, currentUserId, onProjectUpdate }: Project
   const [isEditingName, setIsEditingName] = useState(false)
   const [editedName, setEditedName] = useState(project.name)
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const isOwner = currentUserId && project.ownerId === currentUserId
 
@@ -151,6 +154,42 @@ export function ProjectCard({ project, currentUserId, onProjectUpdate }: Project
     }
   }
 
+  const handleDeleteStart = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setShowDeleteDialog(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) throw new Error('Failed to delete project')
+
+      toast({
+        title: "Project deleted",
+        description: "Project and all its contents have been permanently deleted",
+        variant: "default",
+      })
+
+      // Navigate back to projects page
+      router.push('/projects')
+      onProjectUpdate?.()
+    } catch (error) {
+      console.error('Error deleting project:', error)
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete project. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteDialog(false)
+    }
+  }
+
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-US', {
       month: 'short',
@@ -264,13 +303,22 @@ export function ProjectCard({ project, currentUserId, onProjectUpdate }: Project
               {project.name}
             </h3>
             {isOwner && (
-              <button
-                onClick={handleEditName}
-                className="opacity-0 group-hover/title:opacity-100 p-1 hover:bg-muted rounded transition-all"
-                title="Rename project"
-              >
-                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-              </button>
+              <>
+                <button
+                  onClick={handleEditName}
+                  className="opacity-0 group-hover/title:opacity-100 p-1 hover:bg-muted rounded transition-all"
+                  title="Rename project"
+                >
+                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+                <button
+                  onClick={handleDeleteStart}
+                  className="opacity-0 group-hover/title:opacity-100 p-1 hover:bg-destructive/20 rounded transition-all"
+                  title="Delete project"
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                </button>
+              </>
             )}
           </div>
         )}
@@ -286,6 +334,18 @@ export function ProjectCard({ project, currentUserId, onProjectUpdate }: Project
           <span>{formatDate(project.updatedAt)}</span>
         </div>
       </CardFooter>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Project?"
+        description={`⚠️ WARNING: You are about to delete "${project.name}" and ALL of its contents, including all sessions, generations, and images. This action is PERMANENT and CANNOT be undone. Are you absolutely sure?`}
+        confirmText={isDeleting ? "Deleting..." : "Delete Forever"}
+        cancelText="Cancel"
+        variant="destructive"
+      />
     </Card>
   )
 }

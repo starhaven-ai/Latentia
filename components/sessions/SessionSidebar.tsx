@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Image, Video, Pencil, Check, X, Lock, Globe } from 'lucide-react'
+import { Plus, Image, Video, Pencil, Check, X, Lock, Globe, Trash2 } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { useQueryClient } from '@tanstack/react-query'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import type { Session } from '@/types/project'
 
 interface SessionSidebarProps {
@@ -31,6 +32,8 @@ export function SessionSidebar({
   const queryClient = useQueryClient()
   const [renamingSessionId, setRenamingSessionId] = useState<string | null>(null)
   const [newSessionName, setNewSessionName] = useState('')
+  const [deletingSession, setDeletingSession] = useState<Session | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   
   const filteredSessions = sessions.filter((s) => s.type === generationType)
   const isOwner = currentUserId === projectOwnerId
@@ -127,6 +130,45 @@ export function SessionSidebar({
         description: "Failed to update session privacy",
         variant: "destructive",
       })
+    }
+  }
+
+  const handleDeleteStart = (session: Session, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setDeletingSession(session)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingSession) return
+    
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/sessions/${deletingSession.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) throw new Error('Failed to delete session')
+
+      toast({
+        title: "Session deleted",
+        description: "Session and all its contents have been permanently deleted",
+        variant: "default",
+      })
+
+      // Invalidate queries to refresh the session list
+      queryClient.invalidateQueries({ queryKey: ['sessions'] })
+      
+      onSessionUpdate?.()
+      setDeletingSession(null)
+    } catch (error) {
+      console.error('Error deleting session:', error)
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete session. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -274,6 +316,15 @@ export function SessionSidebar({
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
+                        <button
+                          onClick={(e) => handleDeleteStart(session, e)}
+                          className={`p-1 rounded hover:bg-destructive/20 opacity-0 group-hover:opacity-100 transition-opacity ${
+                            activeSession?.id === session.id ? 'text-primary-foreground hover:text-destructive' : 'text-muted-foreground hover:text-destructive'
+                          }`}
+                          title="Delete session"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -283,6 +334,18 @@ export function SessionSidebar({
           ))
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!deletingSession}
+        onOpenChange={(open) => !open && setDeletingSession(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Session?"
+        description={`Are you sure you want to delete "${deletingSession?.name}"? This will permanently delete all generations and images in this session. This action cannot be undone.`}
+        confirmText={isDeleting ? "Deleting..." : "Delete Session"}
+        cancelText="Cancel"
+        variant="destructive"
+      />
     </div>
   )
 }

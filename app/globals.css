@@ -109,5 +109,39 @@
     -webkit-text-fill-color: transparent;
     animation: shimmer 1.5s ease-in-out;
   }
+  
+  /* Custom scrollbar for prompt text */
+  .scrollable-prompt {
+    max-height: 100%;
+    overflow-y: auto;
+  }
+  
+  .scrollable-prompt::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollable-prompt::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollable-prompt::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 3px;
+    transition: background 0.2s ease;
+  }
+  
+  .scrollable-prompt:hover::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+  }
+  
+  /* Firefox */
+  .scrollable-prompt {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  
+  .scrollable-prompt:hover {
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
 }
 

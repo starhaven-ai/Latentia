@@ -510,7 +510,7 @@ export function GenerationGallery({
             <div key={procGen.id} className="flex gap-6 items-start mb-6">
               {/* Left Side: Prompt and metadata */}
               <div className="w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 border-primary/30 flex flex-col">
-                <div className="flex-1 mb-4">
+                <div className="flex-1 mb-4 scrollable-prompt">
                   <p className="text-base font-normal leading-relaxed text-foreground/90">
                     {procGen.prompt}
                   </p>

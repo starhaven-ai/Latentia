@@ -247,7 +247,7 @@ export function GenerationGallery({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground/70">Model:</span>
-                      <span className="font-medium">{generation.modelId.replace('gemini-', '').replace('fal-', '')}</span>
+                      <span className="font-medium">{(generation.modelId || 'unknown').replace('gemini-', '').replace('fal-', '')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground/70">Generated:</span>
@@ -410,7 +410,7 @@ export function GenerationGallery({
                   )}
                   <div className="flex items-center gap-2">
                     <Info className="h-3.5 w-3.5" />
-                    <span className="capitalize font-medium">{generation.modelId.replace('gemini-', '').replace('-', ' ')}</span>
+                    <span className="capitalize font-medium">{(generation.modelId || 'unknown').replace('gemini-', '').replace('-', ' ')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground/70">Generated:</span>

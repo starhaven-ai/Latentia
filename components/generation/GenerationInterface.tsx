@@ -72,6 +72,8 @@ export function GenerationInterface({
   // Flatten all pages into a single array
   const generations = infiniteData?.pages.flatMap((page) => page.data) || []
   
+  console.log('🟢 Generations from infinite query:', generations.length, generations.map(g => ({ id: g.id, status: g.status })))
+  
   // Subscribe to real-time updates
   useGenerationsRealtime(session?.id || null, userId)
   
@@ -253,6 +255,8 @@ export function GenerationInterface({
   const processingGenerations = generations.filter(g => 
     g.status === 'processing' || g.status === 'cancelled'
   )
+  
+  console.log('🟡 Processing generations:', processingGenerations.length, processingGenerations.map(g => ({ id: g.id, status: g.status })))
   
   // Get model name for pending generation display
   const allModels = getAllModels()

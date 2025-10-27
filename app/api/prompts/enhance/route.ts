@@ -149,7 +149,9 @@ Return ONLY the enhanced prompt text. Nothing else.`
       messages: [
         {
           role: 'user',
-          content: messageContent,
+          content: messageContent.length > 1 
+            ? messageContent 
+            : messageContent[0],
         },
       ],
     })

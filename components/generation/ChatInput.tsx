@@ -97,12 +97,10 @@ export function ChatInput({
     try {
       await onGenerate(prompt, referenceImage || undefined)
       onPromptChange('')
-      // Clean up preview URL
-      if (imagePreviewUrl) {
-        URL.revokeObjectURL(imagePreviewUrl)
-      }
-      setImagePreviewUrl(null)
-      setReferenceImage(null)
+      // DON'T clear referenceImage - keep it for next generation
+      // Only clear preview if we're done with the file
+      // setImagePreviewUrl(null)
+      // setReferenceImage(null)
     } catch (error) {
       console.error('Generation error:', error)
       // Error handling is done in the mutation

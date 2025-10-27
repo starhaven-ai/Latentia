@@ -6,7 +6,6 @@ import { getModel } from '@/lib/models/registry'
 
 export async function POST(request: NextRequest) {
   let generation: any = null
-  let parameters: any = null
   
   try {
     const supabase = createRouteHandlerClient({ cookies })
@@ -32,8 +31,6 @@ export async function POST(request: NextRequest) {
       negativePrompt,
       parameters: requestParameters,
     } = body
-    
-    parameters = requestParameters
 
     // Validate required fields
     if (!sessionId || !modelId || !prompt) {
@@ -43,7 +40,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get model adapter
+    // Verify model exists
     const model = getModel(modelId)
     if (!model) {
       return NextResponse.json(
@@ -52,7 +49,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create generation record in database using Prisma
+    // Create generation record in database with 'processing' status
     generation = await prisma.generation.create({
       data: {
         sessionId,
@@ -60,71 +57,60 @@ export async function POST(request: NextRequest) {
         modelId,
         prompt,
         negativePrompt: negativePrompt || null,
-        parameters: parameters || {},
+        parameters: requestParameters || {},
         status: 'processing',
       },
     })
 
-    // Generate using the model
-    // Extract referenceImage from parameters and pass it at the top level
-    const { referenceImage, ...otherParameters } = parameters || {}
-    const result = await model.generate({
-      prompt,
-      negativePrompt,
-      referenceImage,
-      parameters: otherParameters, // Pass parameters as an object
-      ...otherParameters, // Also spread at top level for backward compatibility
+    console.log(`[${generation.id}] Generation created, starting async processing`)
+
+    // Trigger background processing asynchronously (fire and forget)
+    // Don't await - this allows us to return immediately
+    const baseUrl = request.nextUrl.origin
+    fetch(`${baseUrl}/api/generate/process`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        generationId: generation.id,
+      }),
+    }).catch((error) => {
+      console.error(`[${generation.id}] Failed to trigger background processing:`, error)
+      // If fetch fails, update status to failed
+      prisma.generation.update({
+        where: { id: generation.id },
+        data: { 
+          status: 'failed',
+          parameters: {
+            ...(requestParameters || {}),
+            error: 'Failed to start background processing',
+          }
+        },
+      }).catch(console.error)
     })
 
-    // Update generation status
-    if (result.status === 'completed' && result.outputs) {
-      // Store outputs in database using Prisma
-      const outputRecords = result.outputs.map((output) => ({
-        generationId: generation.id,
-        fileUrl: output.url,
-        fileType: model.getConfig().type,
-        width: output.width,
-        height: output.height,
-        duration: output.duration,
-      }))
-
-      await prisma.output.createMany({
-        data: outputRecords,
-      })
-
-      // Update generation status
-      await prisma.generation.update({
-        where: { id: generation.id },
-        data: { status: 'completed' },
-      })
-    } else if (result.status === 'failed') {
-      await prisma.generation.update({
-        where: { id: generation.id },
-        data: { status: 'failed' },
-      })
-    }
-
+    // Return immediately with processing status
     return NextResponse.json({
       id: generation.id,
-      status: result.status,
-      outputs: result.outputs,
-      error: result.error,
+      status: 'processing',
+      message: 'Generation started. Poll for updates.',
     })
   } catch (error: any) {
     console.error('Generation error:', error)
     
-    // Update generation status to failed
+    // Update generation status to failed if we created it
     if (generation) {
       await prisma.generation.update({
         where: { id: generation.id },
         data: { 
           status: 'failed',
           parameters: {
-            ...parameters,
+            ...(generation.parameters as any),
             error: error.message,
           }
         },
-      })
+      }).catch(console.error)
     }
     
     return NextResponse.json(

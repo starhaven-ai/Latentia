@@ -1,37 +1,81 @@
 import { useQuery } from '@tanstack/react-query'
 import type { GenerationWithOutputs } from '@/types/generation'
 
-async function fetchGenerations(sessionId: string, limit: number = 20): Promise<GenerationWithOutputs[]> {
-  const response = await fetch(`/api/generations?sessionId=${sessionId}&limit=${limit}`)
+interface GenerationsResponse {
+  data: GenerationWithOutputs[]
+  pagination: {
+    hasMore: boolean
+    nextCursor: string | null
+    limit: number
+  }
+}
+
+async function fetchGenerations(sessionId: string, limit: number = 20, cursor?: string): Promise<GenerationsResponse> {
+  const params = new URLSearchParams({
+    sessionId,
+    limit: limit.toString(),
+  })
+  
+  if (cursor) {
+    params.append('cursor', cursor)
+  }
+  
+  const response = await fetch(`/api/generations?${params}`)
   
   if (!response.ok) {
     throw new Error('Failed to fetch generations')
   }
   
-  return response.json()
+  const result = await response.json()
+  
+  // Handle backward compatibility - if API returns array directly, wrap it
+  if (Array.isArray(result)) {
+    return {
+      data: result,
+      pagination: {
+        hasMore: false,
+        nextCursor: null,
+        limit,
+      },
+    }
+  }
+  
+  return result
 }
 
 export function useGenerations(sessionId: string | null, limit: number = 20) {
-  return useQuery({
-    queryKey: ['generations', sessionId, limit],
+  const query = useQuery({
+    queryKey: ['generations', sessionId],
     queryFn: () => fetchGenerations(sessionId!, limit),
     enabled: !!sessionId, // Only run if sessionId exists
-    staleTime: 30000, // Cache for 30 seconds - data is fresh for 30s
+    staleTime: 10000, // Cache for 10 seconds - reduce to see updates faster
     gcTime: 300000, // Keep in cache for 5 minutes
-    refetchOnMount: false, // Use cached data if available
+    refetchOnMount: 'always', // Always refetch to get latest status
     refetchOnWindowFocus: false, // Don't refetch on window focus
     refetchInterval: (query) => {
-      // Poll every 3 seconds if there are processing generations
-      const data = query.state.data as GenerationWithOutputs[] | undefined
-      if (!data) return false
+      // Poll more frequently if there are processing generations
+      const response = query.state.data as GenerationsResponse | undefined
+      if (!response?.data) return false
       
       // Check if any generations are processing
-      const hasProcessingGenerations = data.some(gen => gen.status === 'processing')
+      const processingGenerations = response.data.filter(gen => gen.status === 'processing')
+      const hasProcessingGenerations = processingGenerations.length > 0
       
-      // Silently poll - don't log on every check to avoid spam
+      if (hasProcessingGenerations) {
+        // Log occasionally for debugging (every 10th poll)
+        if (Math.random() < 0.1) {
+          console.log(`📊 Polling: ${processingGenerations.length} generation(s) in progress`)
+        }
+        
+        // Poll every 2 seconds for faster updates
+        return 2000
+      }
       
-      return hasProcessingGenerations ? 3000 : false
+      return false
     },
+    select: (response) => response.data, // Extract just the data array for easier consumption
   })
+  
+  return query
 }
 

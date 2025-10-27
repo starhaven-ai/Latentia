@@ -7,10 +7,12 @@ import { VideoInput } from './VideoInput'
 import type { Session } from '@/types/project'
 import type { GenerationWithOutputs } from '@/types/generation'
 import { useGenerations } from '@/hooks/useGenerations'
+import { useGenerationsRealtime } from '@/hooks/useGenerationsRealtime'
 import { useGenerateMutation } from '@/hooks/useGenerateMutation'
 import { useUIStore } from '@/store/uiStore'
 import { useToast } from '@/components/ui/use-toast'
 import { getAllModels } from '@/lib/models/registry'
+import { createClient } from '@/lib/supabase/client'
 
 interface GenerationInterfaceProps {
   session: Session | null
@@ -31,12 +33,24 @@ export function GenerationInterface({
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [prompt, setPrompt] = useState('')
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
+  
+  // Get current user for realtime subscriptions
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id || null)
+    })
+  }, [])
   
   // Use Zustand store for UI state
   const { selectedModel, parameters, setSelectedModel, setParameters } = useUIStore()
   
   // Use React Query for data fetching (limit to 20 for performance)
   const { data: generations = [], isLoading } = useGenerations(session?.id || null, 20)
+  
+  // Subscribe to real-time updates
+  useGenerationsRealtime(session?.id || null, userId)
   
   // Use React Query mutation for generating
   const generateMutation = useGenerateMutation()

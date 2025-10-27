@@ -38,33 +38,18 @@ export function ImageBrowseModal({
   const fetchImages = async () => {
     setLoading(true)
     try {
-      // Fetch all image sessions for this project
-      const sessionsResponse = await fetch(`/api/sessions?projectId=${projectId}`)
-      if (!sessionsResponse.ok) throw new Error('Failed to fetch sessions')
+      // Use optimized endpoint that fetches all project images in one query
+      const response = await fetch(`/api/projects/${projectId}/images`)
+      if (!response.ok) throw new Error('Failed to fetch images')
       
-      const sessions = await sessionsResponse.json()
-      const imageSessions = sessions.filter((s: any) => s.type === 'image')
-
-      // Fetch generations from all image sessions
-      const allImages: Array<{ url: string; prompt: string; generationId: string }> = []
+      const projectImages = await response.json()
       
-      for (const session of imageSessions) {
-        const genResponse = await fetch(`/api/generations?sessionId=${session.id}`)
-        if (genResponse.ok) {
-          const generations: GenerationWithOutputs[] = await genResponse.json()
-          
-          // Extract all output images
-          generations.forEach((gen) => {
-            gen.outputs.forEach((output) => {
-              allImages.push({
-                url: output.fileUrl,
-                prompt: gen.prompt,
-                generationId: gen.id,
-              })
-            })
-          })
-        }
-      }
+      // Transform to expected format
+      const allImages = projectImages.map((img: any) => ({
+        url: img.url,
+        prompt: img.prompt,
+        generationId: img.generationId,
+      }))
 
       setImages(allImages)
     } catch (error) {

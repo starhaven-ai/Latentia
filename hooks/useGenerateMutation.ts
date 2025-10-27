@@ -15,7 +15,7 @@ interface GenerateParams {
 
 interface GenerateResponse {
   id: string
-  status: 'completed' | 'failed'
+  status: 'processing' | 'completed' | 'failed'
   outputs?: Array<{
     url: string
     width?: number
@@ -23,6 +23,7 @@ interface GenerateResponse {
     duration?: number
   }>
   error?: string
+  message?: string
 }
 
 async function generateImage(params: GenerateParams): Promise<GenerateResponse> {
@@ -92,7 +93,7 @@ export function useGenerateMutation() {
       return { previousGenerations, optimisticId }
     },
     onSuccess: (data, variables, context) => {
-      // Update the optimistic generation to completed status
+      // Update the optimistic generation with real ID and status
       queryClient.setQueryData<GenerationWithOutputs[]>(
         ['generations', variables.sessionId],
         (old) => {
@@ -100,8 +101,18 @@ export function useGenerateMutation() {
           
           return old.map((gen) => {
             if (gen.id === context?.optimisticId) {
-              console.log('✓ Found optimistic generation to replace:', context.optimisticId)
-              if (data.status === 'completed' && data.outputs) {
+              console.log('✓ Replacing optimistic generation:', context.optimisticId, '→', data.id)
+              
+              // Handle different statuses from async API
+              if (data.status === 'processing') {
+                // Generation is processing in background - update ID and keep status
+                return {
+                  ...gen,
+                  id: data.id,
+                  status: 'processing' as const,
+                }
+              } else if (data.status === 'completed' && data.outputs) {
+                // Synchronous completion (shouldn't happen with new API, but handle it)
                 return {
                   ...gen,
                   id: data.id,
@@ -135,14 +146,13 @@ export function useGenerateMutation() {
         }
       )
       
-      // Log generations after update to debug restart issue
-      setTimeout(() => {
-        const currentData = queryClient.getQueryData<GenerationWithOutputs[]>(['generations', variables.sessionId])
-        console.log('After mutation update:', {
-          count: currentData?.length || 0,
-          statuses: currentData?.map(g => ({ id: g.id.substring(0, 20), status: g.status }))
-        })
-      }, 50)
+      // Trigger immediate refetch to start polling for processing generations
+      queryClient.invalidateQueries({ 
+        queryKey: ['generations', variables.sessionId],
+        refetchType: 'active'
+      })
+      
+      console.log(`[${data.id}] Generation mutation success - status: ${data.status}`)
     },
     onError: (error: Error, variables, context) => {
       console.error('Generation failed:', error)

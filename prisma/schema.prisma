@@ -191,7 +191,7 @@ model PromptEnhancementPrompt {
   modelIds     String[]
   createdBy    String   @db.Uuid
   createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  updatedAt    DateTime @updatedAt
   updatedBy    String   @db.Uuid
 
   @@map("prompt_enhancement_prompts")

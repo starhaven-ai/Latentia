@@ -183,16 +183,16 @@ model Bookmark {
 }
 
 model PromptEnhancementPrompt {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String   // e.g., "Universal Prompt Enhancer", "Nano Banana", "Seedream 4"
-  description String?  @db.Text
-  systemPrompt String @db.Text // The actual system prompt for Claude
-  isActive    Boolean  @default(true) @map("is_active")
-  modelIds    String[] // Array of model IDs this prompt applies to (e.g., ['gemini-nano-banana', 'seedream-4.0'])
-  createdBy   String   @map("created_by") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  updatedBy   String   @map("updated_by") @db.Uuid
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   // e.g., "Universal Prompt Enhancer", "Nano Banana", "Seedream 4"
+  description  String?  @db.Text
+  systemPrompt String   @db.Text // The actual system prompt for Claude
+  is_active    Boolean  @default(true)
+  modelIds     String[] // Array of model IDs this prompt applies to (e.g., ['gemini-nano-banana', 'seedream-4.0'])
+  createdBy    String   @map("created_by") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  updatedBy    String   @map("updated_by") @db.Uuid
 
   @@map("prompt_enhancement_prompts")
 }

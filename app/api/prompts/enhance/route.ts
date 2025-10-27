@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
         modelIds: {
           has: modelId, // Check if this model ID is in the array
         },
-        isActive: true,
+        is_active: true,
       },
       orderBy: {
         createdAt: 'desc',

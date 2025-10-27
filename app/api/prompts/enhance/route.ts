@@ -121,13 +121,18 @@ Return ONLY the enhanced prompt text. Nothing else.`
     const messageContent: any[] = []
     
     if (referenceImage) {
+      // Parse data URL to get media type and base64 data
+      const [dataUrlPrefix, base64Data] = referenceImage.split(',')
+      const mediaTypeMatch = dataUrlPrefix.match(/data:([^;]+)/)
+      const mediaType = mediaTypeMatch ? mediaTypeMatch[1] : 'image/jpeg' // Default to JPEG if not detected
+      
       // Add image for analysis
       messageContent.push({
         type: 'image',
         source: {
           type: 'base64',
-          media_type: 'image/png',
-          data: referenceImage.split(',')[1], // Remove data URL prefix
+          media_type: mediaType,
+          data: base64Data,
         },
       })
       messageContent.push({

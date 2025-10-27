@@ -34,12 +34,25 @@ export function GenerationInterface({
   const [prompt, setPrompt] = useState('')
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const [currentUser, setCurrentUser] = useState<{ displayName: string | null } | null>(null)
   
   // Get current user for realtime subscriptions
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data }) => {
       setUserId(data.user?.id || null)
+      
+      // Also fetch profile for display name
+      if (data.user?.id) {
+        supabase
+          .from('profiles')
+          .select('displayName')
+          .eq('id', data.user.id)
+          .single()
+          .then(({ data: profile }) => {
+            setCurrentUser(profile ? { displayName: profile.displayName } : null)
+          })
+      }
     })
   }, [])
   
@@ -261,6 +274,7 @@ export function GenerationInterface({
                 onConvertToVideo={handleConvertToVideo}
                 onCreateVideoSession={onSessionCreate}
                 currentGenerationType={generationType}
+                currentUser={currentUser}
               />
             </div>
           </div>

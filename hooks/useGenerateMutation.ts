@@ -210,11 +210,8 @@ export function useGenerateMutation() {
         }
       )
       
-      // Trigger refetch to get latest data
-      queryClient.invalidateQueries({ 
-        queryKey: ['generations', 'infinite', variables.sessionId],
-        refetchType: 'active'
-      })
+      // DON'T invalidate - rely on optimistic updates, real-time subscriptions, and polling
+      // This prevents the race condition where invalidation refetches and overwrites the processing state
     },
     onError: (error: Error, variables, context) => {
       console.error('Generation failed:', error)

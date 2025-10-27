@@ -220,7 +220,7 @@ export function GenerationGallery({
   return (
     <>
       <div className="space-y-6 pb-4">
-        {generations.map((generation) => {
+        {(generations || []).map((generation) => {
           const isVideo = isVideoGeneration(generation)
           
           // Failed generation layout
@@ -291,7 +291,7 @@ export function GenerationGallery({
 
                 {/* Video outputs - same width as prompt */}
                 <div className="grid grid-cols-1 gap-4">
-                  {generation.outputs.map((output) => {
+                  {(generation.outputs || []).map((output) => {
                     const aspectRatio = (generation.parameters as any)?.aspectRatio || '16:9'
                     return (
                       <div
@@ -421,7 +421,7 @@ export function GenerationGallery({
 
             {/* Right Side: Outputs in 2-Column Grid - Smaller Images */}
             <div className="flex-1 grid grid-cols-2 gap-3 max-w-4xl">
-              {generation.outputs.map((output) => {
+              {(generation.outputs || []).map((output) => {
                 const aspectRatio = (generation.parameters as any)?.aspectRatio || '1:1'
                 return (
                 <div
@@ -525,7 +525,7 @@ export function GenerationGallery({
         })}
 
         {/* Show processing generations */}
-        {processingGenerations.map((procGen) => {
+        {(processingGenerations || []).map((procGen) => {
           const allModels = getAllModels()
           const modelConfig = allModels.find(m => m.id === procGen.modelId)
           const modelName = modelConfig?.name || 'Unknown Model'

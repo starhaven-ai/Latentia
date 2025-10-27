@@ -157,9 +157,13 @@ Return ONLY the enhanced prompt text. Nothing else.`
     })
 
     // Extract the enhanced prompt from Claude's response
-    const enhancedPrompt = message.content[0].type === 'text' 
-      ? message.content[0].text 
-      : 'Failed to enhance prompt'
+    let enhancedPrompt = 'Failed to enhance prompt'
+    
+    // Claude returns content as an array - find the text block
+    const textBlocks = message.content.filter(block => block.type === 'text')
+    if (textBlocks.length > 0 && textBlocks[0].type === 'text') {
+      enhancedPrompt = textBlocks[0].text
+    }
 
     return NextResponse.json({
       originalPrompt: prompt,

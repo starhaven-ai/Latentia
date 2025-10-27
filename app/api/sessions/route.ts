@@ -63,7 +63,23 @@ export async function GET(request: Request) {
       },
     })
 
-    return NextResponse.json(sessions)
+    // Get project owner profile for display
+    const ownerProfile = await prisma.profile.findUnique({
+      where: { id: project.ownerId },
+      select: {
+        id: true,
+        displayName: true,
+        username: true,
+      },
+    })
+
+    // Add creator info to each session
+    const sessionsWithCreator = sessions.map(session => ({
+      ...session,
+      creator: ownerProfile,
+    }))
+
+    return NextResponse.json(sessionsWithCreator)
   } catch (error) {
     console.error('Error fetching sessions:', error)
     return NextResponse.json(

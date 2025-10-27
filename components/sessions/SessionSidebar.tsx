@@ -260,6 +260,15 @@ export function SessionSidebar({
                             }`}>
                               {new Date(session.updatedAt).toLocaleDateString()}
                             </p>
+                            {session.creator?.displayName && (
+                              <p className={`text-xs ${
+                                activeSession?.id === session.id 
+                                  ? 'text-primary-foreground/60' 
+                                  : 'text-muted-foreground/70'
+                              }`}>
+                                {session.creator.displayName}
+                              </p>
+                            )}
                           </div>
                           <div className="flex items-center gap-1">
                             <button

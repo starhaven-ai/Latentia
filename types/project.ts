@@ -29,6 +29,12 @@ export interface ProjectMember {
   joinedAt: Date
 }
 
+export interface SessionCreator {
+  id: string
+  displayName: string | null
+  username: string | null
+}
+
 export interface Session {
   id: string
   projectId: string
@@ -37,5 +43,6 @@ export interface Session {
   isPrivate: boolean
   createdAt: Date
   updatedAt: Date
+  creator?: SessionCreator | null
 }
 

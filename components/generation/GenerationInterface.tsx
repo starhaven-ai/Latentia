@@ -107,12 +107,7 @@ export function GenerationInterface({
         },
       })
       
-      // Show success toast
-      toast({
-        title: "Generation complete!",
-        description: `Successfully generated ${parameters.numOutputs} ${generationType}${parameters.numOutputs > 1 ? 's' : ''}`,
-        variant: "success",
-      })
+      // Success is indicated by the progress bar, no toast needed
     } catch (error: any) {
       console.error('Generation error:', error)
       toast({

@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -54,13 +55,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-3xl font-bold text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            PRISM
-          </CardTitle>
-          <CardDescription className="text-center">
+    <div className="dark flex min-h-screen items-center justify-center bg-[#141414] p-4">
+      <Card className="w-full max-w-md border-[#333333]">
+        <CardHeader className="space-y-6">
+          <div className="flex justify-center">
+            <Image
+              src="/images/loop logo_standalone - white.png"
+              alt="Loop Vesper"
+              width={80}
+              height={80}
+              className="object-contain"
+            />
+          </div>
+          <CardDescription className="text-center text-muted-foreground">
             Sign in to your account to continue
           </CardDescription>
         </CardHeader>
@@ -91,18 +98,22 @@ export default function LoginPage() {
             {error && (
               <p className="text-sm text-destructive">{error}</p>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button 
+              type="submit" 
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" 
+              disabled={loading}
+            >
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+              <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-card px-2 text-muted-foreground">
-                Or continue with
+                OR CONTINUE WITH
               </span>
             </div>
           </div>
@@ -110,7 +121,7 @@ export default function LoginPage() {
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            className="w-full border-border hover:bg-accent/10 hover:border-primary transition-colors"
             onClick={handleGoogleLogin}
             disabled={loading}
           >
@@ -138,7 +149,7 @@ export default function LoginPage() {
         <CardFooter className="flex flex-col space-y-4">
           <div className="text-sm text-muted-foreground text-center">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className="text-primary hover:underline">
+            <Link href="/signup" className="text-primary hover:text-primary/80 transition-colors font-medium">
               Sign up
             </Link>
           </div>

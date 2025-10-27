@@ -32,17 +32,66 @@ export function PromptEnhancementButton({
     
     try {
       // Convert reference image to base64 if it's a File
+      // COMPRESS to prevent HTTP 413 errors (Vercel limit: 4.5MB)
       let imageData = null
       if (referenceImage) {
         if (referenceImage instanceof File) {
+          // Compress the image before sending
           imageData = await new Promise<string>((resolve) => {
             const reader = new FileReader()
-            reader.onload = () => resolve(reader.result as string)
+            reader.onload = () => {
+              const dataUrl = reader.result as string
+              
+              // Check size and compress if necessary
+              const img = new Image()
+              img.onload = () => {
+                const canvas = document.createElement('canvas')
+                const ctx = canvas.getContext('2d')
+                
+                if (!ctx) {
+                  resolve(dataUrl) // Fallback to original if canvas not supported
+                  return
+                }
+                
+                // Calculate new dimensions (max 1024px for faster processing)
+                let { width, height } = img
+                if (width > 1024 || height > 1024) {
+                  const ratio = 1024 / Math.max(width, height)
+                  width = Math.floor(width * ratio)
+                  height = Math.floor(height * ratio)
+                }
+                
+                canvas.width = width
+                canvas.height = height
+                ctx.drawImage(img, 0, 0, width, height)
+                
+                // Convert to JPEG at 80% quality
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8)
+                
+                // Final size check - reject if still too large
+                const sizeInMB = compressedDataUrl.length / (1024 * 1024)
+                if (sizeInMB > 2) {
+                  console.warn('Compressed image still too large for enhancement, skipping image in enhancement')
+                  resolve('') // Send without image if still too large
+                } else {
+                  resolve(compressedDataUrl)
+                }
+              }
+              img.onerror = () => resolve(dataUrl) // Fallback on error
+              img.src = dataUrl
+            }
             reader.onerror = () => resolve('')
             reader.readAsDataURL(referenceImage)
           })
         } else if (typeof referenceImage === 'string') {
-          imageData = referenceImage
+          // Already compressed base64, use as-is
+          const sizeInMB = referenceImage.length / (1024 * 1024)
+          if (sizeInMB > 2) {
+            console.warn('Reference image too large for enhancement, skipping')
+            imageData = null // Skip image if too large
+          } else {
+            imageData = referenceImage
+          }
         }
       }
       
@@ -59,8 +108,20 @@ export function PromptEnhancementButton({
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to enhance prompt')
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const error = await response.json()
+          errorMessage = error.error || error.message || errorMessage
+        } catch {
+          // If response is not JSON, try to get text
+          try {
+            const text = await response.text()
+            errorMessage = text || errorMessage
+          } catch {
+            // Last resort: use status
+          }
+        }
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()

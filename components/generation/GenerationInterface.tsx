@@ -75,6 +75,7 @@ export function GenerationInterface({
   console.log('🟢 Generations from infinite query:', generations.length)
   if (generations.length > 0) {
     console.log('🟢 Sample generation:', { id: generations[0].id, status: generations[0].status, outputs: (generations[0].outputs || []).length })
+    console.log('🟢 All generation statuses:', generations.map(g => ({ id: g.id, status: g.status })))
   }
   
   // Subscribe to real-time updates

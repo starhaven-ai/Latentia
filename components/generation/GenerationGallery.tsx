@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Image from 'next/image'
 import { Download, RotateCcw, Info, Copy, Bookmark, Check, Video, Wand2, Ratio } from 'lucide-react'
 import type { GenerationWithOutputs } from '@/types/generation'
 import type { Session } from '@/types/project'
@@ -404,11 +405,14 @@ export function GenerationGallery({
                   style={{ aspectRatio: getAspectRatioStyle(aspectRatio) }}
                 >
                   {output.fileType === 'image' && (
-                    <img
+                    <Image
                       src={output.fileUrl}
                       alt="Generated content"
+                      width={output.width || 512}
+                      height={output.height || 512}
                       className="w-full h-full object-cover cursor-pointer"
                       loading="lazy"
+                      unoptimized={false}
                       onClick={() => setLightboxData({
                         imageUrl: output.fileUrl,
                         output: output,

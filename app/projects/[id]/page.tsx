@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Settings, Sun, Moon, Bookmark } from 'lucide-react'
 import { SessionSidebar } from '@/components/sessions/SessionSidebar'
 import { GenerationInterface } from '@/components/generation/GenerationInterface'
+import { useSessions } from '@/hooks/useSessions'
 import type { Session } from '@/types/project'
 
 export default function ProjectPage() {
@@ -16,11 +17,13 @@ export default function ProjectPage() {
   const [projectName, setProjectName] = useState('Loading...')
   const [projectOwnerId, setProjectOwnerId] = useState<string>('')
   const [currentUserId, setCurrentUserId] = useState<string>('')
-  const [sessions, setSessions] = useState<Session[]>([])
   const [activeSession, setActiveSession] = useState<Session | null>(null)
   const [generationType, setGenerationType] = useState<'image' | 'video'>('image')
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const supabase = createClient()
+
+  // Use React Query for sessions with intelligent caching
+  const { data: sessions = [], isLoading: sessionsLoading } = useSessions(params.id as string)
 
   // Initialize theme from localStorage
   useEffect(() => {
@@ -42,6 +45,26 @@ export default function ProjectPage() {
     fetchProject()
   }, [params.id])
 
+  // Set active session when sessions data loads
+  useEffect(() => {
+    if (!sessionsLoading && sessions.length > 0) {
+      if (!activeSession) {
+        // Set first session as active
+        setActiveSession(sessions[0])
+        setGenerationType(sessions[0].type)
+      } else {
+        // Preserve active session if it still exists
+        const updatedActiveSession = sessions.find(s => s.id === activeSession.id)
+        if (updatedActiveSession) {
+          setActiveSession(updatedActiveSession)
+        }
+      }
+    } else if (!sessionsLoading && sessions.length === 0) {
+      // No sessions - create default
+      handleSessionCreate('image')
+    }
+  }, [sessions, sessionsLoading])
+
   const fetchProject = async () => {
     try {
       // Get current user
@@ -56,38 +79,6 @@ export default function ProjectPage() {
         const project = await response.json()
         setProjectName(project.name)
         setProjectOwnerId(project.ownerId)
-      }
-
-      // Fetch sessions for this project
-      const sessionsResponse = await fetch(`/api/sessions?projectId=${params.id}`)
-      if (sessionsResponse.ok) {
-        const fetchedSessions = await sessionsResponse.json()
-        
-        // Parse dates from strings to Date objects
-        const parsedSessions = fetchedSessions.map((s: any) => ({
-          ...s,
-          createdAt: new Date(s.createdAt),
-          updatedAt: new Date(s.updatedAt),
-        }))
-        
-        if (parsedSessions.length > 0) {
-          setSessions(parsedSessions)
-          
-          // Preserve the active session if it exists, otherwise use the first one
-          if (activeSession) {
-            const updatedActiveSession = parsedSessions.find((s: Session) => s.id === activeSession.id)
-            if (updatedActiveSession) {
-              setActiveSession(updatedActiveSession)
-            } else {
-              setActiveSession(parsedSessions[0])
-            }
-          } else {
-            setActiveSession(parsedSessions[0])
-          }
-        } else {
-          // Create a default session if none exist
-          await handleSessionCreate('image')
-        }
       }
     } catch (error) {
       console.error('Error fetching project:', error)
@@ -116,9 +107,9 @@ export default function ProjectPage() {
           createdAt: new Date(newSession.createdAt),
           updatedAt: new Date(newSession.updatedAt),
         }
-        setSessions([...sessions, parsedSession])
         setActiveSession(parsedSession)
         setGenerationType(type)
+        // Sessions will refetch automatically via React Query
         return parsedSession
       } else {
         console.error('Failed to create session')
@@ -264,7 +255,7 @@ export default function ProjectPage() {
           currentUserId={currentUserId}
           onSessionSelect={setActiveSession}
           onSessionCreate={handleSessionCreate}
-          onSessionUpdate={fetchProject}
+          onSessionUpdate={() => {}}
         />
 
         {/* Generation Interface */}

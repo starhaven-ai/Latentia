@@ -24,7 +24,7 @@ export function useProjects() {
     queryFn: fetchProjects,
     staleTime: 5 * 60 * 1000, // 5 minutes - projects rarely change
     gcTime: 30 * 60 * 1000, // 30 minutes - keep in memory for faster navigation
-    refetchOnMount: 'always', // Always refetch to get latest thumbnails
+    refetchOnMount: false, // Use cached data if fresh (within staleTime)
     refetchOnWindowFocus: false, // Don't refetch on window focus
   })
 }

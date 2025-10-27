@@ -18,7 +18,7 @@ export function useGenerations(sessionId: string | null, limit: number = 20) {
     enabled: !!sessionId, // Only run if sessionId exists
     staleTime: 10 * 1000, // 10 seconds - generations update frequently during processing
     gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes for faster navigation
-    refetchOnMount: 'always', // Always refetch to get latest status
+    refetchOnMount: false, // Use cached data if fresh - real-time updates handle new data
     refetchOnWindowFocus: false, // Don't refetch on window focus
     refetchInterval: (query) => {
       // Poll more frequently if there are processing generations

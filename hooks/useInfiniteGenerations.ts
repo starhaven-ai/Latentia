@@ -62,7 +62,7 @@ export function useInfiniteGenerations(sessionId: string | null, limit: number =
     },
     staleTime: 10 * 1000, // 10 seconds - same as regular generations
     gcTime: 30 * 60 * 1000, // 30 minutes - keep in memory for faster navigation
-    refetchOnMount: 'always',
+    refetchOnMount: false, // Use cached data if fresh
     refetchOnWindowFocus: false,
     refetchInterval: (query) => {
       // Poll more frequently if there are processing generations

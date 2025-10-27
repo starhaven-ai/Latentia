@@ -61,7 +61,7 @@ export function useInfiniteGenerations(sessionId: string | null, limit: number =
       return lastPage.hasMore ? (lastPage.nextCursor as string | undefined) : undefined
     },
     staleTime: 10 * 1000, // 10 seconds - same as regular generations
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes - keep in memory for faster navigation
     refetchOnMount: 'always',
     refetchOnWindowFocus: false,
     refetchInterval: (query) => {

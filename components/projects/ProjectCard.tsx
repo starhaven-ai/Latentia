@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Lock, Users, Globe, User, Pencil, Check, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/use-toast'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { useQueryClient } from '@tanstack/react-query'
 import type { Project } from '@/types/project'
 
 interface ProjectCardProps {
@@ -17,14 +18,65 @@ interface ProjectCardProps {
 export function ProjectCard({ project, currentUserId, onProjectUpdate }: ProjectCardProps) {
   const router = useRouter()
   const { toast } = useToast()
+  const queryClient = useQueryClient()
   const [updating, setUpdating] = useState(false)
   const [isEditingName, setIsEditingName] = useState(false)
   const [editedName, setEditedName] = useState(project.name)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const hasPrefetchedRef = useRef(false)
 
   const isOwner = currentUserId && project.ownerId === currentUserId
   const thumbnailUrl = project.thumbnailUrl || null
+
+  // Prefetch project data on hover (after 200ms delay to avoid accidental prefetch)
+  const handleMouseEnter = () => {
+    if (hasPrefetchedRef.current) return
+
+    hoverTimeoutRef.current = setTimeout(async () => {
+      try {
+        // Fetch sessions for this project
+        const sessionsResponse = await fetch(`/api/sessions?projectId=${project.id}`)
+        if (!sessionsResponse.ok) return
+        const sessions = await sessionsResponse.json()
+
+        // Prefetch sessions in React Query cache
+        queryClient.setQueryData(['sessions', project.id], sessions)
+
+        // If we have sessions, prefetch first 10 generations for the first session
+        if (sessions && sessions.length > 0 && sessions[0].id) {
+          const genResponse = await fetch(`/api/generations?sessionId=${sessions[0].id}&limit=10`)
+          if (genResponse.ok) {
+            const genData = await genResponse.json()
+            // Store in cache for instant access when navigating
+            queryClient.setQueryData(['generations', 'infinite', sessions[0].id], {
+              pages: [{ data: genData, nextCursor: undefined, hasMore: false }],
+              pageParams: [undefined],
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Error prefetching project data:', error)
+      }
+
+      hasPrefetchedRef.current = true
+    }, 200)
+  }
+
+  const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleClick = () => {
     if (!isEditingName) {
@@ -166,6 +218,8 @@ export function ProjectCard({ project, currentUserId, onProjectUpdate }: Project
     <Card
       className="cursor-pointer hover:border-primary transition-colors group"
       onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <CardContent className="p-0">
         <div className="aspect-video bg-muted relative overflow-hidden">

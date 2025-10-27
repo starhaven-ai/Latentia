@@ -6,7 +6,7 @@ import { ChatInput } from './ChatInput'
 import { VideoInput } from './VideoInput'
 import type { Session } from '@/types/project'
 import type { GenerationWithOutputs } from '@/types/generation'
-import { useGenerations } from '@/hooks/useGenerations'
+import { useInfiniteGenerations } from '@/hooks/useInfiniteGenerations'
 import { useGenerationsRealtime } from '@/hooks/useGenerationsRealtime'
 import { useGenerateMutation } from '@/hooks/useGenerateMutation'
 import { useUIStore } from '@/store/uiStore'
@@ -59,8 +59,17 @@ export function GenerationInterface({
   // Use Zustand store for UI state
   const { selectedModel, parameters, setSelectedModel, setParameters } = useUIStore()
   
-  // Use React Query for data fetching (limit to 20 for performance)
-  const { data: generations = [], isLoading } = useGenerations(session?.id || null, 20)
+  // Use infinite query for progressive loading (loads 10 at a time)
+  const {
+    data: infiniteData,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteGenerations(session?.id || null, 10)
+  
+  // Flatten all pages into a single array
+  const generations = infiniteData?.pages.flatMap((page) => page.data) || []
   
   // Subscribe to real-time updates
   useGenerationsRealtime(session?.id || null, userId)
@@ -276,6 +285,19 @@ export function GenerationInterface({
                 currentGenerationType={generationType}
                 currentUser={currentUser}
               />
+              
+              {/* Load More Button */}
+              {hasNextPage && (
+                <div className="flex justify-center mt-8 mb-4">
+                  <button
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                    className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isFetchingNextPage ? 'Loading...' : 'Load More'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

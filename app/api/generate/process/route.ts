@@ -9,9 +9,22 @@ import { uploadBase64ToStorage, uploadUrlToStorage } from '@/lib/supabase/storag
  * It's called asynchronously after the main generate endpoint returns
  */
 export async function POST(request: NextRequest) {
+  // Read body once and store it for error handling
+  let requestBody: any = {}
+  let generationId: string | undefined
+  
   try {
-    const body = await request.json()
-    const { generationId } = body
+    requestBody = await request.json()
+    generationId = requestBody.generationId
+  } catch (error) {
+    console.error('Failed to parse request body:', error)
+    return NextResponse.json(
+      { error: 'Invalid request body' },
+      { status: 400 }
+    )
+  }
+  
+  try {
 
     if (!generationId) {
       return NextResponse.json(
@@ -175,16 +188,15 @@ export async function POST(request: NextRequest) {
     console.error('Background generation error:', error)
     
     // Try to update generation status if we have the ID
-    const body = await request.json().catch(() => ({}))
-    if (body.generationId) {
+    if (generationId) {
       try {
         const generation = await prisma.generation.findUnique({
-          where: { id: body.generationId },
+          where: { id: generationId },
         })
         
         if (generation) {
           await prisma.generation.update({
-            where: { id: body.generationId },
+            where: { id: generationId },
             data: { 
               status: 'failed',
               parameters: {

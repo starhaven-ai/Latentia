@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Plus, LogOut, Settings, Sun, Moon, Bookmark } from 'lucide-react'
 import { ProjectGrid } from '@/components/projects/ProjectGrid'
 import { NewProjectDialog } from '@/components/projects/NewProjectDialog'
-import { ProfileSettings } from '@/components/settings/ProfileSettings'
 import type { Project } from '@/types/project'
 
 type TabType = 'briefings' | 'projects' | 'review'
@@ -19,7 +19,6 @@ export default function ProjectsPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabType>('projects')
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
-  const [showProfileSettings, setShowProfileSettings] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -140,14 +139,15 @@ export default function ProjectsPage() {
                 <Sun className="h-4 w-4" />
               )}
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setShowProfileSettings(true)}
-              title="Settings"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
+            <Link href="/settings">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                title="Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </Link>
             <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign out">
               <LogOut className="h-4 w-4" />
             </Button>
@@ -313,11 +313,6 @@ export default function ProjectsPage() {
         onProjectCreated={handleProjectCreated}
       />
 
-      {/* Profile Settings Dialog */}
-      <ProfileSettings 
-        isOpen={showProfileSettings}
-        onClose={() => setShowProfileSettings(false)}
-      />
     </div>
   )
 }

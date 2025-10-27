@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Settings, Sun, Moon, Bookmark } from 'lucide-react'
 import { SessionSidebar } from '@/components/sessions/SessionSidebar'
 import { GenerationInterface } from '@/components/generation/GenerationInterface'
-import { ProfileSettings } from '@/components/settings/ProfileSettings'
 import type { Session } from '@/types/project'
 
 export default function ProjectPage() {
@@ -20,7 +20,6 @@ export default function ProjectPage() {
   const [activeSession, setActiveSession] = useState<Session | null>(null)
   const [generationType, setGenerationType] = useState<'image' | 'video'>('image')
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
-  const [showProfileSettings, setShowProfileSettings] = useState(false)
   const supabase = createClient()
 
   // Initialize theme from localStorage
@@ -241,13 +240,15 @@ export default function ProjectPage() {
                 <Sun className="h-4 w-4" />
               )}
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setShowProfileSettings(true)}
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
+            <Link href="/settings">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                title="Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -276,11 +277,6 @@ export default function ProjectPage() {
         />
       </div>
 
-      {/* Profile Settings Dialog */}
-      <ProfileSettings 
-        isOpen={showProfileSettings}
-        onClose={() => setShowProfileSettings(false)}
-      />
     </div>
   )
 }

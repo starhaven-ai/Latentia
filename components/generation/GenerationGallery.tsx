@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Image from 'next/image'
-import { Download, RotateCcw, Info, Copy, Bookmark, Check, Video, Wand2, Ratio, X } from 'lucide-react'
+import { Download, RotateCcw, Info, Copy, Bookmark, Check, Video, Wand2, X } from 'lucide-react'
 import type { GenerationWithOutputs } from '@/types/generation'
 import type { Session } from '@/types/project'
 import { useUpdateOutputMutation } from '@/hooks/useOutputMutations'
@@ -410,12 +410,6 @@ export function GenerationGallery({
                     <Info className="h-3.5 w-3.5" />
                     <span className="capitalize font-medium">{generation.modelId.replace('gemini-', '').replace('-', ' ')}</span>
                   </div>
-                  {generation.parameters?.aspectRatio && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground/70">Aspect Ratio:</span>
-                      <span className="font-medium">{generation.parameters.aspectRatio}</span>
-                    </div>
-                  )}
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground/70">Generated:</span>
                     <span className="font-medium">{new Date(generation.createdAt).toLocaleDateString()}</span>
@@ -570,17 +564,6 @@ export function GenerationGallery({
                   <div className="flex items-center gap-2">
                     <Wand2 className="h-3.5 w-3.5 text-primary" />
                     <span className="font-medium">{modelName}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Ratio className="h-3.5 w-3.5 text-muted-foreground/70" />
-                    <span className="text-muted-foreground/70">Aspect Ratio:</span>
-                    <span className="font-medium">{procGen.parameters.aspectRatio}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground/70">Outputs:</span>
-                    <span className="font-medium">
-                      {numOutputs} {numOutputs === 1 ? 'image' : 'images'}
-                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground/70">Generated:</span>

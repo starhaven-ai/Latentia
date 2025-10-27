@@ -35,6 +35,7 @@ export function GenerationInterface({
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [currentUser, setCurrentUser] = useState<{ displayName: string | null } | null>(null)
+  const previousSessionIdRef = useRef<string | null>(null)
   
   // Get current user for realtime subscriptions
   useEffect(() => {
@@ -85,18 +86,27 @@ export function GenerationInterface({
     }
   }, [generationType])
 
-  // Auto-scroll to bottom when generations load or update
+  // Auto-scroll to bottom when:
+  // 1. Session changes (user opened a different session)
+  // 2. New generations are added
+  // 3. Data finishes loading
   useEffect(() => {
+    const isNewSession = session?.id !== previousSessionIdRef.current
+    previousSessionIdRef.current = session?.id || null
+
     if (!isLoading && generations.length > 0 && scrollContainerRef.current) {
-      // Small delay to ensure DOM is fully rendered
+      // Longer delay for new sessions to ensure content is fully rendered
+      // Shorter delay for updates to existing content
+      const delay = isNewSession ? 300 : 100
+
       setTimeout(() => {
         scrollContainerRef.current?.scrollTo({
           top: scrollContainerRef.current.scrollHeight,
-          behavior: 'smooth',
+          behavior: isNewSession ? 'auto' : 'smooth', // Instant for new sessions, smooth for updates
         })
-      }, 100)
+      }, delay)
     }
-  }, [generations, isLoading])
+  }, [generations, isLoading, session?.id])
 
   const handleGenerate = async (prompt: string, referenceImage?: File) => {
     if (!session || !prompt.trim()) return

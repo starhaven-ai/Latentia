@@ -65,13 +65,13 @@ export async function GET(request: NextRequest) {
           orderBy: {
             createdAt: 'asc',
           },
-        },
       },
-      orderBy: {
-        createdAt: 'desc', // Newest first
-      },
-      take: Math.min(limit, 50), // Max 50 generations for performance
-    })
+    },
+    orderBy: {
+      createdAt: 'asc', // Oldest first, newest at bottom
+    },
+    take: Math.min(limit, 50), // Max 50 generations for performance
+  })
 
     // Fetch bookmarks separately for efficiency
     const outputIds = generations.flatMap((g: any) => g.outputs.map((o: any) => o.id))

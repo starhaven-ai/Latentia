@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Video as VideoIcon, Wand2, ImagePlus, Ratio, ChevronDown, X, Upload, FolderOpen, Clock } from 'lucide-react'
+import { Video as VideoIcon, ImagePlus, Ratio, ChevronDown, X, Upload, FolderOpen, Clock } from 'lucide-react'
 import { useModelCapabilities } from '@/hooks/useModelCapabilities'
 import { AspectRatioSelector } from './AspectRatioSelector'
 import { ModelPicker } from './ModelPicker'
 import { ImageBrowseModal } from './ImageBrowseModal'
 import { useParams } from 'next/navigation'
+import { PromptEnhancementButton } from './PromptEnhancementButton'
 
 interface VideoInputProps {
   prompt: string
@@ -165,6 +166,13 @@ export function VideoInput({
             onChange={(e) => onPromptChange(e.target.value)}
             onKeyDown={handleKeyDown}
             className="resize-none min-h-[52px] max-h-[104px] px-4 py-3 text-sm rounded-lg bg-muted/50 border border-border focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary transition-all"
+            disabled={generating}
+          />
+          <PromptEnhancementButton
+            prompt={prompt}
+            modelId={selectedModel}
+            referenceImage={referenceImage || imagePreviewUrl || null}
+            onEnhancementComplete={(enhanced) => onPromptChange(enhanced)}
             disabled={generating}
           />
         </div>

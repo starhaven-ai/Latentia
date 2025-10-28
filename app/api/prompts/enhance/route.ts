@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get model-specific enhancement prompt from database
-    const enhancementPrompt = await prisma.promptEnhancementPrompt.findFirst({
+    const enhancementPrompt = await (prisma as any).promptEnhancementPrompt.findFirst({
       where: {
         modelIds: {
           has: modelId, // Check if this model ID is in the array
@@ -71,8 +71,21 @@ Return ONLY the enhanced prompt text. Nothing else.`
     let requestContent: string
     
     if (referenceImage) {
-      // Image editing mode - get model-specific guidance
-      if (modelId === 'gemini-nano-banana') {
+      // Image present. If target is VIDEO model, treat as image-to-video guidance (Veo-style).
+      const isVideoModel = /veo|video|replicate-video|fal-video|gemini-video/i.test(modelId)
+      if (isVideoModel) {
+        requestContent = `User wants to generate a video guided by a reference image. User's text prompt: "${prompt}"
+Reference image will be provided.
+
+Enhance this for an image-to-video workflow (inspired by Veo best practices):
+- Keep the subject and style consistent with the reference image
+- Add subtle motion cues (camera and subject) appropriate for ~8s
+- Describe lighting, mood, and pacing succinctly
+- Provide a single coherent shot idea (avoid rigid multi-shot lists)
+- If audio ambiance is desired, mention it briefly; otherwise omit
+
+Return ONLY the enhanced video prompt.`
+      } else if (modelId === 'gemini-nano-banana') {
         requestContent = `User wants to edit an image. Their instruction: "${prompt}"
 Reference image will be provided.
 
@@ -104,8 +117,34 @@ Reference image will be provided.
 Enhance this edit instruction to be clearer and more effective. Return ONLY the enhanced edit instruction.`
       }
     } else {
-      // Text-to-image mode
-      requestContent = `User's prompt: "${prompt}"
+      // No reference image provided — treat as pure text prompt.
+      // If the target is a VIDEO model (e.g., Veo/Gemini video), apply image-to-video best practices.
+      const isVideoModel = /veo|video|replicate-video|fal-video|gemini-video/i.test(modelId)
+      if (isVideoModel) {
+        // Veo 3.x-style guidance (lightweight, common-sense, non-restrictive)
+        // Based on Google's docs about image-to-video and reference images
+        // https://ai.google.dev/gemini-api/docs/video?authuser=1&example=dialogue
+        requestContent = `User's video prompt: "${prompt}"
+Please enhance this for a video generation model while keeping the user's intent. Use practical, non-restrictive guidance inspired by Veo best practices:
+
+Include when useful (omit if not relevant):
+- A concise storyline or action progression (beginning → middle → end)
+- Camera guidance (e.g., wide shot, close-up, slow pan, push-in)
+- Visual tone and lighting (e.g., cinematic, soft daylight, moody, golden hour)
+- Motion cues (what moves and how: drifting snow, subtle camera sway)
+- Composition hints (foreground/background elements; depth; subject focus)
+- Duration-aware phrasing (8s feels complete; avoid overstuffing)
+- Audio ambiance only if clearly desired (keep subtle)
+
+Avoid:
+- Overly rigid shot lists or technical jargon
+- Breaking the user's style/subject
+- Excessive verbosity
+
+Return ONLY the enhanced prompt text. Nothing else.`
+      } else {
+        // Text-to-image mode
+        requestContent = `User's prompt: "${prompt}"
 Please enhance this text-to-image prompt while respecting the user's creative vision.
 
 Guidelines:
@@ -115,6 +154,7 @@ Guidelines:
 - Don't add unnecessary complexity
 
 Return ONLY the enhanced prompt text. Nothing else.`
+      }
     }
 
     // Prepare message content

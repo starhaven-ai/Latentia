@@ -229,8 +229,9 @@ export function GenerationInterface({
     // Switch to the video session
     onSessionSwitch(videoSessionId)
 
-    // Set prompt and parameters from the image generation
-    setPrompt(generation.prompt)
+    // Do NOT copy the image prompt into the video prompt box.
+    // The user will write a video-specific prompt (optionally enhanced).
+    setPrompt('')
     setSelectedModel(generation.modelId)
     
     // Set the reference image URL for the thumbnail
@@ -247,7 +248,7 @@ export function GenerationInterface({
 
     toast({
       title: "Converted to video",
-      description: "Prompt copied to video session. Ready to generate!",
+      description: "Reference image sent. Write a video prompt or use the wand to enhance.",
       variant: "success",
     })
   }

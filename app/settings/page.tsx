@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, User, BarChart3 } from 'lucide-react'
+import { ArrowLeft, User, BarChart3, Sparkles } from 'lucide-react'
 import { AccountSettings } from '@/components/settings/AccountSettings'
 import { AnalyticsSettings } from '@/components/settings/AnalyticsSettings'
+import { PromptManagementSettings } from '@/components/settings/PromptManagementSettings'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -34,7 +35,7 @@ export default function SettingsPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="account" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Account
@@ -42,6 +43,10 @@ export default function SettingsPage() {
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Analytics
+            </TabsTrigger>
+            <TabsTrigger value="prompts" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              Prompts
             </TabsTrigger>
           </TabsList>
 
@@ -51,6 +56,10 @@ export default function SettingsPage() {
 
           <TabsContent value="analytics" className="mt-6">
             <AnalyticsSettings />
+          </TabsContent>
+
+          <TabsContent value="prompts" className="mt-6">
+            <PromptManagementSettings />
           </TabsContent>
         </Tabs>
       </div>

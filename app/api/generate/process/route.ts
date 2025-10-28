@@ -33,9 +33,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Fetch the generation from database
+    // Fetch the generation from database with session
     const generation = await prisma.generation.findUnique({
       where: { id: generationId },
+      include: {
+        session: {
+          select: {
+            type: true,
+          },
+        },
+      },
     })
 
     if (!generation) {
@@ -100,20 +107,24 @@ export async function POST(request: NextRequest) {
         // Upload to Supabase Storage if it's a data URL or external URL
         if (output.url.startsWith('data:')) {
           // Base64 data URL - upload to storage
-          const extension = output.url.includes('image/png') ? 'png' : 'jpg'
+          // Determine file extension based on session type
+          const extension = generation.session.type === 'video' 
+            ? 'mp4' // Videos from models might be base64 encoded
+            : (output.url.includes('image/png') ? 'png' : 'jpg')
+          const bucket = generation.session.type === 'video' ? 'generated-videos' : 'generated-images'
           const storagePath = `${generation.userId}/${generationId}/${i}.${extension}`
           
-          console.log(`[${generationId}] Uploading base64 image ${i} to storage`)
+          console.log(`[${generationId}] Uploading base64 ${generation.session.type} ${i} to storage`)
           finalUrl = await uploadBase64ToStorage(
             output.url,
-            'generated-images',
+            bucket,
             storagePath
           )
           console.log(`[${generationId}] Uploaded to: ${finalUrl}`)
         } else if (output.url.startsWith('http')) {
           // External URL - download and re-upload to our storage for consistency
           const extension = output.url.includes('.mp4') ? 'mp4' : output.url.includes('.webm') ? 'webm' : 'jpg'
-          const bucket = model.getConfig().type === 'video' ? 'generated-videos' : 'generated-images'
+          const bucket = generation.session.type === 'video' ? 'generated-videos' : 'generated-images'
           const storagePath = `${generation.userId}/${generationId}/${i}.${extension}`
           
           console.log(`[${generationId}] Uploading external URL ${i} to storage`)
@@ -133,7 +144,7 @@ export async function POST(request: NextRequest) {
         outputRecords.push({
           generationId: generation.id,
           fileUrl: finalUrl,
-          fileType: model.getConfig().type,
+          fileType: generation.session.type,
           width: output.width,
           height: output.height,
           duration: output.duration,

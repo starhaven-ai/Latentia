@@ -145,6 +145,30 @@ export function VideoInput({
     }
   }
 
+  // If a referenceImageUrl is provided from parent (e.g., convert-to-video),
+  // hydrate the local preview + File so it appears in the prompt bar and is
+  // included in the generation request.
+  useEffect(() => {
+    if (!referenceImageUrl) return
+    // If we've already set a preview for this URL, skip
+    if (imagePreviewUrl === referenceImageUrl && referenceImage) return
+    ;(async () => {
+      try {
+        const response = await fetch(referenceImageUrl)
+        const blob = await response.blob()
+        const file = new File([blob], 'reference.png', { type: blob.type })
+        // Clean up old preview URL
+        if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(imagePreviewUrl)
+        }
+        setImagePreviewUrl(referenceImageUrl)
+        setReferenceImage(file)
+      } catch (err) {
+        console.error('Failed to hydrate referenceImageUrl for video input:', err)
+      }
+    })()
+  }, [referenceImageUrl])
+
   // Cleanup preview URL on unmount
   useEffect(() => {
     return () => {

@@ -28,12 +28,7 @@ export function PromptManagementSettings() {
   const [prompts, setPrompts] = useState<EnhancementPrompt[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editedPrompt, setEditedPrompt] = useState<Partial<EnhancementPrompt>>({})
-  const [showNewForm, setShowNewForm] = useState(false)
-  const [newPrompt, setNewPrompt] = useState({
-    name: '',
-    description: '',
-    systemPrompt: '',
-  })
+  // Single-prompt admin UX: no creation flow for now
 
   useEffect(() => {
     fetchPrompts()
@@ -58,21 +53,23 @@ export function PromptManagementSettings() {
     }
   }
 
-  const handleCreate = async () => {
+  // Save edits for the currently edited prompt
+  const handleSave = async () => {
+    if (!editingId) return
     setLoading(true)
     try {
-      const response = await fetch('/api/admin/prompt-enhancements', {
-        method: 'POST',
+      const response = await fetch(`/api/admin/prompt-enhancements/${editingId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newPrompt),
+        body: JSON.stringify(editedPrompt),
       })
-      if (!response.ok) throw new Error('Failed to create')
-      toast({ title: 'Success', description: 'Prompt created' })
-      setShowNewForm(false)
-      setNewPrompt({ name: '', description: '', systemPrompt: '' })
+      if (!response.ok) throw new Error('Failed to save')
+      toast({ title: 'Saved', description: 'System prompt updated' })
+      setEditingId(null)
+      setEditedPrompt({})
       await fetchPrompts()
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to create', variant: 'destructive' })
+      toast({ title: 'Error', description: 'Failed to save changes', variant: 'destructive' })
     } finally {
       setLoading(false)
     }
@@ -107,60 +104,11 @@ export function PromptManagementSettings() {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Prompt Enhancement</CardTitle>
-            <CardDescription>Manage AI prompt enhancement system prompts</CardDescription>
+            <CardDescription>Edit the system prompt used for AI prompt enhancement</CardDescription>
           </div>
-          <Button onClick={() => setShowNewForm(true)} disabled={showNewForm}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Prompt
-          </Button>
         </div>
       </CardHeader>
       <CardContent>
-        {showNewForm && (
-          <Card className="mb-6 border-primary">
-            <CardHeader>
-              <CardTitle className="text-lg">Create New Prompt</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Name</Label>
-                <Input
-                  value={newPrompt.name}
-                  onChange={(e) => setNewPrompt({ ...newPrompt, name: e.target.value })}
-                  placeholder="e.g., Veo 3.1 Video Enhancement"
-                />
-              </div>
-              <div>
-                <Label>Description</Label>
-                <Input
-                  value={newPrompt.description}
-                  onChange={(e) => setNewPrompt({ ...newPrompt, description: e.target.value })}
-                  placeholder="Brief description"
-                />
-              </div>
-              <div>
-                <Label>System Prompt</Label>
-                <Textarea
-                  value={newPrompt.systemPrompt}
-                  onChange={(e) => setNewPrompt({ ...newPrompt, systemPrompt: e.target.value })}
-                  placeholder="Enter system prompt..."
-                  rows={10}
-                  className="font-mono text-sm"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleCreate} disabled={!newPrompt.name || !newPrompt.systemPrompt || loading}>
-                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Create
-                </Button>
-                <Button variant="outline" onClick={() => setShowNewForm(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         <div className="space-y-4">
           {prompts.map((prompt) => (
             <Card key={prompt.id}>
@@ -173,23 +121,62 @@ export function PromptManagementSettings() {
                     </div>
                     <CardDescription>{prompt.description || 'No description'}</CardDescription>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => handleDelete(prompt.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {editingId === prompt.id ? (
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={handleSave} disabled={loading}>
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setEditedPrompt({}) }}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => { setEditingId(prompt.id); setEditedPrompt({ name: prompt.name, description: prompt.description || '', systemPrompt: prompt.systemPrompt }) }}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="rounded-lg bg-muted p-4">
-                  <pre className="text-sm whitespace-pre-wrap font-mono">{prompt.systemPrompt}</pre>
-                </div>
-              </CardContent>
+              {editingId === prompt.id ? (
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Name</Label>
+                    <Input
+                      value={editedPrompt.name || ''}
+                      onChange={(e) => setEditedPrompt({ ...editedPrompt, name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Description</Label>
+                    <Input
+                      value={editedPrompt.description || ''}
+                      onChange={(e) => setEditedPrompt({ ...editedPrompt, description: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>System Prompt</Label>
+                    <Textarea
+                      value={editedPrompt.systemPrompt || ''}
+                      onChange={(e) => setEditedPrompt({ ...editedPrompt, systemPrompt: e.target.value })}
+                      rows={16}
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                </CardContent>
+              ) : (
+                <CardContent>
+                  <div className="rounded-lg bg-muted p-4">
+                    <pre className="text-sm whitespace-pre-wrap font-mono">{prompt.systemPrompt}</pre>
+                  </div>
+                </CardContent>
+              )}
             </Card>
           ))}
         </div>
 
         {prompts.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
-            <p>No prompts configured.</p>
+            <p>No system prompt configured yet.</p>
           </div>
         )}
       </CardContent>

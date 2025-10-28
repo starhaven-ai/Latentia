@@ -56,7 +56,7 @@ export async function uploadBase64ToStorage(
 
 /**
  * Upload external URL to Supabase Storage
- * @param url - External URL to download and upload
+ * @param url - External URL to download and upload (supports http://, https://, and gs://)
  * @param bucket - Storage bucket name
  * @param path - File path within bucket
  * @returns Public URL of uploaded file
@@ -67,15 +67,55 @@ export async function uploadUrlToStorage(
   path: string
 ): Promise<string> {
   try {
-    // Fetch the image from external URL
-    const response = await fetch(url)
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.statusText}`)
+    let response: Response
+    
+    // Handle GCS URIs (gs://bucket-name/path/to/file)
+    if (url.startsWith('gs://')) {
+      // Convert GCS URI to HTTP URL
+      // Format: gs://bucket-name/path/to/file -> https://storage.googleapis.com/bucket-name/path/to/file
+      const gsPath = url.replace('gs://', '')
+      const [bucketName, ...pathParts] = gsPath.split('/')
+      const filePath = pathParts.join('/')
+      
+      // Fetch from Google Cloud Storage
+      response = await fetch(`https://storage.googleapis.com/${bucketName}/${filePath}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+        },
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch from GCS: ${response.statusText}`)
+      }
+    } else if (url.startsWith('http://') || url.startsWith('https://')) {
+      // Regular HTTP/HTTPS URL
+      response = await fetch(url)
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch from URL: ${response.statusText}`)
+      }
+    } else {
+      throw new Error(`Unsupported URL format: ${url}`)
     }
 
     const arrayBuffer = await response.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
-    const contentType = response.headers.get('content-type') || 'image/png'
+    
+    // Detect content type from URL or response headers
+    let contentType = response.headers.get('content-type')
+    if (!contentType) {
+      // Fallback: detect from file extension
+      const ext = url.split('.').pop()?.toLowerCase()
+      if (ext === 'mp4' || ext === 'webm') {
+        contentType = 'video/mp4'
+      } else if (ext === 'jpg' || ext === 'jpeg') {
+        contentType = 'image/jpeg'
+      } else if (ext === 'png') {
+        contentType = 'image/png'
+      } else {
+        contentType = 'application/octet-stream'
+      }
+    }
 
     // Upload to Supabase Storage
     const { data, error } = await supabaseAdmin.storage

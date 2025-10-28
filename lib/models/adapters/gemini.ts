@@ -172,12 +172,7 @@ export class GeminiAdapter extends BaseModelAdapter {
   }
 
   private async generateVideo(request: GenerationRequest): Promise<GenerationResponse> {
-    // TODO: Implement proper Veo 3.1 API integration
-    // The current endpoint needs to be updated to use:
-    // - POST https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview:predictLongRunning
-    // - Poll the operation status until complete
-    // - Download the video from the returned URI
-    // See: https://ai.google.dev/gemini-api/docs/video
+    console.log(`[Veo 3.1] Starting video generation for prompt: ${request.prompt.substring(0, 50)}...`)
     
     const duration = request.duration || 8
     const resolution = request.resolution || 720
@@ -206,81 +201,111 @@ export class GeminiAdapter extends BaseModelAdapter {
     
     const { width, height } = getDimensions(aspectRatio, resolution)
     
-    // Calculate realistic generation time based on video parameters
-    // Formula: base time + (duration * complexity factor) + (resolution factor)
-    const baseTime = 30 // 30 seconds base
-    const durationFactor = duration * 5 // 5 seconds per second of video
-    const resolutionFactor = resolution === 1080 ? 30 : 0 // 30 seconds extra for 1080p
-    const estimatedTime = baseTime + durationFactor + resolutionFactor
+    // Using Veo 3.1 official API endpoint
+    const modelId = 'veo-3.1-generate-preview'
+    const endpoint = `${this.baseUrl}/models/${modelId}:predictLongRunning`
     
-    console.log(`Generating video with Veo 3.1: ${duration}s video, ${width}x${height}, ${aspectRatio}, estimated ${estimatedTime}s`)
-
-    // MOCK IMPLEMENTATION FOR TESTING
-    // Simulate realistic video generation time
-    await new Promise(resolve => setTimeout(resolve, estimatedTime * 1000))
-    
-    // Return mock video response
-    // Using Big Buck Bunny sample video (open source)
-    const mockVideoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
-    
-    return {
-      id: `gen-${Date.now()}`,
-      status: 'completed',
-      outputs: [
-        {
-          url: mockVideoUrl,
-          width,
-          height,
-          duration,
-        },
-      ],
-      metadata: {
-        model: this.config.id,
-        prompt: request.prompt,
-        estimatedTime,
-        note: 'MOCK VIDEO - Replace with actual Veo 3.1 API implementation',
-      },
-    }
-
-    /* Template for proper Veo 3.1 implementation:
-    
-    const endpoint = `${this.baseUrl}/models/veo-3.1-generate-preview:predictLongRunning`
-    
-    const payload = {
-      instances: [{
-        prompt: request.prompt,
-      }],
+    // Build request payload according to Veo 3.1 API
+    const instance: any = {
+      prompt: request.prompt,
     }
     
-    const response = await fetch(`${endpoint}?key=${this.apiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error?.message || 'Video generation failed')
-    }
-
-    const operation = await response.json()
-    
-    // Poll operation until complete
-    let operationComplete = false
-    while (!operationComplete) {
-      await new Promise(resolve => setTimeout(resolve, 10000)) // Wait 10s
-      const statusResponse = await fetch(`${this.baseUrl}/${operation.name}?key=${this.apiKey}`)
-      const status = await statusResponse.json()
-      operationComplete = status.done
-      if (operationComplete) {
-        const videoUri = status.response.generatedVideos[0].video.uri
-        // Download video from URI
-        // Return formatted response with actual video data
+    // Add reference image if provided (for image-to-video)
+    if (request.referenceImage) {
+      const dataUrlMatch = request.referenceImage.match(/^data:([^;]+);base64,(.+)$/)
+      if (dataUrlMatch) {
+        const [, mimeType, base64Data] = dataUrlMatch
+        instance.image = {
+          mimeType,
+          data: base64Data,
+        }
       }
     }
-    */
+    
+    const payload = {
+      instances: [instance],
+    }
+    
+    console.log(`[Veo 3.1] Calling API with ${duration}s video, ${width}x${height}, ${aspectRatio}`)
+    
+    try {
+      // Initiate video generation
+      const response = await fetch(`${endpoint}?key=${this.apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error?.message || 'Video generation request failed')
+      }
+
+      const operation = await response.json()
+      const operationName = operation.name
+      
+      console.log(`[Veo 3.1] Generation started, operation: ${operationName}`)
+      
+      // Poll operation until complete (max 5 minutes)
+      const maxAttempts = 30 // 5 minutes at 10s intervals
+      let attempts = 0
+      let operationComplete = false
+      
+      while (!operationComplete && attempts < maxAttempts) {
+        attempts++
+        await new Promise(resolve => setTimeout(resolve, 10000)) // Wait 10s
+        
+        const statusResponse = await fetch(`${this.baseUrl}/${operationName}?key=${this.apiKey}`)
+        if (!statusResponse.ok) {
+          throw new Error('Failed to check operation status')
+        }
+        
+        const status = await statusResponse.json()
+        operationComplete = status.done
+        
+        if (operationComplete) {
+          const generatedVideo = status.response?.generateVideoResponse?.generatedSamples?.[0]
+          if (!generatedVideo) {
+            throw new Error('No video in response')
+          }
+          
+          const videoUri = generatedVideo.video.uri
+          console.log(`[Veo 3.1] Video ready: ${videoUri}`)
+          
+          // Return the video URI - it will be downloaded by the background processor
+          return {
+            id: `gen-${Date.now()}`,
+            status: 'completed',
+            outputs: [
+              {
+                url: videoUri,
+                width,
+                height,
+                duration,
+              },
+            ],
+            metadata: {
+              model: this.config.id,
+              prompt: request.prompt,
+              operationName,
+            },
+          }
+        }
+      }
+      
+      if (!operationComplete) {
+        throw new Error('Video generation timeout - please try again or contact support')
+      }
+      
+      // This shouldn't be reached, but satisfy TypeScript
+      throw new Error('Unexpected end of generation loop')
+      
+    } catch (error: any) {
+      console.error('[Veo 3.1] Generation error:', error)
+      throw new Error(error.message || 'Video generation failed')
+    }
   }
 }
 

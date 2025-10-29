@@ -73,12 +73,9 @@ export async function POST(request: NextRequest) {
     
     const triggerProcessing = async (retries = 3) => {
       for (let i = 0; i < retries; i++) {
-        let timeoutId: NodeJS.Timeout | undefined
         try {
-          // Create abort controller for timeout
-          const controller = new AbortController()
-          timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
-          
+          // Don't use timeout for internal serverless calls - let it take as long as needed
+          // The process endpoint will handle its own timeouts
           const response = await fetch(`${baseUrl}/api/generate/process`, {
             method: 'POST',
             headers: {
@@ -87,10 +84,7 @@ export async function POST(request: NextRequest) {
             body: JSON.stringify({
               generationId: generation.id,
             }),
-            signal: controller.signal,
           })
-          
-          if (timeoutId) clearTimeout(timeoutId)
           
           if (response.ok) {
             console.log(`[${generation.id}] Background processing triggered successfully`)
@@ -99,16 +93,12 @@ export async function POST(request: NextRequest) {
           
           // If not OK, try again unless last retry
           if (i < retries - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))) // Exponential backoff
+            // Longer backoff for serverless - wait 2s, 4s, 6s between retries
+            await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)))
             continue
           }
         } catch (error: any) {
-          // Clear timeout if it wasn't already cleared
-          if (timeoutId) {
-            clearTimeout(timeoutId)
-          }
-          
-          console.error(`[${generation.id}] Background processing trigger attempt ${i + 1} failed:`, error.message)
+          console.error(`[${generation.id}] Background processing trigger attempt ${i + 1} failed:`, error.message || error.toString())
           
           // If last retry failed, update generation status
           if (i === retries - 1) {
@@ -124,8 +114,8 @@ export async function POST(request: NextRequest) {
               },
             }).catch(console.error)
           } else {
-            // Wait before retry with exponential backoff
-            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)))
+            // Wait before retry with longer backoff for serverless
+            await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)))
           }
         }
       }

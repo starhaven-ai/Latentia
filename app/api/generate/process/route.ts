@@ -129,10 +129,16 @@ export async function POST(request: NextRequest) {
           
           console.log(`[${generationId}] Uploading external URL ${i} to storage`)
           try {
+            // Google Generative Language file downloads require API key auth
+            const isGeminiFile = output.url.includes('generativelanguage.googleapis.com')
+            const headers = isGeminiFile && process.env.GEMINI_API_KEY
+              ? { 'x-goog-api-key': process.env.GEMINI_API_KEY as string }
+              : undefined
             finalUrl = await uploadUrlToStorage(
               output.url,
               bucket,
-              storagePath
+              storagePath,
+              headers ? { headers } : undefined
             )
             console.log(`[${generationId}] Uploaded to: ${finalUrl}`)
           } catch (error) {

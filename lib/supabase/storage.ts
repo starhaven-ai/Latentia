@@ -64,7 +64,8 @@ export async function uploadBase64ToStorage(
 export async function uploadUrlToStorage(
   url: string,
   bucket: string,
-  path: string
+  path: string,
+  opts?: { headers?: Record<string, string> }
 ): Promise<string> {
   try {
     let response: Response
@@ -89,7 +90,11 @@ export async function uploadUrlToStorage(
       }
     } else if (url.startsWith('http://') || url.startsWith('https://')) {
       // Regular HTTP/HTTPS URL
-      response = await fetch(url)
+      response = await fetch(url, {
+        headers: {
+          ...(opts?.headers || {}),
+        },
+      })
       
       if (!response.ok) {
         throw new Error(`Failed to fetch from URL: ${response.statusText}`)

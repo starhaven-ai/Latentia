@@ -268,22 +268,30 @@ export class GeminiAdapter extends BaseModelAdapter {
           } catch {
             errorMessage = errorText
           }
+          console.error(`[Veo 3.1] Files API upload failed (${uploadResponse.status}):`, errorMessage)
           throw new Error(`Failed to upload image to Files API: ${errorMessage}`)
         }
         
         const fileData = await uploadResponse.json()
-        const fileUri = fileData.file?.uri || fileData.uri
+        console.log(`[Veo 3.1] Files API upload response:`, JSON.stringify(fileData, null, 2))
+        
+        // Try multiple possible response formats
+        const fileUri = fileData.file?.uri || 
+                        fileData.file?.name || 
+                        fileData.uri || 
+                        fileData.name ||
+                        (fileData.file && typeof fileData.file === 'string' ? fileData.file : null)
         
         if (!fileUri) {
-          throw new Error('No file URI returned from Files API upload')
+          console.error(`[Veo 3.1] Unexpected Files API response structure:`, fileData)
+          throw new Error(`No file URI returned from Files API upload. Response structure: ${JSON.stringify(fileData)}`)
         }
         
         console.log(`[Veo 3.1] Reference image uploaded, file URI: ${fileUri}`)
         
-        // Reference the uploaded file in the video generation request
-        instance.image = {
-          file_uri: fileUri,
-        }
+        // Reference the uploaded file - Veo 3.1 expects a string URI, not an object
+        // Based on API docs, we should pass the file URI as a string
+        instance.image = fileUri
       } catch (error: any) {
         console.error('[Veo 3.1] Error uploading reference image:', error)
         // Fall back to text-to-video if image upload fails

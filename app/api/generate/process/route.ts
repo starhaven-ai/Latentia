@@ -89,7 +89,8 @@ export async function POST(request: NextRequest) {
       try {
         const extension = referenceImage.includes('image/png') ? 'png' : 'jpg'
         const storagePath = `${generation.userId}/${generationId}/reference.${extension}`
-        referenceImageUrl = await uploadBase64ToStorage(referenceImage, 'reference-images', storagePath)
+        // Store in existing images bucket
+        referenceImageUrl = await uploadBase64ToStorage(referenceImage, 'generated-images', storagePath)
       } catch (e) {
         console.error(`[${generationId}] Failed to upload reference image:`, e)
       }
@@ -136,7 +137,10 @@ export async function POST(request: NextRequest) {
           console.log(`[${generationId}] Uploaded to: ${finalUrl}`)
         } else if (output.url.startsWith('http')) {
           // External URL - download and re-upload to our storage for consistency
-          const extension = output.url.includes('.mp4') ? 'mp4' : output.url.includes('.webm') ? 'webm' : 'jpg'
+          // For video sessions, default to mp4 extension since Veo returns media streams without file extension
+          const extension = generation.session.type === 'video'
+            ? 'mp4'
+            : (output.url.includes('.png') ? 'png' : 'jpg')
           const bucket = generation.session.type === 'video' ? 'generated-videos' : 'generated-images'
           const storagePath = `${generation.userId}/${generationId}/${i}.${extension}`
           

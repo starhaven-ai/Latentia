@@ -284,23 +284,36 @@ export function GenerationGallery({
             )
           }
           
-          // Video layout: Prompt above, video below with more space
+          // Video layout: mirror image layout → prompt on the left, video on the right
           if (isVideo) {
             return (
-              <div key={generation.id} className="space-y-3 max-w-4xl mx-auto">
-                {/* Prompt above video - truncated with click to copy */}
-                <div 
-                  className="bg-muted/30 rounded-lg px-4 py-3 border border-border/50 cursor-pointer hover:border-primary/50 transition-colors group"
-                  onClick={() => handleCopyPrompt(generation.prompt)}
-                  title="Click to copy prompt"
-                >
-                  <p className="text-sm text-foreground/90 line-clamp-2 group-hover:text-primary transition-colors">
-                    {generation.prompt}
-                  </p>
+              <div key={generation.id} className="flex gap-6 items-start">
+                {/* Left Side: Prompt Display - same styling as images */}
+                <div className="w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 flex flex-col">
+                  <div className="flex-1 overflow-hidden hover:overflow-y-auto transition-all group relative">
+                    <p 
+                      className="text-base font-normal leading-relaxed text-foreground/90 cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => handleCopyPrompt(generation.prompt)}
+                      title="Click to copy"
+                    >
+                      {generation.prompt}
+                    </p>
+                    <Copy className="h-3.5 w-3.5 absolute top-0 right-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                  <div className="space-y-2 text-xs text-muted-foreground mt-4">
+                    <div className="flex items-center gap-2">
+                      <Info className="h-3.5 w-3.5" />
+                      <span className="capitalize font-medium">{(generation.modelId || 'unknown').replace('gemini-', '').replace('-', ' ')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground/70">Generated:</span>
+                      <span className="font-medium">{formatDate(generation.createdAt)}</span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Video outputs - same width as prompt */}
-                <div className="grid grid-cols-1 gap-4">
+                {/* Right Side: Single video container */}
+                <div className="flex-1 grid grid-cols-1 gap-3 max-w-4xl">
                   {(generation.outputs || []).map((output) => {
                     const aspectRatio = (generation.parameters as any)?.aspectRatio || '16:9'
                     return (
@@ -315,7 +328,7 @@ export function GenerationGallery({
                           controls
                         />
 
-                        {/* Hover Overlay with Actions */}
+                        {/* Hover Overlay with Actions (no convert-to-video button in video view) */}
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                           {/* Top Right - Approval checkmark */}
                           <div className="absolute top-2 right-2 pointer-events-auto">

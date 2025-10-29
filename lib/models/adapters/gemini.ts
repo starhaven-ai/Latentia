@@ -206,20 +206,11 @@ export class GeminiAdapter extends BaseModelAdapter {
     const endpoint = `${this.baseUrl}/models/${modelId}:predictLongRunning`
     
     // Build request payload according to Veo 3.1 API
+    // Note: Veo 3.1 preview currently does not accept arbitrary binary `data` fields on the instance.
+    // To prevent API errors ("`data` isn't supported by this model"), we only send the prompt.
+    // If/when inline reference images are supported, adapt the schema accordingly.
     const instance: any = {
       prompt: request.prompt,
-    }
-    
-    // Add reference image if provided (for image-to-video)
-    if (request.referenceImage) {
-      const dataUrlMatch = request.referenceImage.match(/^data:([^;]+);base64,(.+)$/)
-      if (dataUrlMatch) {
-        const [, mimeType, base64Data] = dataUrlMatch
-        instance.image = {
-          mimeType,
-          data: base64Data,
-        }
-      }
     }
     
     const payload = {

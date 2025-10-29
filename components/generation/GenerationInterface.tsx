@@ -11,7 +11,7 @@ import { useGenerationsRealtime } from '@/hooks/useGenerationsRealtime'
 import { useGenerateMutation } from '@/hooks/useGenerateMutation'
 import { useUIStore } from '@/store/uiStore'
 import { useToast } from '@/components/ui/use-toast'
-import { getAllModels } from '@/lib/models/registry'
+import { getAllModels, getModelsByType } from '@/lib/models/registry'
 import { createClient } from '@/lib/supabase/client'
 
 interface GenerationInterfaceProps {
@@ -89,6 +89,16 @@ export function GenerationInterface({
     const defaultNumOutputs = generationType === 'image' ? 4 : 1
     if (parameters.numOutputs !== defaultNumOutputs) {
       setParameters({ numOutputs: defaultNumOutputs })
+    }
+    // Enforce model type per view: image sessions -> image models, video sessions -> video models
+    const all = getAllModels()
+    const current = all.find(m => m.id === selectedModel)
+    const requiredType = generationType
+    if (!current || current.type !== requiredType) {
+      const fallback = getModelsByType(requiredType)[0]
+      if (fallback) {
+        setSelectedModel(fallback.id)
+      }
     }
   }, [generationType])
 
@@ -232,7 +242,11 @@ export function GenerationInterface({
     // Do NOT copy the image prompt into the video prompt box.
     // The user will write a video-specific prompt (optionally enhanced).
     setPrompt('')
-    setSelectedModel(generation.modelId)
+    // Force default video model when moving into a video session
+    const videoDefault = getModelsByType('video')[0]
+    if (videoDefault) {
+      setSelectedModel(videoDefault.id)
+    }
     
     // Set the reference image URL for the thumbnail
     if (imageUrl) {

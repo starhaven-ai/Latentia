@@ -227,9 +227,9 @@ export class GeminiAdapter extends BaseModelAdapter {
         const imageBytes = Buffer.from(imageBuffer)
         const contentType = imageResponse.headers.get('content-type') || 'image/jpeg'
         
-        // Upload to Google Files API using multipart/form-data
-        // Construct multipart body with proper binary handling
-        const boundary = `----formdata-latentia-${Date.now()}`
+        // Upload to Google Files API using multipart upload
+        // Per docs, use files:upload with X-Goog-Upload-Protocol: multipart
+        const boundary = `----gl-files-upload-${Date.now()}`
         const metadata = JSON.stringify({
           file: {
             display_name: 'reference_image',
@@ -251,10 +251,12 @@ export class GeminiAdapter extends BaseModelAdapter {
         
         const multipartBody = Buffer.concat(parts)
         
-        const uploadResponse = await fetch(`${this.baseUrl}/files?key=${this.apiKey}`, {
+        const uploadResponse = await fetch(`${this.baseUrl}/files:upload`, {
           method: 'POST',
           headers: {
-            'Content-Type': `multipart/form-data; boundary=${boundary}`,
+            'x-goog-api-key': this.apiKey,
+            'X-Goog-Upload-Protocol': 'multipart',
+            'Content-Type': `multipart/related; boundary=${boundary}`,
           },
           body: multipartBody,
         })
@@ -276,22 +278,19 @@ export class GeminiAdapter extends BaseModelAdapter {
         console.log(`[Veo 3.1] Files API upload response:`, JSON.stringify(fileData, null, 2))
         
         // Try multiple possible response formats
-        const fileUri = fileData.file?.uri || 
-                        fileData.file?.name || 
-                        fileData.uri || 
-                        fileData.name ||
-                        (fileData.file && typeof fileData.file === 'string' ? fileData.file : null)
+        // The Files API returns a File object with name like "files/abc123" and possibly uri for downloads
+        const fileResourceName = fileData.file?.name || fileData.name || null
+        const fileUri = fileData.file?.uri || fileData.uri || null
         
-        if (!fileUri) {
+        if (!fileResourceName && !fileUri) {
           console.error(`[Veo 3.1] Unexpected Files API response structure:`, fileData)
           throw new Error(`No file URI returned from Files API upload. Response structure: ${JSON.stringify(fileData)}`)
         }
         
-        console.log(`[Veo 3.1] Reference image uploaded, file URI: ${fileUri}`)
+        console.log(`[Veo 3.1] Reference image uploaded, file name: ${fileResourceName || 'n/a'}, uri: ${fileUri || 'n/a'}`)
         
-        // Reference the uploaded file - Veo 3.1 expects a string URI, not an object
-        // Based on API docs, we should pass the file URI as a string
-        instance.image = fileUri
+        // Reference the uploaded file - Veo 3.1 expects a string; examples pass the file resource name
+        instance.image = fileResourceName || fileUri
       } catch (error: any) {
         console.error('[Veo 3.1] Error uploading reference image:', error)
         // Fall back to text-to-video if image upload fails

@@ -206,15 +206,89 @@ export class GeminiAdapter extends BaseModelAdapter {
     const endpoint = `${this.baseUrl}/models/${modelId}:predictLongRunning`
     
     // Build request payload according to Veo 3.1 API
-    // If a reference image URL is provided, include as a guided image
+    // If a reference image URL is provided, we need to upload it to Google's Files API first
     const instance: any = {
       prompt: request.prompt,
     }
 
     if ((request as any).referenceImageUrl) {
-      instance.image = { uri: (request as any).referenceImageUrl }
-      // Per docs, when using reference images, 8s is required for 1080p; cap duration to 8s
-      // We'll rely on the selected duration but do not exceed 8
+      // Veo 3.1 requires images to be uploaded via Files API
+      // Download the image from our storage and upload to Google Files API
+      try {
+        console.log(`[Veo 3.1] Uploading reference image to Google Files API: ${(request as any).referenceImageUrl}`)
+        
+        // Download image from Supabase
+        const imageResponse = await fetch((request as any).referenceImageUrl)
+        if (!imageResponse.ok) {
+          throw new Error(`Failed to fetch reference image: ${imageResponse.statusText}`)
+        }
+        
+        const imageBuffer = await imageResponse.arrayBuffer()
+        const imageBytes = Buffer.from(imageBuffer)
+        const contentType = imageResponse.headers.get('content-type') || 'image/jpeg'
+        
+        // Upload to Google Files API using multipart/form-data
+        // Construct multipart body with proper binary handling
+        const boundary = `----formdata-latentia-${Date.now()}`
+        const metadata = JSON.stringify({
+          file: {
+            display_name: 'reference_image',
+          },
+        })
+        
+        // Build multipart body parts
+        const parts: Buffer[] = []
+        
+        parts.push(Buffer.from(`--${boundary}\r\n`))
+        parts.push(Buffer.from('Content-Disposition: form-data; name="metadata"\r\n'))
+        parts.push(Buffer.from('Content-Type: application/json\r\n\r\n'))
+        parts.push(Buffer.from(metadata))
+        parts.push(Buffer.from(`\r\n--${boundary}\r\n`))
+        parts.push(Buffer.from(`Content-Disposition: form-data; name="file"; filename="reference_image"\r\n`))
+        parts.push(Buffer.from(`Content-Type: ${contentType}\r\n\r\n`))
+        parts.push(imageBytes)
+        parts.push(Buffer.from(`\r\n--${boundary}--\r\n`))
+        
+        const multipartBody = Buffer.concat(parts)
+        
+        const uploadResponse = await fetch(`${this.baseUrl}/files?key=${this.apiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          },
+          body: multipartBody,
+        })
+        
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text()
+          let errorMessage = 'Unknown error'
+          try {
+            const error = JSON.parse(errorText)
+            errorMessage = error.error?.message || errorText
+          } catch {
+            errorMessage = errorText
+          }
+          throw new Error(`Failed to upload image to Files API: ${errorMessage}`)
+        }
+        
+        const fileData = await uploadResponse.json()
+        const fileUri = fileData.file?.uri || fileData.uri
+        
+        if (!fileUri) {
+          throw new Error('No file URI returned from Files API upload')
+        }
+        
+        console.log(`[Veo 3.1] Reference image uploaded, file URI: ${fileUri}`)
+        
+        // Reference the uploaded file in the video generation request
+        instance.image = {
+          file_uri: fileUri,
+        }
+      } catch (error: any) {
+        console.error('[Veo 3.1] Error uploading reference image:', error)
+        // Fall back to text-to-video if image upload fails
+        console.warn('[Veo 3.1] Falling back to text-to-video without reference image')
+      }
     }
     
     const payload = {

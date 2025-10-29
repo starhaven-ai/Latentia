@@ -83,6 +83,18 @@ export async function POST(request: NextRequest) {
     const parameters = generation.parameters as any
     const { referenceImage, ...otherParameters } = parameters || {}
 
+    // If a base64 reference image was provided, upload it to storage and convert to a URL
+    let referenceImageUrl: string | undefined
+    if (referenceImage && typeof referenceImage === 'string' && referenceImage.startsWith('data:')) {
+      try {
+        const extension = referenceImage.includes('image/png') ? 'png' : 'jpg'
+        const storagePath = `${generation.userId}/${generationId}/reference.${extension}`
+        referenceImageUrl = await uploadBase64ToStorage(referenceImage, 'reference-images', storagePath)
+      } catch (e) {
+        console.error(`[${generationId}] Failed to upload reference image:`, e)
+      }
+    }
+
     console.log(`[${generationId}] Starting generation with model ${generation.modelId}`)
 
     // Generate using the model
@@ -90,6 +102,7 @@ export async function POST(request: NextRequest) {
       prompt: generation.prompt,
       negativePrompt: generation.negativePrompt || undefined,
       referenceImage,
+      referenceImageUrl,
       parameters: otherParameters,
       ...otherParameters,
     })

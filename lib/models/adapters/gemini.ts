@@ -227,55 +227,82 @@ export class GeminiAdapter extends BaseModelAdapter {
         const imageBytes = Buffer.from(imageBuffer)
         const contentType = imageResponse.headers.get('content-type') || 'image/jpeg'
         
-        // Upload to Google Files API using multipart upload
-        // Per docs, use files:upload with X-Goog-Upload-Protocol: multipart
-        const boundary = `----gl-files-upload-${Date.now()}`
-        const metadata = JSON.stringify({
+        // Upload to Google Files API
+        // Try using the standard /files endpoint with proper JSON structure first
+        // If that doesn't work, fall back to multipart
+        const metadata = {
           file: {
             display_name: 'reference_image',
           },
-        })
-        
-        // Build multipart body parts
-        const parts: Buffer[] = []
-        
-        parts.push(Buffer.from(`--${boundary}\r\n`))
-        parts.push(Buffer.from('Content-Disposition: form-data; name="metadata"\r\n'))
-        parts.push(Buffer.from('Content-Type: application/json\r\n\r\n'))
-        parts.push(Buffer.from(metadata))
-        parts.push(Buffer.from(`\r\n--${boundary}\r\n`))
-        parts.push(Buffer.from(`Content-Disposition: form-data; name="file"; filename="reference_image"\r\n`))
-        parts.push(Buffer.from(`Content-Type: ${contentType}\r\n\r\n`))
-        parts.push(imageBytes)
-        parts.push(Buffer.from(`\r\n--${boundary}--\r\n`))
-        
-        const multipartBody = Buffer.concat(parts)
-        
-        const uploadResponse = await fetch(`${this.baseUrl}/files:upload`, {
-          method: 'POST',
-          headers: {
-            'x-goog-api-key': this.apiKey,
-            'X-Goog-Upload-Protocol': 'multipart',
-            'Content-Type': `multipart/related; boundary=${boundary}`,
-          },
-          body: multipartBody,
-        })
-        
-        if (!uploadResponse.ok) {
-          const errorText = await uploadResponse.text()
-          let errorMessage = 'Unknown error'
-          try {
-            const error = JSON.parse(errorText)
-            errorMessage = error.error?.message || errorText
-          } catch {
-            errorMessage = errorText
-          }
-          console.error(`[Veo 3.1] Files API upload failed (${uploadResponse.status}):`, errorMessage)
-          throw new Error(`Failed to upload image to Files API: ${errorMessage}`)
         }
         
-        const fileData = await uploadResponse.json()
-        console.log(`[Veo 3.1] Files API upload response:`, JSON.stringify(fileData, null, 2))
+        // Convert image to base64 for JSON upload
+        const imageBase64 = imageBytes.toString('base64')
+        
+        let uploadResponse: Response
+        let fileData: any
+        
+        // Try JSON format first (some Google APIs accept this)
+        try {
+          uploadResponse = await fetch(`${this.baseUrl}/files?key=${this.apiKey}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...metadata,
+              config: {
+                file_type: 'FILE_TYPE_IMAGE',
+                mime_type: contentType,
+              },
+              data: {
+                mime_type: contentType,
+                data: imageBase64,
+              },
+            }),
+          })
+          
+          if (uploadResponse.ok) {
+            fileData = await uploadResponse.json()
+            console.log(`[Veo 3.1] Files API JSON upload response:`, JSON.stringify(fileData, null, 2))
+          } else {
+            throw new Error(`JSON upload failed: ${uploadResponse.status}`)
+          }
+        } catch (jsonError) {
+          // Fall back to multipart/form-data
+          console.log(`[Veo 3.1] JSON upload failed, trying multipart:`, jsonError)
+          
+          const boundary = `----formdata-${Date.now()}`
+          const parts: Buffer[] = []
+          
+          parts.push(Buffer.from(`--${boundary}\r\n`))
+          parts.push(Buffer.from('Content-Disposition: form-data; name="metadata"\r\n'))
+          parts.push(Buffer.from('Content-Type: application/json\r\n\r\n'))
+          parts.push(Buffer.from(JSON.stringify(metadata)))
+          parts.push(Buffer.from(`\r\n--${boundary}\r\n`))
+          parts.push(Buffer.from(`Content-Disposition: form-data; name="file"; filename="reference.jpg"\r\n`))
+          parts.push(Buffer.from(`Content-Type: ${contentType}\r\n\r\n`))
+          parts.push(imageBytes)
+          parts.push(Buffer.from(`\r\n--${boundary}--\r\n`))
+          
+          const multipartBody = Buffer.concat(parts)
+          
+          uploadResponse = await fetch(`${this.baseUrl}/files?key=${this.apiKey}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': `multipart/form-data; boundary=${boundary}`,
+            },
+            body: multipartBody,
+          })
+          
+          if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text()
+            throw new Error(`Multipart upload also failed (${uploadResponse.status}): ${errorText}`)
+          }
+          
+          fileData = await uploadResponse.json()
+          console.log(`[Veo 3.1] Files API multipart upload response:`, JSON.stringify(fileData, null, 2))
+        }
         
         // Try multiple possible response formats
         // The Files API returns a File object with name like "files/abc123" and possibly uri for downloads

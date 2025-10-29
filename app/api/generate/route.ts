@@ -66,18 +66,75 @@ export async function POST(request: NextRequest) {
 
     // Trigger background processing asynchronously (fire and forget)
     // Don't await - this allows us to return immediately
-    const baseUrl = request.nextUrl.origin
-    fetch(`${baseUrl}/api/generate/process`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        generationId: generation.id,
-      }),
-    }).catch((error) => {
-      console.error(`[${generation.id}] Failed to trigger background processing:`, error)
-      // If fetch fails, update status to failed
+    // Use retry logic for serverless environments where internal fetches can fail
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}`
+      : request.nextUrl.origin
+    
+    const triggerProcessing = async (retries = 3) => {
+      for (let i = 0; i < retries; i++) {
+        let timeoutId: NodeJS.Timeout | undefined
+        try {
+          // Create abort controller for timeout
+          const controller = new AbortController()
+          timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
+          
+          const response = await fetch(`${baseUrl}/api/generate/process`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              generationId: generation.id,
+            }),
+            signal: controller.signal,
+          })
+          
+          if (timeoutId) clearTimeout(timeoutId)
+          
+          if (response.ok) {
+            console.log(`[${generation.id}] Background processing triggered successfully`)
+            return
+          }
+          
+          // If not OK, try again unless last retry
+          if (i < retries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))) // Exponential backoff
+            continue
+          }
+        } catch (error: any) {
+          // Clear timeout if it wasn't already cleared
+          if (timeoutId) {
+            clearTimeout(timeoutId)
+          }
+          
+          console.error(`[${generation.id}] Background processing trigger attempt ${i + 1} failed:`, error.message)
+          
+          // If last retry failed, update generation status
+          if (i === retries - 1) {
+            console.error(`[${generation.id}] All retries exhausted, marking generation as failed`)
+            await prisma.generation.update({
+              where: { id: generation.id },
+              data: { 
+                status: 'failed',
+                parameters: {
+                  ...(requestParameters || {}),
+                  error: 'Failed to start background processing after retries',
+                }
+              },
+            }).catch(console.error)
+          } else {
+            // Wait before retry with exponential backoff
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)))
+          }
+        }
+      }
+    }
+    
+    // Start processing in background (don't await)
+    triggerProcessing().catch((error) => {
+      console.error(`[${generation.id}] Background processing trigger failed completely:`, error)
+      // Final fallback - mark as failed
       prisma.generation.update({
         where: { id: generation.id },
         data: { 

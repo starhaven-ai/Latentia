@@ -270,9 +270,14 @@ export function GenerationInterface({
   // Get video sessions
   const videoSessions = allSessions.filter(s => s.type === 'video')
   
-  // Get all processing generations (in-progress)
+  // Get all processing generations (in-progress) - exclude cancelled as they shouldn't show progress
   const processingGenerations = generations.filter(g => 
-    g.status === 'processing' || g.status === 'cancelled'
+    g.status === 'processing'
+  )
+  
+  // Get cancelled generations separately (they will be shown in the gallery but without progress)
+  const cancelledGenerations = generations.filter(g => 
+    g.status === 'cancelled'
   )
   
   console.log('🟡 Processing generations:', processingGenerations.length, processingGenerations.map(g => ({ id: g.id, status: g.status })))
@@ -308,10 +313,11 @@ export function GenerationInterface({
           <div className="p-6 flex justify-center">
             <div className="w-full max-w-7xl">
               <GenerationGallery
-                generations={generations.filter(g => g.status !== 'processing')}
+                generations={generations.filter(g => g.status !== 'processing' && g.status !== 'cancelled')}
                 sessionId={session?.id || null}
                 onReuseParameters={handleReuseParameters}
                 processingGenerations={processingGenerations}
+                cancelledGenerations={cancelledGenerations}
                 videoSessions={videoSessions}
                 onConvertToVideo={handleConvertToVideo}
                 onCreateVideoSession={onSessionCreate}

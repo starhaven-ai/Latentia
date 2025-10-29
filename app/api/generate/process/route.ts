@@ -52,10 +52,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Skip if already completed or failed
-    if (generation.status === 'completed' || generation.status === 'failed') {
+    // Skip if already completed, failed, or cancelled
+    if (generation.status === 'completed' || generation.status === 'failed' || generation.status === 'cancelled') {
       return NextResponse.json({ 
-        message: 'Generation already processed',
+        message: 'Generation already processed or cancelled',
         status: generation.status 
       })
     }

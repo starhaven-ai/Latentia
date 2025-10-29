@@ -26,6 +26,7 @@ interface GenerationGalleryProps {
   sessionId: string | null
   onReuseParameters: (generation: GenerationWithOutputs) => void
   processingGenerations?: GenerationWithOutputs[]
+  cancelledGenerations?: GenerationWithOutputs[]
   videoSessions?: Session[]
   onConvertToVideo?: (generation: GenerationWithOutputs, videoSessionId: string, imageUrl?: string) => void
   onCreateVideoSession?: ((type: 'image' | 'video', name: string) => Promise<Session | null>) | undefined
@@ -38,6 +39,7 @@ export function GenerationGallery({
   sessionId,
   onReuseParameters,
   processingGenerations = [],
+  cancelledGenerations = [],
   videoSessions = [],
   onConvertToVideo,
   onCreateVideoSession,
@@ -211,7 +213,7 @@ export function GenerationGallery({
   }
 
 
-  if (generations.length === 0 && processingGenerations.length === 0) {
+  if (generations.length === 0 && processingGenerations.length === 0 && cancelledGenerations.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center text-muted-foreground">
@@ -230,6 +232,52 @@ export function GenerationGallery({
   return (
     <>
       <div className="space-y-6 pb-4">
+        {/* Show cancelled generations (without progress) */}
+        {(cancelledGenerations || []).map((generation) => {
+          return (
+            <div key={generation.id} className="flex gap-6 items-start">
+              {/* Left Side: Prompt Display with Cancelled State */}
+              <div className="w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-destructive/50 flex flex-col relative">
+                <div className="absolute top-2 left-2 px-2 py-1 bg-destructive/20 text-destructive text-xs font-medium rounded z-10">
+                  Cancelled
+                </div>
+                <div className="flex-1 overflow-hidden hover:overflow-y-auto transition-all group relative mt-6">
+                  <p 
+                    className="text-base font-normal leading-relaxed text-foreground/90 cursor-pointer hover:text-primary transition-colors"
+                    onClick={() => handleCopyPrompt(generation.prompt)}
+                    title="Click to copy"
+                  >
+                    {generation.prompt}
+                  </p>
+                  <Copy className="h-3.5 w-3.5 absolute top-0 right-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <div className="space-y-2 text-xs text-muted-foreground mt-4">
+                  <div className="flex items-center gap-2 text-destructive/80">
+                    <Info className="h-3.5 w-3.5" />
+                    <span className="font-medium">Cancelled</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground/70">Model:</span>
+                    <span className="font-medium">{(generation.modelId || 'unknown').replace('gemini-', '').replace('fal-', '')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground/70">Generated:</span>
+                    <span className="font-medium">{formatDate(generation.createdAt)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Side: Empty/Cancelled State */}
+              <div className="flex-1 max-w-2xl flex items-center justify-center">
+                <div className="bg-muted/20 rounded-xl p-8 border border-destructive/30 text-center">
+                  <p className="text-sm text-muted-foreground">Generation was cancelled</p>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Show completed/failed generations */}
         {(generations || []).map((generation) => {
           const isVideo = isVideoGeneration(generation)
           

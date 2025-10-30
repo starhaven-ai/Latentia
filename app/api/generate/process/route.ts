@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
   // Read body once and store it for error handling
   let requestBody: any = {}
   let generationId: string | undefined
+  let heartbeatTimer: NodeJS.Timeout | null = null
   
   try {
     requestBody = await request.json()
@@ -60,6 +61,47 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Helper: append debug log and heartbeat safely (best-effort; don't throw)
+    const appendLog = async (step: string, extra?: Record<string, any>) => {
+      try {
+        const existing = await prisma.generation.findUnique({ where: { id: generationId } })
+        if (!existing) return
+        const prev = (existing.parameters as any) || {}
+        const logs = Array.isArray(prev.debugLogs) ? prev.debugLogs : []
+        logs.push({
+          at: new Date().toISOString(),
+          step,
+          ...((extra || {}) as any),
+        })
+        await prisma.generation.update({
+          where: { id: generationId },
+          data: {
+            parameters: {
+              ...prev,
+              lastHeartbeatAt: new Date().toISOString(),
+              lastStep: step,
+              debugLogs: logs.slice(-100),
+            },
+          },
+        })
+      } catch (_) {}
+    }
+
+    const startHeartbeat = (label: string) => {
+      if (heartbeatTimer) clearInterval(heartbeatTimer)
+      heartbeatTimer = setInterval(() => {
+        appendLog(label)
+      }, 10000)
+    }
+    const stopHeartbeat = () => {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer)
+        heartbeatTimer = null
+      }
+    }
+
+    await appendLog('process:start')
+
     // Get model adapter
     const model = getModel(generation.modelId)
     if (!model) {
@@ -97,6 +139,8 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`[${generationId}] Starting generation with model ${generation.modelId}`)
+    await appendLog('model:generate:start', { modelId: generation.modelId })
+    startHeartbeat('model:generate:heartbeat')
 
     // Generate using the model
     const result = await model.generate({
@@ -107,8 +151,19 @@ export async function POST(request: NextRequest) {
       parameters: otherParameters,
       ...otherParameters,
     })
+    stopHeartbeat()
+    await appendLog('model:generate:end', { status: result?.status })
 
     console.log(`[${generationId}] Generation result:`, result.status)
+
+    // Before processing outputs, re-check cancellation
+    try {
+      const latest = await prisma.generation.findUnique({ where: { id: generation.id } })
+      if (latest && latest.status === 'cancelled') {
+        await appendLog('cancelled:skip-after-generate')
+        return NextResponse.json({ id: generation.id, status: 'cancelled' })
+      }
+    } catch (_) {}
 
     // Process outputs and upload to storage
     if (result.status === 'completed' && result.outputs) {
@@ -129,12 +184,14 @@ export async function POST(request: NextRequest) {
           const storagePath = `${generation.userId}/${generationId}/${i}.${extension}`
           
           console.log(`[${generationId}] Uploading base64 ${generation.session.type} ${i} to storage`)
+          startHeartbeat('storage:upload:heartbeat')
           finalUrl = await uploadBase64ToStorage(
             output.url,
             bucket,
             storagePath
           )
           console.log(`[${generationId}] Uploaded to: ${finalUrl}`)
+          stopHeartbeat()
         } else if (output.url.startsWith('http')) {
           // External URL - download and re-upload to our storage for consistency
           // For video sessions, default to mp4 extension since Veo returns media streams without file extension
@@ -146,6 +203,7 @@ export async function POST(request: NextRequest) {
           
           console.log(`[${generationId}] Uploading external URL ${i} to storage`)
           try {
+            startHeartbeat('storage:upload-url:heartbeat')
             // Google Generative Language file downloads require API key auth
             const isGeminiFile = output.url.includes('generativelanguage.googleapis.com')
             const headers = isGeminiFile && process.env.GEMINI_API_KEY
@@ -158,9 +216,12 @@ export async function POST(request: NextRequest) {
               headers ? { headers } : undefined
             )
             console.log(`[${generationId}] Uploaded to: ${finalUrl}`)
+            stopHeartbeat()
           } catch (error) {
             console.error(`[${generationId}] Failed to upload to storage, using original URL:`, error)
             // Keep original URL if upload fails
+            stopHeartbeat()
+            await appendLog('storage:upload-url:failed', { error: (error as any)?.message })
           }
         }
 
@@ -186,6 +247,7 @@ export async function POST(request: NextRequest) {
       })
 
       console.log(`[${generationId}] Generation completed successfully`)
+      await appendLog('process:completed', { outputCount: outputRecords.length })
 
       return NextResponse.json({
         id: generation.id,
@@ -206,6 +268,7 @@ export async function POST(request: NextRequest) {
       })
 
       console.log(`[${generationId}] Generation failed:`, result.error)
+      await appendLog('process:failed', { error: result.error })
 
       return NextResponse.json({
         id: generation.id,
@@ -220,6 +283,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Background generation error:', error)
+    // Best-effort: no appendLog here (out of scope)
     
     // Try to update generation status if we have the ID
     if (generationId) {

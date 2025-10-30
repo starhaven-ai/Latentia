@@ -63,6 +63,17 @@ export async function POST(request: NextRequest) {
     })
 
     console.log(`[${generation.id}] Generation created, starting async processing`)
+    // Best-effort: add initial debug log
+    try {
+      const existing = await prisma.generation.findUnique({ where: { id: generation.id } })
+      const prev = (existing?.parameters as any) || {}
+      const logs = Array.isArray(prev.debugLogs) ? prev.debugLogs : []
+      logs.push({ at: new Date().toISOString(), step: 'generate:create' })
+      await prisma.generation.update({
+        where: { id: generation.id },
+        data: { parameters: { ...prev, debugLogs: logs.slice(-100), lastStep: 'generate:create' } },
+      })
+    } catch (_) {}
 
     // Trigger background processing asynchronously (fire and forget)
     // Don't await - this allows us to return immediately
@@ -88,6 +99,16 @@ export async function POST(request: NextRequest) {
           
           if (response.ok) {
             console.log(`[${generation.id}] Background processing triggered successfully`)
+            try {
+              const existing = await prisma.generation.findUnique({ where: { id: generation.id } })
+              const prev = (existing?.parameters as any) || {}
+              const logs = Array.isArray(prev.debugLogs) ? prev.debugLogs : []
+              logs.push({ at: new Date().toISOString(), step: 'process:triggered' })
+              await prisma.generation.update({
+                where: { id: generation.id },
+                data: { parameters: { ...prev, debugLogs: logs.slice(-100), lastStep: 'process:triggered' } },
+              })
+            } catch (_) {}
             return
           }
           
@@ -113,6 +134,16 @@ export async function POST(request: NextRequest) {
                 }
               },
             }).catch(console.error)
+            try {
+              const existing = await prisma.generation.findUnique({ where: { id: generation.id } })
+              const prev = (existing?.parameters as any) || {}
+              const logs = Array.isArray(prev.debugLogs) ? prev.debugLogs : []
+              logs.push({ at: new Date().toISOString(), step: 'process:trigger-failed', error: error?.message })
+              await prisma.generation.update({
+                where: { id: generation.id },
+                data: { parameters: { ...prev, debugLogs: logs.slice(-100), lastStep: 'process:trigger-failed' } },
+              })
+            } catch (_) {}
           } else {
             // Wait before retry with longer backoff for serverless
             await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)))

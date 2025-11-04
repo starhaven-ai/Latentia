@@ -134,6 +134,35 @@ export function useGenerateMutation() {
     onSuccess: (data, variables, context) => {
       console.log(`[${data.id}] Generation mutation success - status: ${data.status}`)
       
+      // If status is 'processing', trigger the background process endpoint from frontend
+      // This is a fallback in case the server-side trigger fails (Vercel limitation)
+      if (data.status === 'processing') {
+        // Trigger background process after a short delay to ensure generation is in DB
+        setTimeout(() => {
+          console.log(`[${data.id}] Frontend fallback: Triggering background process`)
+          fetch('/api/generate/process', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              generationId: data.id,
+            }),
+          })
+          .then(async (res) => {
+            if (res.ok) {
+              console.log(`[${data.id}] Frontend trigger successful`)
+            } else {
+              const errorText = await res.text()
+              console.warn(`[${data.id}] Frontend trigger failed: ${res.status} ${errorText}`)
+            }
+          })
+          .catch((err) => {
+            console.error(`[${data.id}] Frontend trigger error:`, err)
+          })
+        }, 500) // Wait 500ms for DB to be ready
+      }
+      
       // Helper to create the updated generation object
       const createUpdatedGeneration = (original: GenerationWithOutputs): GenerationWithOutputs => {
         if (data.status === 'processing') {

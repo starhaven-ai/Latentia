@@ -12,14 +12,58 @@ async function fetchGenerations(sessionId: string, limit: number = 20): Promise<
 }
 
 /**
+ * Trigger background process for a generation that hasn't started yet
+ * This is a fallback for when server-side trigger fails
+ */
+async function triggerProcessForStuckGeneration(generationId: string) {
+  console.log(`🔄 Attempting to trigger process for generation: ${generationId}`)
+  try {
+    const res = await fetch('/api/generate/process', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ generationId }),
+    })
+    if (res.ok) {
+      console.log(`✅ Successfully triggered process for ${generationId}`)
+    } else {
+      const errorText = await res.text()
+      console.warn(`⚠️ Failed to trigger process for ${generationId}: ${res.status} ${errorText}`)
+    }
+  } catch (err) {
+    console.error(`❌ Error triggering process for ${generationId}:`, err)
+  }
+}
+
+/**
  * Check for stuck generations and trigger cleanup if needed
  * A generation is considered stuck if it's been processing for > 2 minutes
  * (Vercel Pro timeout is 60s, so 2min is definitely stuck)
+ * Also checks for generations that haven't started processing (> 10 seconds with no heartbeat)
  */
 async function checkAndCleanupStuckGenerations(generations: GenerationWithOutputs[]) {
   const now = Date.now()
   const TWO_MINUTES = 2 * 60 * 1000
+  const TEN_SECONDS = 10 * 1000
   
+  // Check for generations that haven't started processing (no heartbeat after 10s)
+  const notStartedGenerations = generations.filter(gen => {
+    if (gen.status !== 'processing') return false
+    const createdAt = new Date(gen.createdAt).getTime()
+    const age = now - createdAt
+    // Check if it's been > 10 seconds and no heartbeat/process step
+    const params = gen.parameters as any
+    const lastStep = params?.lastStep
+    const hasStarted = lastStep && lastStep !== 'generate:create'
+    return age > TEN_SECONDS && !hasStarted
+  })
+  
+  // Trigger process for generations that haven't started
+  for (const gen of notStartedGenerations) {
+    console.log(`🔄 Generation ${gen.id} hasn't started processing after 10s, triggering process endpoint...`)
+    triggerProcessForStuckGeneration(gen.id)
+  }
+  
+  // Check for truly stuck generations (> 2 minutes)
   const stuckGenerations = generations.filter(gen => {
     if (gen.status !== 'processing') return false
     const createdAt = new Date(gen.createdAt).getTime()

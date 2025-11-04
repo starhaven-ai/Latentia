@@ -602,12 +602,20 @@ export function GenerationGallery({
           const modelName = modelConfig?.name || 'Unknown Model'
           const numOutputs = procGen.parameters.numOutputs || 1
           
+          // Check if generation is stuck (> 2 minutes old)
+          const now = Date.now()
+          const createdAt = new Date(procGen.createdAt).getTime()
+          const ageMinutes = (now - createdAt) / (60 * 1000)
+          const isStuck = ageMinutes > 2
+          
           return (
             <div key={procGen.id} className="flex gap-6 items-start mb-6">
               {/* Left Side: Prompt and metadata */}
               <div className={`w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border flex flex-col relative group ${
                 procGen.status === 'cancelled' 
                   ? 'border-destructive/50' 
+                  : isStuck
+                  ? 'border-destructive/50 border-destructive'
                   : 'border-border/50 border-primary/30'
               }`}>
                 {/* Cancel button - top left, only visible on hover when processing */}
@@ -625,6 +633,13 @@ export function GenerationGallery({
                 {procGen.status === 'cancelled' && (
                   <div className="absolute top-2 left-2 px-2 py-1 bg-destructive/20 text-destructive text-xs font-medium rounded">
                     Cancelled
+                  </div>
+                )}
+                
+                {/* Stuck badge */}
+                {isStuck && procGen.status === 'processing' && (
+                  <div className="absolute top-2 left-2 px-2 py-1 bg-destructive/20 text-destructive text-xs font-medium rounded z-10">
+                    ⚠️ Stuck ({Math.round(ageMinutes)}min)
                   </div>
                 )}
                 
@@ -665,17 +680,36 @@ export function GenerationGallery({
                 </div>
               </div>
 
-              {/* Right Side: Progress placeholders */}
-              <div className="flex-1 grid grid-cols-2 gap-3 max-w-2xl">
-                {Array.from({ length: numOutputs }).map((_, idx) => (
-                  <GenerationProgress 
-                    key={`${procGen.id}-${idx}`}
-                    estimatedTime={25}
-                    aspectRatio={procGen.parameters.aspectRatio}
-                    isVideo={false}
-                  />
-                ))}
-              </div>
+              {/* Right Side: Progress placeholders or stuck message */}
+              {isStuck ? (
+                <div className="flex-1 max-w-2xl">
+                  <div className="bg-destructive/10 rounded-xl p-6 border border-destructive/50">
+                    <h3 className="text-lg font-semibold text-destructive mb-2">Generation Stuck</h3>
+                    <p className="text-sm text-foreground/80 mb-4">
+                      This generation has been processing for {Math.round(ageMinutes)} minutes and appears to be stuck. 
+                      The cleanup process will mark it as failed shortly.
+                    </p>
+                    <button
+                      onClick={() => onReuseParameters(procGen)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      Try Again
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 grid grid-cols-2 gap-3 max-w-2xl">
+                  {Array.from({ length: numOutputs }).map((_, idx) => (
+                    <GenerationProgress 
+                      key={`${procGen.id}-${idx}`}
+                      estimatedTime={25}
+                      aspectRatio={procGen.parameters.aspectRatio}
+                      isVideo={false}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )
         })}

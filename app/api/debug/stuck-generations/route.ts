@@ -3,6 +3,9 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 
+// Force dynamic rendering since we use cookies
+export const dynamic = 'force-dynamic'
+
 /**
  * Debug endpoint to check for stuck processing generations
  */

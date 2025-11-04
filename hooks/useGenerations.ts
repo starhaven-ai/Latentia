@@ -13,25 +13,34 @@ async function fetchGenerations(sessionId: string, limit: number = 20): Promise<
 
 /**
  * Check for stuck generations and trigger cleanup if needed
- * A generation is considered stuck if it's been processing for > 5 minutes
+ * A generation is considered stuck if it's been processing for > 2 minutes
+ * (Vercel Pro timeout is 60s, so 2min is definitely stuck)
  */
 async function checkAndCleanupStuckGenerations(generations: GenerationWithOutputs[]) {
   const now = Date.now()
-  const FIVE_MINUTES = 5 * 60 * 1000
+  const TWO_MINUTES = 2 * 60 * 1000
   
   const stuckGenerations = generations.filter(gen => {
     if (gen.status !== 'processing') return false
     const createdAt = new Date(gen.createdAt).getTime()
-    return (now - createdAt) > FIVE_MINUTES
+    const age = now - createdAt
+    return age > TWO_MINUTES
   })
   
   if (stuckGenerations.length > 0) {
-    console.warn(`⚠️ Found ${stuckGenerations.length} stuck generation(s), triggering cleanup...`)
+    console.warn(`⚠️ Found ${stuckGenerations.length} stuck generation(s) (older than 2 minutes), triggering cleanup...`, 
+      stuckGenerations.map(g => ({ id: g.id, age: Math.round((now - new Date(g.createdAt).getTime()) / 1000) + 's' }))
+    )
     // Trigger cleanup endpoint (best effort, don't await)
     fetch('/api/admin/cleanup-stuck-generations', {
       method: 'POST',
-    }).catch(err => {
-      console.error('Failed to trigger cleanup:', err)
+    })
+    .then(async (res) => {
+      const data = await res.json()
+      console.log('✅ Cleanup response:', data)
+    })
+    .catch(err => {
+      console.error('❌ Failed to trigger cleanup:', err)
     })
   }
 }

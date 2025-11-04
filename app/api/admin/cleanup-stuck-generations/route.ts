@@ -3,9 +3,12 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 
+// Force dynamic rendering since we use cookies
+export const dynamic = 'force-dynamic'
+
 /**
  * Cleanup endpoint for stuck generations
- * Marks generations as failed if they've been processing > 5 minutes
+ * Marks generations as failed if they've been processing > 2 minutes
  * Can be called manually or via cron job
  */
 export async function POST(request: NextRequest) {
@@ -20,14 +23,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Find generations stuck > 5 minutes
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+    // Find generations stuck > 2 minutes (Vercel Pro timeout is 60s, so 2min is definitely stuck)
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000)
     
     const stuckGenerations = await prisma.generation.findMany({
       where: {
         status: 'processing',
         createdAt: {
-          lt: fiveMinutesAgo,
+          lt: twoMinutesAgo,
         },
       },
     })

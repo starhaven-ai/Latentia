@@ -7,10 +7,10 @@ import { prisma } from '@/lib/prisma'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id
+    const { id } = await params
     if (!id) {
       return NextResponse.json({ error: 'Generation ID required' }, { status: 400 })
     }
@@ -27,7 +27,7 @@ export async function GET(
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    const params = (generation.parameters as any) || {}
+    const generationParams = (generation.parameters as any) || {}
     const createdAt = generation.createdAt as unknown as Date
     const ageMs = Date.now() - new Date(createdAt).getTime()
 
@@ -39,9 +39,9 @@ export async function GET(
       createdAt: generation.createdAt,
       ageMs,
       outputs: generation.outputs.length,
-      lastStep: params.lastStep,
-      lastHeartbeatAt: params.lastHeartbeatAt,
-      debugLogs: Array.isArray(params.debugLogs) ? params.debugLogs : [],
+      lastStep: generationParams.lastStep,
+      lastHeartbeatAt: generationParams.lastHeartbeatAt,
+      debugLogs: Array.isArray(generationParams.debugLogs) ? generationParams.debugLogs : [],
     })
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed' }, { status: 500 })

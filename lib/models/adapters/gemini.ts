@@ -206,123 +206,120 @@ export class GeminiAdapter extends BaseModelAdapter {
     const endpoint = `${this.baseUrl}/models/${modelId}:predictLongRunning`
     
     // Build request payload according to Veo 3.1 API
-    // If a reference image URL is provided, we need to upload it to Google's Files API first
+    // Veo 3.1 supports image-to-video: https://ai.google.dev/gemini-api/docs/video
+    // Images must be uploaded via Google Files API first
     const instance: any = {
       prompt: request.prompt,
     }
 
-    if ((request as any).referenceImageUrl) {
-      // Veo 3.1 requires images to be uploaded via Files API
-      // Download the image from our storage and upload to Google Files API
+    // Check for reference image - can be base64 (referenceImage) or URL (referenceImageUrl)
+    let imageBytes: Buffer | null = null
+    let contentType: string = 'image/jpeg'
+    
+    if (request.referenceImage && typeof request.referenceImage === 'string' && request.referenceImage.startsWith('data:')) {
+      // Handle base64 data URL directly
+      console.log(`[Veo 3.1] Using reference image from base64 data URL`)
+      const dataUrlMatch = request.referenceImage.match(/^data:([^;]+);base64,(.+)$/)
+      if (dataUrlMatch) {
+        const [, mimeType, base64Data] = dataUrlMatch
+        contentType = mimeType || 'image/jpeg'
+        imageBytes = Buffer.from(base64Data, 'base64')
+      } else {
+        console.warn(`[Veo 3.1] Invalid base64 format, ignoring reference image`)
+      }
+    } else if ((request as any).referenceImageUrl) {
+      // Handle URL - download first
+      console.log(`[Veo 3.1] Downloading reference image from URL: ${(request as any).referenceImageUrl}`)
       try {
-        console.log(`[Veo 3.1] Uploading reference image to Google Files API: ${(request as any).referenceImageUrl}`)
-        
-        // Download image from Supabase
         const imageResponse = await fetch((request as any).referenceImageUrl)
         if (!imageResponse.ok) {
           throw new Error(`Failed to fetch reference image: ${imageResponse.statusText}`)
         }
         
         const imageBuffer = await imageResponse.arrayBuffer()
-        const imageBytes = Buffer.from(imageBuffer)
-        const contentType = imageResponse.headers.get('content-type') || 'image/jpeg'
+        imageBytes = Buffer.from(imageBuffer)
+        contentType = imageResponse.headers.get('content-type') || 'image/jpeg'
+      } catch (error: any) {
+        console.error(`[Veo 3.1] Failed to download reference image:`, error)
+        imageBytes = null
+      }
+    }
+
+    // Upload image to Google Files API if we have image data
+    if (imageBytes) {
+      try {
+        console.log(`[Veo 3.1] Uploading reference image to Google Files API (${contentType}, ${imageBytes.length} bytes)`)
         
-        // Upload to Google Files API
-        // Try using the standard /files endpoint with proper JSON structure first
-        // If that doesn't work, fall back to multipart
+        // Upload to Google Files API using multipart/form-data format
+        // According to Gemini Files API documentation
+        const boundary = `----formdata-${Date.now()}`
+        const parts: Buffer[] = []
+        
+        // Metadata part
         const metadata = {
           file: {
             display_name: 'reference_image',
           },
         }
         
-        // Convert image to base64 for JSON upload
-        const imageBase64 = imageBytes.toString('base64')
+        parts.push(Buffer.from(`--${boundary}\r\n`))
+        parts.push(Buffer.from('Content-Disposition: form-data; name="metadata"\r\n'))
+        parts.push(Buffer.from('Content-Type: application/json\r\n\r\n'))
+        parts.push(Buffer.from(JSON.stringify(metadata)))
+        parts.push(Buffer.from(`\r\n--${boundary}\r\n`))
         
-        let uploadResponse: Response
-        let fileData: any
+        // File part
+        const fileExtension = contentType.includes('png') ? 'png' : 'jpg'
+        parts.push(Buffer.from(`Content-Disposition: form-data; name="file"; filename="reference.${fileExtension}"\r\n`))
+        parts.push(Buffer.from(`Content-Type: ${contentType}\r\n\r\n`))
+        parts.push(imageBytes)
+        parts.push(Buffer.from(`\r\n--${boundary}--\r\n`))
         
-        // Try JSON format first (some Google APIs accept this)
-        try {
-          uploadResponse = await fetch(`${this.baseUrl}/files?key=${this.apiKey}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              ...metadata,
-              config: {
-                file_type: 'FILE_TYPE_IMAGE',
-                mime_type: contentType,
-              },
-              data: {
-                mime_type: contentType,
-                data: imageBase64,
-              },
-            }),
-          })
-          
-          if (uploadResponse.ok) {
-            fileData = await uploadResponse.json()
-            console.log(`[Veo 3.1] Files API JSON upload response:`, JSON.stringify(fileData, null, 2))
-          } else {
-            throw new Error(`JSON upload failed: ${uploadResponse.status}`)
-          }
-        } catch (jsonError) {
-          // Fall back to multipart/form-data
-          console.log(`[Veo 3.1] JSON upload failed, trying multipart:`, jsonError)
-          
-          const boundary = `----formdata-${Date.now()}`
-          const parts: Buffer[] = []
-          
-          parts.push(Buffer.from(`--${boundary}\r\n`))
-          parts.push(Buffer.from('Content-Disposition: form-data; name="metadata"\r\n'))
-          parts.push(Buffer.from('Content-Type: application/json\r\n\r\n'))
-          parts.push(Buffer.from(JSON.stringify(metadata)))
-          parts.push(Buffer.from(`\r\n--${boundary}\r\n`))
-          parts.push(Buffer.from(`Content-Disposition: form-data; name="file"; filename="reference.jpg"\r\n`))
-          parts.push(Buffer.from(`Content-Type: ${contentType}\r\n\r\n`))
-          parts.push(imageBytes)
-          parts.push(Buffer.from(`\r\n--${boundary}--\r\n`))
-          
-          const multipartBody = Buffer.concat(parts)
-          
-          uploadResponse = await fetch(`${this.baseUrl}/files?key=${this.apiKey}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': `multipart/form-data; boundary=${boundary}`,
-            },
-            body: multipartBody,
-          })
-          
-          if (!uploadResponse.ok) {
-            const errorText = await uploadResponse.text()
-            throw new Error(`Multipart upload also failed (${uploadResponse.status}): ${errorText}`)
-          }
-          
-          fileData = await uploadResponse.json()
-          console.log(`[Veo 3.1] Files API multipart upload response:`, JSON.stringify(fileData, null, 2))
+        const multipartBody = Buffer.concat(parts)
+        
+        const uploadResponse = await fetch(`${this.baseUrl}/files?key=${this.apiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          },
+          body: multipartBody,
+        })
+        
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text()
+          console.error(`[Veo 3.1] Files API upload failed (${uploadResponse.status}):`, errorText)
+          throw new Error(`Files API upload failed: ${uploadResponse.status} ${errorText}`)
         }
         
-        // Try multiple possible response formats
-        // The Files API returns a File object with name like "files/abc123" and possibly uri for downloads
-        const fileResourceName = fileData.file?.name || fileData.name || null
-        const fileUri = fileData.file?.uri || fileData.uri || null
+        const fileData = await uploadResponse.json()
+        console.log(`[Veo 3.1] Files API upload response:`, JSON.stringify(fileData, null, 2))
         
-        if (!fileResourceName && !fileUri) {
+        // Extract file resource name - format should be "files/abc123"
+        // According to Gemini API docs, the response has a `file` object with a `name` field
+        const fileResourceName = fileData.file?.name || fileData.name
+        
+        if (!fileResourceName) {
           console.error(`[Veo 3.1] Unexpected Files API response structure:`, fileData)
-          throw new Error(`No file URI returned from Files API upload. Response structure: ${JSON.stringify(fileData)}`)
+          throw new Error(`No file name returned from Files API. Response: ${JSON.stringify(fileData)}`)
         }
         
-        console.log(`[Veo 3.1] Reference image uploaded, file name: ${fileResourceName || 'n/a'}, uri: ${fileUri || 'n/a'}`)
+        console.log(`[Veo 3.1] Reference image uploaded successfully, file name: ${fileResourceName}`)
         
-        // Reference the uploaded file - Veo 3.1 expects a string; examples pass the file resource name
-        instance.image = fileResourceName || fileUri
+        // Veo 3.1 expects the file resource name (e.g., "files/abc123") in the `image` field
+        // According to docs: https://ai.google.dev/gemini-api/docs/video
+        instance.image = fileResourceName
       } catch (error: any) {
         console.error('[Veo 3.1] Error uploading reference image:', error)
-        // Fall back to text-to-video if image upload fails
+        console.error('[Veo 3.1] Error details:', {
+          message: error.message,
+          stack: error.stack,
+        })
+        // Don't fail completely - fall back to text-to-video
         console.warn('[Veo 3.1] Falling back to text-to-video without reference image')
+        // Continue without image - Veo will generate from text prompt only
       }
+    } else {
+      console.log(`[Veo 3.1] No reference image provided, generating text-to-video`)
     }
     
     const payload = {
@@ -330,6 +327,7 @@ export class GeminiAdapter extends BaseModelAdapter {
     }
     
     console.log(`[Veo 3.1] Calling API with ${duration}s video, ${width}x${height}, ${aspectRatio}`)
+    console.log(`[Veo 3.1] Payload:`, JSON.stringify({ instances: [instance] }, null, 2))
     
     try {
       // Initiate video generation

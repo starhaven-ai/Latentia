@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { getModel } from '@/lib/models/registry'
 import { uploadBase64ToStorage, uploadUrlToStorage } from '@/lib/supabase/storage'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 /**
  * Background processor for async generation
  * This endpoint processes a generation that's already been created in the database
@@ -17,6 +20,7 @@ export async function POST(request: NextRequest) {
   try {
     requestBody = await request.json()
     generationId = requestBody.generationId
+    console.log(`[${generationId || 'unknown'}] Process endpoint called with body:`, JSON.stringify(requestBody))
   } catch (error) {
     console.error('Failed to parse request body:', error)
     return NextResponse.json(

@@ -78,16 +78,32 @@ export async function POST(request: NextRequest) {
     // Trigger background processing asynchronously (fire and forget)
     // Don't await - this allows us to return immediately
     // Use retry logic for serverless environments where internal fetches can fail
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : request.nextUrl.origin
+    // In Vercel, use VERCEL_URL for internal calls, but ensure it has protocol
+    let baseUrl: string
+    if (process.env.VERCEL_URL) {
+      // VERCEL_URL might not include protocol
+      baseUrl = process.env.VERCEL_URL.startsWith('http') 
+        ? process.env.VERCEL_URL 
+        : `https://${process.env.VERCEL_URL}`
+    } else if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+      baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL.startsWith('http')
+        ? process.env.NEXT_PUBLIC_VERCEL_URL
+        : `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+    } else {
+      baseUrl = request.nextUrl.origin
+    }
+    
+    console.log(`[${generation.id}] Triggering background process at: ${baseUrl}/api/generate/process`)
     
     const triggerProcessing = async (retries = 3) => {
       for (let i = 0; i < retries; i++) {
         try {
           // Don't use timeout for internal serverless calls - let it take as long as needed
           // The process endpoint will handle its own timeouts
-          const response = await fetch(`${baseUrl}/api/generate/process`, {
+          const processUrl = `${baseUrl}/api/generate/process`
+          console.log(`[${generation.id}] Attempt ${i + 1}: Calling ${processUrl}`)
+          
+          const response = await fetch(processUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -95,7 +111,11 @@ export async function POST(request: NextRequest) {
             body: JSON.stringify({
               generationId: generation.id,
             }),
+            // Add signal to prevent hanging forever
+            signal: AbortSignal.timeout(10000), // 10 second timeout
           })
+          
+          console.log(`[${generation.id}] Response status: ${response.status} ${response.statusText}`)
           
           if (response.ok) {
             console.log(`[${generation.id}] Background processing triggered successfully`)
@@ -119,7 +139,14 @@ export async function POST(request: NextRequest) {
             continue
           }
         } catch (error: any) {
-          console.error(`[${generation.id}] Background processing trigger attempt ${i + 1} failed:`, error.message || error.toString())
+          const errorMessage = error.message || error.toString()
+          const errorName = error.name || 'Unknown'
+          console.error(`[${generation.id}] Background processing trigger attempt ${i + 1} failed:`, {
+            error: errorMessage,
+            name: errorName,
+            stack: error.stack,
+            url: `${baseUrl}/api/generate/process`,
+          })
           
           // If last retry failed, update generation status
           if (i === retries - 1) {

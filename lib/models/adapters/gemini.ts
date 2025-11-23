@@ -324,14 +324,9 @@ export class GeminiAdapter extends BaseModelAdapter {
         }
         console.log(`[Veo 3.1] Reference image uploaded`, uploadedReferenceMeta)
         
-        // Veo 3.1 expects a structured fileData object for reference images
-        // According to Gemini API patterns, the image should be in fileData format
-        instance.image = {
-          fileData: {
-            fileUri: fileResourceName,
-            mimeType: contentType,
-          }
-        }
+        // VEO 3.1 uses direct file URI - not fileData structure
+        // Use 'referenceImage' field instead of 'image' based on VEO API patterns
+        instance.referenceImage = fileResourceName
       } catch (error: any) {
         console.error('[Veo 3.1] Error uploading reference image:', error)
         console.error('[Veo 3.1] Error details:', {
@@ -344,7 +339,7 @@ export class GeminiAdapter extends BaseModelAdapter {
       console.log(`[Veo 3.1] No reference image provided, generating text-to-video`)
     }
     
-    if (imageBytes && !instance.image) {
+    if (imageBytes && !instance.referenceImage) {
       throw new Error('[Veo 3.1] Reference image upload failed - no file resource returned')
     }
     

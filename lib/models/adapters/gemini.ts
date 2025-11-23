@@ -324,9 +324,14 @@ export class GeminiAdapter extends BaseModelAdapter {
         }
         console.log(`[Veo 3.1] Reference image uploaded`, uploadedReferenceMeta)
         
-        // Veo 3.1 expects the file resource name (e.g., "files/abc123") in the `image` field
-        // According to docs: https://ai.google.dev/gemini-api/docs/video
-        instance.image = fileResourceName
+        // Veo 3.1 expects a structured fileData object for reference images
+        // According to Gemini API patterns, the image should be in fileData format
+        instance.image = {
+          fileData: {
+            fileUri: fileResourceName,
+            mimeType: contentType,
+          }
+        }
       } catch (error: any) {
         console.error('[Veo 3.1] Error uploading reference image:', error)
         console.error('[Veo 3.1] Error details:', {

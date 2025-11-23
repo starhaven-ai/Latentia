@@ -214,8 +214,12 @@ export class GeminiAdapter extends BaseModelAdapter {
 
     // Check for reference image - can be base64 (referenceImage) or URL (referenceImageUrl)
     let imageBytes: Buffer | null = null
+    let imageBase64: string | null = null
     let contentType: string = 'image/jpeg'
     let uploadedReferenceMeta: { name: string; contentType: string; byteLength: number } | null = null
+
+    // Try base64 encoding directly first (simpler and might be more compatible)
+    const USE_BASE64_DIRECT = process.env.VEO_USE_BASE64_DIRECT === 'true' || true // Default to true
     
     if (request.referenceImage && typeof request.referenceImage === 'string' && request.referenceImage.startsWith('data:')) {
       // Handle base64 data URL directly
@@ -224,6 +228,7 @@ export class GeminiAdapter extends BaseModelAdapter {
       if (dataUrlMatch) {
         const [, mimeType, base64Data] = dataUrlMatch
         contentType = mimeType || 'image/jpeg'
+        imageBase64 = base64Data
         imageBytes = Buffer.from(base64Data, 'base64')
       } else {
         console.warn(`[Veo 3.1] Invalid base64 format, ignoring reference image`)
@@ -236,18 +241,28 @@ export class GeminiAdapter extends BaseModelAdapter {
         if (!imageResponse.ok) {
           throw new Error(`Failed to fetch reference image: ${imageResponse.statusText}`)
         }
-        
+
         const imageBuffer = await imageResponse.arrayBuffer()
         imageBytes = Buffer.from(imageBuffer)
+        imageBase64 = imageBytes.toString('base64')
         contentType = imageResponse.headers.get('content-type') || 'image/jpeg'
       } catch (error: any) {
         console.error(`[Veo 3.1] Failed to download reference image:`, error)
         imageBytes = null
+        imageBase64 = null
       }
     }
 
-    // Upload image to Google Files API if we have image data
-    if (imageBytes) {
+    // Handle image - either use base64 directly or upload to Files API
+    if (imageBytes && USE_BASE64_DIRECT && imageBase64) {
+      // Use base64 encoding directly (simpler approach, might be more compatible)
+      console.log(`[Veo 3.1] Using base64-encoded image directly (${contentType}, ${imageBytes.length} bytes)`)
+      instance.image = {
+        bytesBase64Encoded: imageBase64,
+        mimeType: contentType
+      }
+    } else if (imageBytes) {
+      // Upload to Files API and use file reference (original approach)
       try {
         console.log(`[Veo 3.1] Uploading reference image to Google Files API (${contentType}, ${imageBytes.length} bytes)`)
         
@@ -358,22 +373,20 @@ export class GeminiAdapter extends BaseModelAdapter {
     }
 
     // Only add image field if we actually have an uploaded image
-    // For image-to-video, use the file URI format based on Files API response
     if (instance.image) {
-      // Try using URI object format (consistent with video extension pattern)
-      // Based on forum discussions and video extension patterns
-      cleanInstance.image = {
-        uri: instance.image
+      if (typeof instance.image === 'string') {
+        // Files API approach: instance.image is a file resource name
+        // Try using URI object format (consistent with video extension pattern)
+        cleanInstance.image = {
+          uri: instance.image
+        }
+        console.log(`[Veo 3.1] Using file URI in request: ${instance.image}`)
+      } else if (typeof instance.image === 'object') {
+        // Base64 approach: instance.image is already an object with bytesBase64Encoded and mimeType
+        cleanInstance.image = instance.image
+        console.log(`[Veo 3.1] Using base64-encoded image in request (${instance.image.mimeType})`)
       }
-      console.log(`[Veo 3.1] Using image URI in request: ${instance.image}`)
     }
-
-    // Alternative: If Files API approach fails, we could try base64 encoding directly
-    // This would require modifying the code to include:
-    // cleanInstance.image = {
-    //   bytesBase64Encoded: base64String,
-    //   mimeType: contentType
-    // }
 
     // Build payload with parameters section (required by Gemini API)
     const payload: any = {

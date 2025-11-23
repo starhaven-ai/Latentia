@@ -386,7 +386,7 @@ export function GenerationInterface({
       </div>
 
       {/* Chat Input - Tighter Spacing */}
-      <div className="border-t border-border/30 p-4">
+      <div className="p-4">
         <div className="max-w-4xl mx-auto">
           <div className="bg-card border border-border/40 rounded-lg shadow-sm p-3">
             {generationType === 'video' ? (

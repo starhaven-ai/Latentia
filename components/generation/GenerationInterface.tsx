@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { GenerationGallery } from './GenerationGallery'
+import dynamic from 'next/dynamic'
 import { ChatInput } from './ChatInput'
-import { VideoInput } from './VideoInput'
 import type { Session } from '@/types/project'
 import type { GenerationWithOutputs } from '@/types/generation'
 import { useInfiniteGenerations } from '@/hooks/useInfiniteGenerations'
@@ -13,6 +12,25 @@ import { useUIStore } from '@/store/uiStore'
 import { useToast } from '@/components/ui/use-toast'
 import { getAllModels, getModelsByType } from '@/lib/models/registry'
 import { createClient } from '@/lib/supabase/client'
+
+const GenerationGallery = dynamic(
+  () => import('./GenerationGallery').then((mod) => mod.GenerationGallery),
+  {
+    loading: () => (
+      <div className="py-12 text-center text-muted-foreground">Loading gallery…</div>
+    ),
+  }
+)
+
+const VideoInput = dynamic(
+  () => import('./VideoInput').then((mod) => mod.VideoInput),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="p-6 text-center text-muted-foreground">Loading video controls…</div>
+    ),
+  }
+)
 
 interface GenerationInterfaceProps {
   session: Session | null
@@ -31,6 +49,7 @@ export function GenerationInterface({
 }: GenerationInterfaceProps) {
   const { toast } = useToast()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const [prompt, setPrompt] = useState('')
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
@@ -123,6 +142,26 @@ export function GenerationInterface({
       }, delay)
     }
   }, [generations, isLoading, session?.id])
+
+  useEffect(() => {
+    if (!hasNextPage || !loadMoreRef.current) return
+    const target = loadMoreRef.current
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0]
+        if (first.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage()
+        }
+      },
+      {
+        root: scrollContainerRef.current,
+        rootMargin: '200px',
+        threshold: 0,
+      }
+    )
+    observer.observe(target)
+    return () => observer.disconnect()
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const handleGenerate = async (
     prompt: string,
@@ -329,9 +368,9 @@ export function GenerationInterface({
                 currentUser={currentUser}
               />
               
-              {/* Load More Button */}
+              <div ref={loadMoreRef} className="h-6 w-full" />
               {hasNextPage && (
-                <div className="flex justify-center mt-8 mb-4">
+                <div className="flex justify-center mt-4 mb-4">
                   <button
                     onClick={() => fetchNextPage()}
                     disabled={isFetchingNextPage}

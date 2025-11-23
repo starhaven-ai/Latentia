@@ -8,6 +8,14 @@ export async function getProjects(): Promise<Project[]> {
   return response.json()
 }
 
+export async function getProjectsWithThumbnails(): Promise<Project[]> {
+  const response = await fetch('/api/projects/with-thumbnails')
+  if (!response.ok) {
+    throw new Error('Failed to fetch projects with thumbnails')
+  }
+  return response.json()
+}
+
 export async function getProject(id: string): Promise<ProjectWithSessions> {
   const response = await fetch(`/api/projects/${id}`)
   if (!response.ok) {

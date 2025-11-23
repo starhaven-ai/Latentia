@@ -14,6 +14,8 @@ export interface Project {
   createdAt: Date
   updatedAt: Date
   owner?: ProjectOwner
+  thumbnailUrl?: string | null
+  sessionCount?: number
 }
 
 export interface ProjectWithSessions extends Project {

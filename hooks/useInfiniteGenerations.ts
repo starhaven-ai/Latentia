@@ -1,12 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
-import type { GenerationWithOutputs } from '@/types/generation'
 import { logMetric } from '@/lib/metrics'
-
-interface PaginatedGenerationsResponse {
-  data: GenerationWithOutputs[]
-  nextCursor?: string
-  hasMore: boolean
-}
+import { fetchGenerationsPage, PaginatedGenerationsResponse } from '@/lib/api/generations'
 
 async function fetchGenerations({
   sessionId,
@@ -17,33 +11,14 @@ async function fetchGenerations({
   cursor?: string
   limit?: number
 }): Promise<PaginatedGenerationsResponse> {
-  const params = new URLSearchParams({
-    sessionId,
-    limit: limit.toString(),
-  })
-
-  if (cursor) {
-    params.append('cursor', cursor)
-  }
-
   const startedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
 
   try {
-    const response = await fetch(`/api/generations?${params}`)
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch generations')
-    }
-
-    const data = await response.json()
-
-    const normalized = Array.isArray(data)
-      ? {
-          data,
-          nextCursor: undefined,
-          hasMore: false,
-        }
-      : data
+    const normalized = await fetchGenerationsPage({
+      sessionId,
+      cursor,
+      limit,
+    })
 
     logMetric({
       name: 'hook_fetch_generations_infinite',

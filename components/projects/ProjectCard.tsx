@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/use-toast'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQueryClient, InfiniteData } from '@tanstack/react-query'
 import type { Project } from '@/types/project'
+import { getSessions } from '@/lib/api/sessions'
+import { fetchGenerationsPage, PaginatedGenerationsResponse } from '@/lib/api/generations'
 
 interface ProjectCardProps {
-  project: Project & { thumbnailUrl?: string | null }
+  project: Project
   currentUserId?: string
   onProjectUpdate?: () => void
 }
@@ -30,31 +32,30 @@ export function ProjectCard({ project, currentUserId, onProjectUpdate }: Project
   const isOwner = currentUserId && project.ownerId === currentUserId
   const thumbnailUrl = project.thumbnailUrl || null
 
-  // Prefetch project data on hover (after 200ms delay to avoid accidental prefetch)
   const handleMouseEnter = () => {
     if (hasPrefetchedRef.current) return
 
     hoverTimeoutRef.current = setTimeout(async () => {
       try {
-        // Fetch sessions for this project
-        const sessionsResponse = await fetch(`/api/sessions?projectId=${project.id}`)
-        if (!sessionsResponse.ok) return
-        const sessions = await sessionsResponse.json()
+        const sessions = await queryClient.fetchQuery({
+          queryKey: ['sessions', project.id],
+          queryFn: () => getSessions(project.id),
+          staleTime: 5 * 60 * 1000,
+        })
 
-        // Prefetch sessions in React Query cache
-        queryClient.setQueryData(['sessions', project.id], sessions)
-
-        // If we have sessions, prefetch first 10 generations for the first session
         if (sessions && sessions.length > 0 && sessions[0].id) {
-          const genResponse = await fetch(`/api/generations?sessionId=${sessions[0].id}&limit=10`)
-          if (genResponse.ok) {
-            const genData = await genResponse.json()
-            // Store in cache for instant access when navigating
-            queryClient.setQueryData(['generations', 'infinite', sessions[0].id], {
-              pages: [{ data: genData, nextCursor: undefined, hasMore: false }],
-              pageParams: [undefined],
-            })
+          const firstSession = sessions[0]
+          const firstPage = await fetchGenerationsPage({
+            sessionId: firstSession.id,
+            limit: 10,
+          })
+
+          const infinitePayload: InfiniteData<PaginatedGenerationsResponse> = {
+            pageParams: [undefined],
+            pages: [firstPage],
           }
+
+          queryClient.setQueryData(['generations', 'infinite', firstSession.id], infinitePayload)
         }
       } catch (error) {
         console.error('Error prefetching project data:', error)
@@ -346,6 +347,11 @@ export function ProjectCard({ project, currentUserId, onProjectUpdate }: Project
           <span>•</span>
           <span>{formatDate(project.updatedAt)}</span>
         </div>
+        {typeof project.sessionCount === 'number' && (
+          <div className="text-xs text-muted-foreground">
+            {project.sessionCount} {project.sessionCount === 1 ? 'session' : 'sessions'}
+          </div>
+        )}
       </CardFooter>
 
       {/* Delete Confirmation Dialog */}

@@ -251,39 +251,23 @@ export class GeminiAdapter extends BaseModelAdapter {
       try {
         console.log(`[Veo 3.1] Uploading reference image to Google Files API (${contentType}, ${imageBytes.length} bytes)`)
         
-        // Upload to Google Files API using multipart/form-data format
-        // According to Gemini Files API documentation
-        const boundary = `----formdata-${Date.now()}`
-        const parts: Buffer[] = []
+        // Create FormData for the multipart upload
+        const formData = new FormData()
         
-        // Metadata part
-        const metadata = {
-          file: {
-            display_name: 'reference_image',
-          },
-        }
-        
-        parts.push(Buffer.from(`--${boundary}\r\n`))
-        parts.push(Buffer.from('Content-Disposition: form-data; name="metadata"\r\n'))
-        parts.push(Buffer.from('Content-Type: application/json\r\n\r\n'))
-        parts.push(Buffer.from(JSON.stringify(metadata)))
-        parts.push(Buffer.from(`\r\n--${boundary}\r\n`))
-        
-        // File part
+        // Create a Blob from the image bytes
+        const blob = new Blob([imageBytes], { type: contentType })
         const fileExtension = contentType.includes('png') ? 'png' : 'jpg'
-        parts.push(Buffer.from(`Content-Disposition: form-data; name="file"; filename="reference.${fileExtension}"\r\n`))
-        parts.push(Buffer.from(`Content-Type: ${contentType}\r\n\r\n`))
-        parts.push(imageBytes)
-        parts.push(Buffer.from(`\r\n--${boundary}--\r\n`))
         
-        const multipartBody = Buffer.concat(parts)
+        // Add the file to FormData
+        formData.append('file', blob, `reference.${fileExtension}`)
         
-        const uploadResponse = await fetch(`${this.baseUrl}/files?key=${this.apiKey}`, {
+        // Upload to Google Files API
+        const uploadResponse = await fetch(`${this.baseUrl}/files`, {
           method: 'POST',
           headers: {
-            'Content-Type': `multipart/form-data; boundary=${boundary}`,
+            'x-goog-api-key': this.apiKey,
           },
-          body: multipartBody,
+          body: formData,
         })
         
         if (!uploadResponse.ok) {

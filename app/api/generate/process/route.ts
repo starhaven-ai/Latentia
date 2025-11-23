@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getModel } from '@/lib/models/registry'
 import { uploadBase64ToStorage, uploadUrlToStorage } from '@/lib/supabase/storage'
+import { logMetric } from '@/lib/metrics'
+import { downloadReferenceImageAsDataUrl } from '@/lib/reference-images'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -16,6 +18,17 @@ export async function POST(request: NextRequest) {
   let requestBody: any = {}
   let generationId: string | undefined
   let heartbeatTimer: NodeJS.Timeout | null = null
+  let stopHeartbeatRef: (() => void) | null = null
+  const startedAt = Date.now()
+  let metricStatus: 'success' | 'error' = 'success'
+  let statusCode = 200
+  const metricMeta: Record<string, any> = {}
+
+  const respond = (body: any, status: number = 200) => {
+    statusCode = status
+    metricStatus = status >= 400 ? 'error' : 'success'
+    return NextResponse.json(body, { status })
+  }
   
   try {
     requestBody = await request.json()
@@ -23,20 +36,23 @@ export async function POST(request: NextRequest) {
     console.log(`[${generationId || 'unknown'}] Process endpoint called with body:`, JSON.stringify(requestBody))
   } catch (error) {
     console.error('Failed to parse request body:', error)
-    return NextResponse.json(
+    metricStatus = 'error'
+    return respond(
       { error: 'Invalid request body' },
-      { status: 400 }
+      400
     )
   }
   
   try {
 
     if (!generationId) {
-      return NextResponse.json(
+      return respond(
         { error: 'Generation ID is required' },
-        { status: 400 }
+        400
       )
     }
+
+    metricMeta.generationId = generationId
 
     // Fetch the generation from database with session
     const generation = await prisma.generation.findUnique({
@@ -51,15 +67,15 @@ export async function POST(request: NextRequest) {
     })
 
     if (!generation) {
-      return NextResponse.json(
+      return respond(
         { error: 'Generation not found' },
-        { status: 404 }
+        404
       )
     }
 
     // Skip if already completed, failed, or cancelled
     if (generation.status === 'completed' || generation.status === 'failed' || generation.status === 'cancelled') {
-      return NextResponse.json({ 
+      return respond({ 
         message: 'Generation already processed or cancelled',
         status: generation.status 
       })
@@ -103,6 +119,7 @@ export async function POST(request: NextRequest) {
         heartbeatTimer = null
       }
     }
+    stopHeartbeatRef = stopHeartbeat
 
     await appendLog('process:start')
 
@@ -119,27 +136,60 @@ export async function POST(request: NextRequest) {
           }
         },
       })
-      return NextResponse.json(
+      metricMeta.modelId = generation.modelId
+      return respond(
         { error: `Model not found: ${generation.modelId}` },
-        { status: 404 }
+        404
       )
     }
 
+    metricMeta.modelId = generation.modelId
+
     // Extract parameters
     const parameters = generation.parameters as any
-    const { referenceImage, ...otherParameters } = parameters || {}
+    const {
+      referenceImage,
+      referenceImageUrl: persistedReferenceUrl,
+      referenceImagePath,
+      referenceImageBucket,
+      referenceImageMimeType,
+      referenceImageChecksum,
+      referenceImageId,
+      ...otherParameters
+    } = parameters || {}
 
-    // If a base64 reference image was provided, upload it to storage and convert to a URL
-    let referenceImageUrl: string | undefined
-    if (referenceImage && typeof referenceImage === 'string' && referenceImage.startsWith('data:')) {
+    let inlineReferenceImage = referenceImage as string | undefined
+    let referenceImageUrl = persistedReferenceUrl as string | undefined
+
+    // Backwards compatibility: upload inline base64 if pointer is missing
+    if (inlineReferenceImage && inlineReferenceImage.startsWith('data:') && !referenceImageUrl) {
       try {
-        const extension = referenceImage.includes('image/png') ? 'png' : 'jpg'
+        const extension = inlineReferenceImage.includes('image/png') ? 'png' : 'jpg'
         const storagePath = `${generation.userId}/${generationId}/reference.${extension}`
-        // Store in existing images bucket
-        referenceImageUrl = await uploadBase64ToStorage(referenceImage, 'generated-images', storagePath)
+        referenceImageUrl = await uploadBase64ToStorage(inlineReferenceImage, 'generated-images', storagePath)
       } catch (e) {
-        console.error(`[${generationId}] Failed to upload reference image:`, e)
+        console.error(`[${generationId}] Failed to upload inline reference image:`, e)
       }
+    }
+
+    // If we only have a pointer, download it as base64 for adapters that expect inline data
+    if (!inlineReferenceImage && referenceImageUrl) {
+      try {
+        inlineReferenceImage = await downloadReferenceImageAsDataUrl(referenceImageUrl, referenceImageMimeType)
+      } catch (error) {
+        console.error(`[${generationId}] Failed to hydrate reference image from storage:`, error)
+      }
+    }
+
+    if (referenceImageUrl || inlineReferenceImage) {
+      console.log(`[${generationId}] Reference image resolved`, {
+        hasInline: Boolean(inlineReferenceImage),
+        referenceImageUrl,
+        referenceImageId,
+        referenceImagePath,
+        referenceImageBucket,
+        referenceImageChecksum,
+      })
     }
 
     console.log(`[${generationId}] Starting generation with model ${generation.modelId}`)
@@ -150,7 +200,7 @@ export async function POST(request: NextRequest) {
     const result = await model.generate({
       prompt: generation.prompt,
       negativePrompt: generation.negativePrompt || undefined,
-      referenceImage,
+      referenceImage: inlineReferenceImage,
       referenceImageUrl,
       parameters: otherParameters,
       ...otherParameters,
@@ -165,7 +215,7 @@ export async function POST(request: NextRequest) {
       const latest = await prisma.generation.findUnique({ where: { id: generation.id } })
       if (latest && latest.status === 'cancelled') {
         await appendLog('cancelled:skip-after-generate')
-        return NextResponse.json({ id: generation.id, status: 'cancelled' })
+        return respond({ id: generation.id, status: 'cancelled' })
       }
     } catch (_) {}
 
@@ -253,7 +303,7 @@ export async function POST(request: NextRequest) {
       console.log(`[${generationId}] Generation completed successfully`)
       await appendLog('process:completed', { outputCount: outputRecords.length })
 
-      return NextResponse.json({
+      return respond({
         id: generation.id,
         status: 'completed',
         outputCount: outputRecords.length,
@@ -274,20 +324,21 @@ export async function POST(request: NextRequest) {
       console.log(`[${generationId}] Generation failed:`, result.error)
       await appendLog('process:failed', { error: result.error })
 
-      return NextResponse.json({
+      return respond({
         id: generation.id,
         status: 'failed',
         error: result.error,
       })
     }
 
-    return NextResponse.json({
+    return respond({
       id: generation.id,
       status: result.status,
     })
   } catch (error: any) {
     console.error('Background generation error:', error)
     // Best-effort: no appendLog here (out of scope)
+    metricStatus = 'error'
     
     // Try to update generation status if we have the ID
     if (generationId) {
@@ -313,13 +364,24 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    return NextResponse.json(
+    return respond(
       { 
         error: error.message || 'Generation failed',
         status: 'failed',
       },
-      { status: 500 }
+      500
     )
+  } finally {
+    stopHeartbeatRef?.()
+    logMetric({
+      name: 'api_generate_process_post',
+      status: metricStatus,
+      durationMs: Date.now() - startedAt,
+      meta: {
+        ...metricMeta,
+        statusCode,
+      },
+    })
   }
 }
 

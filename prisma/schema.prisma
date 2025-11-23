@@ -98,11 +98,27 @@ model Generation {
   session Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   user    Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
   outputs Output[]
+  job     GenerationJob?
 
   @@index([sessionId])
   @@index([userId])
   @@index([sessionId, userId]) // Composite index for the query
   @@map("generations")
+}
+
+model GenerationJob {
+  id           String      @id @default(uuid()) @db.Uuid
+  generationId String      @unique @map("generation_id") @db.Uuid
+  runAfter     DateTime?   @map("run_after")
+  attempts     Int         @default(0)
+  lockedAt     DateTime?   @map("locked_at")
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  generation Generation @relation(fields: [generationId], references: [id], onDelete: Cascade)
+
+  @@index([lockedAt])
+  @@index([runAfter])
+  @@map("generation_jobs")
 }
 
 model Output {

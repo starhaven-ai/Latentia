@@ -215,6 +215,7 @@ export class GeminiAdapter extends BaseModelAdapter {
     // Check for reference image - can be base64 (referenceImage) or URL (referenceImageUrl)
     let imageBytes: Buffer | null = null
     let contentType: string = 'image/jpeg'
+    let uploadedReferenceMeta: { name: string; contentType: string; byteLength: number } | null = null
     
     if (request.referenceImage && typeof request.referenceImage === 'string' && request.referenceImage.startsWith('data:')) {
       // Handle base64 data URL directly
@@ -303,7 +304,12 @@ export class GeminiAdapter extends BaseModelAdapter {
           throw new Error(`No file name returned from Files API. Response: ${JSON.stringify(fileData)}`)
         }
         
-        console.log(`[Veo 3.1] Reference image uploaded successfully, file name: ${fileResourceName}`)
+        uploadedReferenceMeta = {
+          name: fileResourceName,
+          contentType,
+          byteLength: imageBytes.length,
+        }
+        console.log(`[Veo 3.1] Reference image uploaded`, uploadedReferenceMeta)
         
         // Veo 3.1 expects the file resource name (e.g., "files/abc123") in the `image` field
         // According to docs: https://ai.google.dev/gemini-api/docs/video
@@ -314,12 +320,14 @@ export class GeminiAdapter extends BaseModelAdapter {
           message: error.message,
           stack: error.stack,
         })
-        // Don't fail completely - fall back to text-to-video
-        console.warn('[Veo 3.1] Falling back to text-to-video without reference image')
-        // Continue without image - Veo will generate from text prompt only
+        throw new Error(error.message || 'Failed to upload reference image to Google Files API')
       }
     } else {
       console.log(`[Veo 3.1] No reference image provided, generating text-to-video`)
+    }
+    
+    if (imageBytes && !instance.image) {
+      throw new Error('[Veo 3.1] Reference image upload failed - no file resource returned')
     }
     
     const payload = {
@@ -347,7 +355,11 @@ export class GeminiAdapter extends BaseModelAdapter {
       const operation = await response.json()
       const operationName = operation.name
       
-      console.log(`[Veo 3.1] Generation started, operation: ${operationName}`)
+      console.log('[Veo 3.1] Generation started', {
+        operation: operationName,
+        referenceImageAttached: Boolean(instance.image),
+        referenceMetadata: uploadedReferenceMeta,
+      })
       
       // Poll operation until complete (max 5 minutes)
       const maxAttempts = 30 // 5 minutes at 10s intervals
@@ -373,7 +385,11 @@ export class GeminiAdapter extends BaseModelAdapter {
           }
           
           const videoUri = generatedVideo.video.uri
-          console.log(`[Veo 3.1] Video ready: ${videoUri}`)
+          console.log('[Veo 3.1] Video ready', {
+            videoUri,
+            operation: operationName,
+            referenceImageAttached: Boolean(instance.image),
+          })
           
           // Return the video URI - it will be downloaded by the background processor
           return {

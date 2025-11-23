@@ -1,14 +1,33 @@
 import { useQuery } from '@tanstack/react-query'
 import type { GenerationWithOutputs } from '@/types/generation'
+import { logMetric } from '@/lib/metrics'
 
 async function fetchGenerations(sessionId: string, limit: number = 20): Promise<GenerationWithOutputs[]> {
-  const response = await fetch(`/api/generations?sessionId=${sessionId}&limit=${limit}`)
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch generations')
+  const startedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
+  try {
+    const response = await fetch(`/api/generations?sessionId=${sessionId}&limit=${limit}`)
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch generations')
+    }
+    
+    const payload = await response.json()
+    logMetric({
+      name: 'hook_fetch_generations',
+      status: 'success',
+      durationMs: (typeof performance !== 'undefined' ? performance.now() : Date.now()) - startedAt,
+      meta: { sessionId, limit, resultCount: payload?.length || 0 },
+    })
+    return payload
+  } catch (error: any) {
+    logMetric({
+      name: 'hook_fetch_generations',
+      status: 'error',
+      durationMs: (typeof performance !== 'undefined' ? performance.now() : Date.now()) - startedAt,
+      meta: { sessionId, limit, error: error?.message },
+    })
+    throw error
   }
-  
-  return response.json()
 }
 
 /**

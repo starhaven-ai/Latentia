@@ -16,7 +16,7 @@ import { useParams } from 'next/navigation'
 interface ChatInputProps {
   prompt: string
   onPromptChange: (prompt: string) => void
-  onGenerate: (prompt: string, referenceImage?: File) => void
+  onGenerate: (prompt: string, options?: { referenceImage?: File }) => void
   parameters: {
     aspectRatio: string
     resolution: number
@@ -95,7 +95,7 @@ export function ChatInput({
     if (!prompt.trim()) return
 
     try {
-      await onGenerate(prompt, referenceImage || undefined)
+      await onGenerate(prompt, { referenceImage: referenceImage || undefined })
       onPromptChange('')
       // DON'T clear referenceImage - keep it for next generation
       // Only clear preview if we're done with the file

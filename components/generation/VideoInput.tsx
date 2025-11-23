@@ -16,7 +16,7 @@ import { PromptEnhancementButton } from './PromptEnhancementButton'
 interface VideoInputProps {
   prompt: string
   onPromptChange: (prompt: string) => void
-  onGenerate: (prompt: string, referenceImage?: File) => void
+  onGenerate: (prompt: string, options?: { referenceImage?: File; referenceImageId?: string }) => void
   parameters: {
     aspectRatio: string
     resolution: number
@@ -46,10 +46,17 @@ export function VideoInput({
   const params = useParams()
   const [referenceImage, setReferenceImage] = useState<File | null>(null)
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
+  const [referenceImageId, setReferenceImageId] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
   const [browseModalOpen, setBrowseModalOpen] = useState(false)
   const [stylePopoverOpen, setStylePopoverOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const createReferenceId = () => {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+      return crypto.randomUUID()
+    }
+    return `ref-${Date.now()}`
+  }
   
   // Get model-specific capabilities
   const { modelConfig, supportedAspectRatios, maxResolution, parameters: modelParameters } = useModelCapabilities(selectedModel)
@@ -90,7 +97,10 @@ export function VideoInput({
 
     setGenerating(true)
     try {
-      await onGenerate(prompt, referenceImage || undefined)
+      await onGenerate(prompt, {
+        referenceImage: referenceImage || undefined,
+        referenceImageId: referenceImageId || undefined,
+      })
       onPromptChange('')
       // Clean up preview URL
       if (imagePreviewUrl) {
@@ -123,6 +133,7 @@ export function VideoInput({
       const previewUrl = URL.createObjectURL(file)
       setImagePreviewUrl(previewUrl)
       setReferenceImage(file)
+      setReferenceImageId(createReferenceId())
     }
   }
 
@@ -140,6 +151,7 @@ export function VideoInput({
       // Set the imageUrl as preview (it's already a valid URL)
       setImagePreviewUrl(imageUrl)
       setReferenceImage(file)
+      setReferenceImageId(createReferenceId())
     } catch (error) {
       console.error('Error loading image from URL:', error)
     }
@@ -163,6 +175,7 @@ export function VideoInput({
         }
         setImagePreviewUrl(referenceImageUrl)
         setReferenceImage(file)
+        setReferenceImageId(createReferenceId())
       } catch (err) {
         console.error('Failed to hydrate referenceImageUrl for video input:', err)
       }
@@ -218,6 +231,7 @@ export function VideoInput({
                 }
                 setImagePreviewUrl(null)
                 setReferenceImage(null)
+                setReferenceImageId(null)
               }}
               className="absolute -top-2 -right-2 bg-background border border-border rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-destructive hover:text-destructive-foreground"
               title="Remove reference image"

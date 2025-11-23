@@ -124,7 +124,10 @@ export function GenerationInterface({
     }
   }, [generations, isLoading, session?.id])
 
-  const handleGenerate = async (prompt: string, referenceImage?: File) => {
+  const handleGenerate = async (
+    prompt: string,
+    options?: { referenceImage?: File; referenceImageId?: string }
+  ) => {
     if (!session || !prompt.trim()) return
 
     // Create pending generation ID
@@ -134,7 +137,7 @@ export function GenerationInterface({
       // Convert referenceImage File to base64 data URL if provided
       // COMPRESS to prevent HTTP 413 errors (Vercel limit: 4.5MB)
       let referenceImageData: string | undefined
-      if (referenceImage) {
+      if (options?.referenceImage) {
         referenceImageData = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader()
           reader.onload = () => {
@@ -179,7 +182,7 @@ export function GenerationInterface({
             img.src = dataUrl
           }
           reader.onerror = reject
-          reader.readAsDataURL(referenceImage)
+          reader.readAsDataURL(options.referenceImage!)
         })
       }
 
@@ -193,6 +196,7 @@ export function GenerationInterface({
           numOutputs: parameters.numOutputs,
           ...(parameters.duration && { duration: parameters.duration }),
           ...(referenceImageData && { referenceImage: referenceImageData }),
+          ...(options?.referenceImageId && { referenceImageId: options.referenceImageId }),
         },
       })
       

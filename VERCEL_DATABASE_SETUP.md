@@ -1,81 +1,63 @@
 # Vercel Database Connection Setup
 
-## Problem
-Vercel serverless functions can't reach Supabase database on port 5432.
+## Summary
 
-## Solution
-Use Supabase's **Session Pooler** (NOT Transaction Pooler) for IPv4 compatibility with Vercel.
+Prisma + Vercel serverless functions require Supabase's **Transaction Pooler** (port `6543`) with PgBouncer parameters. Session pooler (port `5432`) causes intermittent `Can't reach database server` errors and should be avoided.
 
-## Steps to Fix:
+## Recommended Configuration (Transaction Pooler)
 
-### 1. Get Session Pooler URL from Supabase
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard) → **Settings** → **Database**.
+2. Scroll to **Connection string** and choose **Transaction pooling**.
+3. Copy the URI and replace the password placeholder with your actual DB password.
+4. Append the required parameters:
+   ```
+   ?pgbouncer=true&connection_limit=1
+   ```
 
-1. Go to [https://supabase.com/dashboard](https://supabase.com/dashboard)
-2. Select your project
-3. Go to **Settings** → **Database**
-4. Scroll to **Connection String** section
-5. **Important**: Select **Session pooler** method (this provides free IPv4 proxying)
-6. Copy the **URI** connection string
-
-It should look like:
+Example:
 ```
-postgresql://postgres.rcssplhcspjpvwdtwqwl:YOUR_ACTUAL_PASSWORD_HERE@aws-1-eu-west-1.pooler.supabase.com:5432/postgres
+postgresql://postgres.rcssplhcspjpvwdtwqwl:YOUR_PASSWORD@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
 ```
 
-**Note**: Don't add any query parameters (`?pgbouncer=true`, etc). Supabase's Session pooler handles connection pooling automatically - no configuration needed.
+> IMPORTANT: The hostname stays the same; only the port changes to `6543`.
 
-**Critical**: Replace `YOUR_ACTUAL_PASSWORD_HERE` with your **real database password** (same password you use in `.env.local` for local development).
+### Update Vercel
 
-**Important**: 
-- Use **Session pooler**, NOT Transaction pooler
-- Use port `5432` (Session pooler), NOT `6543` (Transaction pooler)
-- The hostname should be `aws-0-REGION.pooler.supabase.com`
-- Session pooler provides **free IPv4 proxying** and is recommended for Vercel
+1. Vercel Dashboard → Project → **Settings** → **Environment Variables**.
+2. Edit `DATABASE_URL` and paste the transaction string above (with your password encoded).
+3. Save and **Redeploy** the latest build so functions pick up the change.
 
-**Why Session Pooler?**
-- Free IPv4 proxying (no $4/month add-on needed)
-- Recommended for Vercel deployments
-- Uses port 5432
+### Update Local Development
 
-### 2. Get Your Database Password
+Create or update `.env.local`:
+```env
+DATABASE_URL=postgresql://postgres.rcssplhcspjpvwdtwqwl:YOUR_PASSWORD@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+```
 
-The password is stored in Supabase:
+Run `npx prisma generate` afterwards to ensure the client reconnects.
 
-1. Go to **Settings** → **Database** → **Database Password**
-2. Copy your password (or reset it if needed)
-3. This is the **same password** you use in `.env.local`
+## Fallback: Direct Connection (Last Resort)
 
-### 3. Update DATABASE_URL in Vercel
+If transaction pooling is unavailable in your region or still blocked:
 
-1. Go to [https://vercel.com/dashboard](https://vercel.com/dashboard)
-2. Select your project (loopvesper)
-3. Go to **Settings** → **Environment Variables**
-4. Find `DATABASE_URL` and click the three dots (`...`)
-5. Click **Edit**
-6. Replace `[YOUR-PASSWORD]` with your actual password from Supabase
-7. Paste the **complete** connection string (with real password)
-8. Click **Save**
-9. **Redeploy** the project (go to Deployments → ... → Redeploy)
+1. Supabase → **Settings** → **Database** → **Connection string** → **Direct connection**.
+2. Copy the URI (`db.<project-ref>.supabase.co:5432`) and append:
+   ```
+   ?pgbouncer=false&connection_limit=1
+   ```
+3. Replace `DATABASE_URL` in Vercel and `.env.local`.
+4. Monitor connection counts closely; direct connections have lower limits.
 
-### 4. Alternative: Enable Direct Connection (NOT Recommended)
+## Verification Checklist
 
-If connection pooler doesn't work, you can enable direct connections:
+1. Redeploy on Vercel after changing `DATABASE_URL`.
+2. Hit `/api/health` (new endpoint) – it should return `{ status: "ok" }`.
+3. Trigger a generation; verify no `Can't reach database server` errors in logs.
+4. If failures persist, confirm the URL includes `6543`, `pgbouncer=true`, and `connection_limit=1`.
 
-1. In Supabase, go to **Settings** → **Database**
-2. Find **Connection Pooling**
-3. Enable **Direct connections**
-4. Use the direct connection URL
+## Why Transaction Pooler?
 
-**Note**: This is not recommended for production as it doesn't scale well with serverless functions.
-
-## Why This Happens
-
-Serverless functions (Vercel) have connection limits. Direct database connections (port 5432) exhaust these limits quickly. Connection pooling (port 6543) handles many concurrent connections efficiently.
-
-## Testing
-
-After updating the DATABASE_URL:
-1. Wait for Vercel deployment to complete (~2 minutes)
-2. Try creating a project again
-3. Check Vercel logs if it still fails
+- Prisma maintains many idle connections per function invocation.
+- Transaction pooling reuses a single connection per invocation, reducing Supabase load.
+- Session pooler with Prisma serverless is unstable (see `CRITICAL_DATABASE_FIX.md` for postmortem).
 

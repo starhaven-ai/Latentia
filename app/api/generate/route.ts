@@ -3,9 +3,23 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { getModel } from '@/lib/models/registry'
+import { logMetric } from '@/lib/metrics'
+import { persistReferenceImage } from '@/lib/reference-images'
+
+const GENERATION_QUEUE_ENABLED = process.env.GENERATION_QUEUE_ENABLED === 'true'
 
 export async function POST(request: NextRequest) {
   let generation: any = null
+  const startedAt = Date.now()
+  let metricStatus: 'success' | 'error' = 'success'
+  let statusCode = 200
+  const metricMeta: Record<string, any> = {}
+
+  const respond = (body: any, status: number = 200) => {
+    statusCode = status
+    metricStatus = status >= 400 ? 'error' : 'success'
+    return NextResponse.json(body, { status })
+  }
   
   try {
     const supabase = createRouteHandlerClient({ cookies })
@@ -17,7 +31,7 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getSession()
 
     if (authError || !session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return respond({ error: 'Unauthorized' }, 401)
     }
 
     const user = session.user
@@ -31,21 +45,39 @@ export async function POST(request: NextRequest) {
       negativePrompt,
       parameters: requestParameters,
     } = body
+    const rawParameters = requestParameters || {}
+    const { referenceImage, referenceImageId, ...otherParameters } = rawParameters
+    let referencePointer: Record<string, any> | null = null
+
+    if (referenceImage && typeof referenceImage === 'string' && referenceImage.startsWith('data:')) {
+      metricMeta.hasReferenceImage = true
+      referencePointer = await persistReferenceImage(referenceImage, user.id, referenceImageId)
+    } else if (referenceImageId) {
+      referencePointer = { referenceImageId }
+    }
+
+    const generationParameters = {
+      ...otherParameters,
+      ...(referencePointer || {}),
+    }
 
     // Validate required fields
+    metricMeta.sessionId = sessionId
+    metricMeta.modelId = modelId
+
     if (!sessionId || !modelId || !prompt) {
-      return NextResponse.json(
+      return respond(
         { error: 'Missing required fields: sessionId, modelId, prompt' },
-        { status: 400 }
+        400
       )
     }
 
     // Verify model exists
     const model = getModel(modelId)
     if (!model) {
-      return NextResponse.json(
+      return respond(
         { error: `Model not found: ${modelId}` },
-        { status: 404 }
+        404
       )
     }
 
@@ -57,12 +89,21 @@ export async function POST(request: NextRequest) {
         modelId,
         prompt,
         negativePrompt: negativePrompt || null,
-        parameters: requestParameters || {},
+        parameters: generationParameters,
         status: 'processing',
       },
     })
 
     console.log(`[${generation.id}] Generation created, starting async processing`)
+    metricMeta.generationId = generation.id
+    if (GENERATION_QUEUE_ENABLED) {
+      await prisma.generationJob.create({
+        data: {
+          generationId: generation.id,
+        },
+      })
+      console.log(`[${generation.id}] Job enqueued for background processor`)
+    }
     // Best-effort: add initial debug log
     try {
       const existing = await prisma.generation.findUnique({ where: { id: generation.id } })
@@ -75,134 +116,130 @@ export async function POST(request: NextRequest) {
       })
     } catch (_) {}
 
-    // Trigger background processing asynchronously (fire and forget)
-    // Don't await - this allows us to return immediately
-    // Use retry logic for serverless environments where internal fetches can fail
-    // In Vercel, use VERCEL_URL for internal calls, but ensure it has protocol
-    let baseUrl: string
-    if (process.env.VERCEL_URL) {
-      // VERCEL_URL might not include protocol
-      baseUrl = process.env.VERCEL_URL.startsWith('http') 
-        ? process.env.VERCEL_URL 
-        : `https://${process.env.VERCEL_URL}`
-    } else if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-      baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL.startsWith('http')
-        ? process.env.NEXT_PUBLIC_VERCEL_URL
-        : `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-    } else {
-      baseUrl = request.nextUrl.origin
-    }
-    
-    console.log(`[${generation.id}] Triggering background process at: ${baseUrl}/api/generate/process`)
-    
-    const triggerProcessing = async (retries = 3) => {
-      for (let i = 0; i < retries; i++) {
-        try {
-          // Don't use timeout for internal serverless calls - let it take as long as needed
-          // The process endpoint will handle its own timeouts
-          const processUrl = `${baseUrl}/api/generate/process`
-          console.log(`[${generation.id}] Attempt ${i + 1}: Calling ${processUrl}`)
-          
-          const response = await fetch(processUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              generationId: generation.id,
-            }),
-            // Add signal to prevent hanging forever
-            signal: AbortSignal.timeout(10000), // 10 second timeout
-          })
-          
-          console.log(`[${generation.id}] Response status: ${response.status} ${response.statusText}`)
-          
-          if (response.ok) {
-            console.log(`[${generation.id}] Background processing triggered successfully`)
-            try {
-              const existing = await prisma.generation.findUnique({ where: { id: generation.id } })
-              const prev = (existing?.parameters as any) || {}
-              const logs = Array.isArray(prev.debugLogs) ? prev.debugLogs : []
-              logs.push({ at: new Date().toISOString(), step: 'process:triggered' })
-              await prisma.generation.update({
-                where: { id: generation.id },
-                data: { parameters: { ...prev, debugLogs: logs.slice(-100), lastStep: 'process:triggered' } },
-              })
-            } catch (_) {}
-            return
-          }
-          
-          // If not OK, try again unless last retry
-          if (i < retries - 1) {
-            // Longer backoff for serverless - wait 2s, 4s, 6s between retries
-            await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)))
-            continue
-          }
-        } catch (error: any) {
-          const errorMessage = error.message || error.toString()
-          const errorName = error.name || 'Unknown'
-          console.error(`[${generation.id}] Background processing trigger attempt ${i + 1} failed:`, {
-            error: errorMessage,
-            name: errorName,
-            stack: error.stack,
-            url: `${baseUrl}/api/generate/process`,
-          })
-          
-          // If last retry failed, update generation status
-          if (i === retries - 1) {
-            console.error(`[${generation.id}] All retries exhausted, marking generation as failed`)
-            await prisma.generation.update({
-              where: { id: generation.id },
-              data: { 
-                status: 'failed',
-                parameters: {
-                  ...(requestParameters || {}),
-                  error: 'Failed to start background processing after retries',
-                }
+    if (!GENERATION_QUEUE_ENABLED) {
+      // Trigger background processing asynchronously (fire and forget)
+      // Don't await - this allows us to return immediately
+      // Use retry logic for serverless environments where internal fetches can fail
+      // In Vercel, use VERCEL_URL for internal calls, but ensure it has protocol
+      let baseUrl: string
+      if (process.env.VERCEL_URL) {
+        baseUrl = process.env.VERCEL_URL.startsWith('http') 
+          ? process.env.VERCEL_URL 
+          : `https://${process.env.VERCEL_URL}`
+      } else if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+        baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL.startsWith('http')
+          ? process.env.NEXT_PUBLIC_VERCEL_URL
+          : `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+      } else {
+        baseUrl = request.nextUrl.origin
+      }
+      
+      console.log(`[${generation.id}] Triggering background process at: ${baseUrl}/api/generate/process`)
+      
+      const triggerProcessing = async (retries = 3) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            const processUrl = `${baseUrl}/api/generate/process`
+            console.log(`[${generation.id}] Attempt ${i + 1}: Calling ${processUrl}`)
+            
+            const response = await fetch(processUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
               },
-            }).catch(console.error)
-            try {
-              const existing = await prisma.generation.findUnique({ where: { id: generation.id } })
-              const prev = (existing?.parameters as any) || {}
-              const logs = Array.isArray(prev.debugLogs) ? prev.debugLogs : []
-              logs.push({ at: new Date().toISOString(), step: 'process:trigger-failed', error: error?.message })
+              body: JSON.stringify({
+                generationId: generation.id,
+              }),
+              signal: AbortSignal.timeout(10000),
+            })
+            
+            console.log(`[${generation.id}] Response status: ${response.status} ${response.statusText}`)
+            
+            if (response.ok) {
+              console.log(`[${generation.id}] Background processing triggered successfully`)
+              try {
+                const existing = await prisma.generation.findUnique({ where: { id: generation.id } })
+                const prev = (existing?.parameters as any) || {}
+                const logs = Array.isArray(prev.debugLogs) ? prev.debugLogs : []
+                logs.push({ at: new Date().toISOString(), step: 'process:triggered' })
+                await prisma.generation.update({
+                  where: { id: generation.id },
+                  data: { parameters: { ...prev, debugLogs: logs.slice(-100), lastStep: 'process:triggered' } },
+                })
+              } catch (_) {}
+              return
+            }
+            
+            if (i < retries - 1) {
+              await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)))
+              continue
+            }
+          } catch (error: any) {
+            const errorMessage = error.message || error.toString()
+            const errorName = error.name || 'Unknown'
+            console.error(`[${generation.id}] Background processing trigger attempt ${i + 1} failed:`, {
+              error: errorMessage,
+              name: errorName,
+              stack: error.stack,
+              url: `${baseUrl}/api/generate/process`,
+            })
+            
+            if (i === retries - 1) {
+              console.error(`[${generation.id}] All retries exhausted, marking generation as failed`)
               await prisma.generation.update({
                 where: { id: generation.id },
-                data: { parameters: { ...prev, debugLogs: logs.slice(-100), lastStep: 'process:trigger-failed' } },
-              })
-            } catch (_) {}
-          } else {
-            // Wait before retry with longer backoff for serverless
-            await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)))
+                data: { 
+                  status: 'failed',
+                  parameters: {
+                    ...generationParameters,
+                    error: 'Failed to start background processing after retries',
+                  }
+                },
+              }).catch(console.error)
+              try {
+                const existing = await prisma.generation.findUnique({ where: { id: generation.id } })
+                const prev = (existing?.parameters as any) || {}
+                const logs = Array.isArray(prev.debugLogs) ? prev.debugLogs : []
+                logs.push({ at: new Date().toISOString(), step: 'process:trigger-failed', error: error?.message })
+                await prisma.generation.update({
+                  where: { id: generation.id },
+                  data: { parameters: { ...prev, debugLogs: logs.slice(-100), lastStep: 'process:trigger-failed' } },
+                })
+              } catch (_) {}
+            } else {
+              await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)))
+            }
           }
         }
       }
+      
+      triggerProcessing().catch((error) => {
+        console.error(`[${generation.id}] Background processing trigger failed completely:`, error)
+        prisma.generation.update({
+          where: { id: generation.id },
+          data: { 
+            status: 'failed',
+            parameters: {
+              ...generationParameters,
+              error: 'Failed to start background processing',
+            }
+          },
+        }).catch(console.error)
+      })
+    } else {
+      console.log(`[${generation.id}] Queue mode enabled - awaiting worker pull`)
     }
-    
-    // Start processing in background (don't await)
-    triggerProcessing().catch((error) => {
-      console.error(`[${generation.id}] Background processing trigger failed completely:`, error)
-      // Final fallback - mark as failed
-      prisma.generation.update({
-        where: { id: generation.id },
-        data: { 
-          status: 'failed',
-          parameters: {
-            ...(requestParameters || {}),
-            error: 'Failed to start background processing',
-          }
-        },
-      }).catch(console.error)
-    })
 
     // Return immediately with processing status
-    return NextResponse.json({
+    return respond({
       id: generation.id,
       status: 'processing',
       message: 'Generation started. Poll for updates.',
     })
   } catch (error: any) {
     console.error('Generation error:', error)
+    metricStatus = 'error'
+    statusCode = 500
     
     // Update generation status to failed if we created it
     if (generation) {
@@ -218,14 +255,24 @@ export async function POST(request: NextRequest) {
       }).catch(console.error)
     }
     
-    return NextResponse.json(
+    return respond(
       { 
         id: generation?.id,
         status: 'failed',
         error: error.message || 'Generation failed' 
       },
-      { status: 500 }
+      500
     )
+  } finally {
+    logMetric({
+      name: 'api_generate_post',
+      status: metricStatus,
+      durationMs: Date.now() - startedAt,
+      meta: {
+        ...metricMeta,
+        statusCode,
+      },
+    })
   }
 }
 

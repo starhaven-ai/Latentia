@@ -16,6 +16,9 @@ interface GenerateParams {
     aspectRatio: string
     resolution: number
     numOutputs: number
+    duration?: number
+    referenceImage?: string
+    referenceImageId?: string
   }
 }
 

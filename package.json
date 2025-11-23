@@ -43,6 +43,7 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.2",
     "@tanstack/react-query-devtools": "^5.18.0",
     "@types/node": "^20",
     "@types/react": "^18",

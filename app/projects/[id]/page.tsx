@@ -49,9 +49,39 @@ export default function ProjectPage() {
   useEffect(() => {
     if (!sessionsLoading && sessions.length > 0) {
       if (!activeSession) {
-        // Set first session as active
-        setActiveSession(sessions[0])
-        setGenerationType(sessions[0].type)
+        // Try to restore last viewed session from localStorage
+        const projectId = params.id as string
+        const lastSessionId = localStorage.getItem(`${projectId}-lastSessionId`)
+        const lastViewType = localStorage.getItem(`${projectId}-lastViewType`) as 'image' | 'video' | null
+
+        let sessionToActivate: Session | null = null
+
+        // First, try to find the last viewed session
+        if (lastSessionId) {
+          sessionToActivate = sessions.find(s => s.id === lastSessionId) || null
+        }
+
+        // If last session exists and matches the last view type, use it
+        if (sessionToActivate && lastViewType && sessionToActivate.type === lastViewType) {
+          setActiveSession(sessionToActivate)
+          setGenerationType(lastViewType)
+        } else if (lastViewType) {
+          // Last session not found, but we have a view type preference
+          // Find the first session of that type
+          const sessionsOfType = sessions.filter(s => s.type === lastViewType)
+          if (sessionsOfType.length > 0) {
+            setActiveSession(sessionsOfType[0])
+            setGenerationType(lastViewType)
+          } else {
+            // No sessions of preferred type, fall back to first session
+            setActiveSession(sessions[0])
+            setGenerationType(sessions[0].type)
+          }
+        } else {
+          // No preferences stored, default to first session
+          setActiveSession(sessions[0])
+          setGenerationType(sessions[0].type)
+        }
       } else {
         // Preserve active session if it still exists
         const updatedActiveSession = sessions.find(s => s.id === activeSession.id)
@@ -109,6 +139,12 @@ export default function ProjectPage() {
         }
         setActiveSession(parsedSession)
         setGenerationType(type)
+
+        // Save to localStorage for persistence
+        const projectId = params.id as string
+        localStorage.setItem(`${projectId}-lastSessionId`, parsedSession.id)
+        localStorage.setItem(`${projectId}-lastViewType`, type)
+
         // Sessions will refetch automatically via React Query
         return parsedSession
       } else {
@@ -126,17 +162,28 @@ export default function ProjectPage() {
     if (targetSession) {
       setActiveSession(targetSession)
       setGenerationType(targetSession.type)
+
+      // Save to localStorage for persistence
+      const projectId = params.id as string
+      localStorage.setItem(`${projectId}-lastSessionId`, targetSession.id)
+      localStorage.setItem(`${projectId}-lastViewType`, targetSession.type)
     }
   }
 
   const handleGenerationTypeChange = (type: 'image' | 'video') => {
     // Find sessions of the target type
     const sessionsOfType = sessions.filter(s => s.type === type)
-    
+
+    const projectId = params.id as string
+
     if (sessionsOfType.length > 0) {
       // Switch to the first session of that type
       setActiveSession(sessionsOfType[0])
       setGenerationType(type)
+
+      // Save to localStorage for persistence
+      localStorage.setItem(`${projectId}-lastSessionId`, sessionsOfType[0].id)
+      localStorage.setItem(`${projectId}-lastViewType`, type)
     } else {
       // No sessions of this type exist, create one
       handleSessionCreate(type)
@@ -253,7 +300,7 @@ export default function ProjectPage() {
           generationType={generationType}
           projectOwnerId={projectOwnerId}
           currentUserId={currentUserId}
-          onSessionSelect={setActiveSession}
+          onSessionSelect={(session) => handleSessionSwitch(session.id)}
           onSessionCreate={handleSessionCreate}
           onSessionUpdate={() => {}}
         />

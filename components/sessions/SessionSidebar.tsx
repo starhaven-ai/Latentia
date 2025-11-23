@@ -256,8 +256,8 @@ export function SessionSidebar({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-1.5">
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium truncate leading-tight">{session.name}</p>
-                            <p className={`text-[10px] mt-0.5 leading-tight ${
+                            <p className="text-sm font-medium truncate leading-tight">{session.name}</p>
+                            <p className={`text-xs mt-0.5 leading-tight ${
                               activeSession?.id === session.id
                                 ? 'text-primary-foreground/70'
                                 : 'text-muted-foreground/80'
@@ -265,7 +265,7 @@ export function SessionSidebar({
                               {new Date(session.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                             </p>
                             {session.creator?.displayName && (
-                              <p className={`text-[10px] leading-tight ${
+                              <p className={`text-xs leading-tight ${
                                 activeSession?.id === session.id
                                   ? 'text-primary-foreground/60'
                                   : 'text-muted-foreground/70'

@@ -209,18 +209,18 @@ export default function ProjectPage() {
             </div>
           </div>
 
-          {/* Center - Mode Toggle with Icons - More Compact */}
+          {/* Center - Mode Toggle with Icons - More Prominent */}
           <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-muted/50 rounded-md p-0.5">
             <Button
               variant={generationType === 'image' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => handleGenerationTypeChange('image')}
-              className="h-7 w-7 p-0"
+              className="h-9 w-9 p-0"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -237,12 +237,12 @@ export default function ProjectPage() {
               variant={generationType === 'video' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => handleGenerationTypeChange('video')}
-              className="h-7 w-7 p-0"
+              className="h-9 w-9 p-0"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -256,27 +256,27 @@ export default function ProjectPage() {
             </Button>
           </div>
 
-          {/* Right side - More Compact Icons */}
+          {/* Right side - Prominent Icons */}
           <div className="flex items-center gap-1 flex-1 justify-end">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => router.push('/bookmarks')}
               title="Bookmarks"
-              className="h-7 w-7 p-0"
+              className="h-9 w-9 p-0"
             >
-              <Bookmark className="h-3.5 w-3.5" />
+              <Bookmark className="h-5 w-5" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={toggleTheme}
-              className="h-7 w-7 p-0 transition-transform hover:rotate-12"
+              className="h-9 w-9 p-0 transition-transform hover:rotate-12"
             >
               {theme === 'light' ? (
-                <Moon className="h-3.5 w-3.5" />
+                <Moon className="h-5 w-5" />
               ) : (
-                <Sun className="h-3.5 w-3.5" />
+                <Sun className="h-5 w-5" />
               )}
             </Button>
             <Link href="/settings">
@@ -284,9 +284,9 @@ export default function ProjectPage() {
                 variant="ghost"
                 size="sm"
                 title="Settings"
-                className="h-7 w-7 p-0"
+                className="h-9 w-9 p-0"
               >
-                <Settings className="h-3.5 w-3.5" />
+                <Settings className="h-5 w-5" />
               </Button>
             </Link>
           </div>

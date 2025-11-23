@@ -192,35 +192,35 @@ export default function ProjectPage() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Header */}
-      <header className="border-b border-border px-4 py-3">
+      {/* Header - Tighter Spacing */}
+      <header className="border-b border-border/30 px-4 py-2.5">
         <div className="flex items-center justify-between">
           {/* Left side - Logo + Project Info */}
-          <div className="flex items-center gap-3 flex-1">
-            <img 
+          <div className="flex items-center gap-2.5 flex-1">
+            <img
               src={theme === 'light' ? "/images/Loop Vesper (Black).svg" : "/images/Loop Vesper (White).svg"}
-              alt="Loop Vesper Logo" 
-              className="h-7 object-contain cursor-pointer hover:opacity-80 transition-opacity"
+              alt="Loop Vesper Logo"
+              className="h-6 object-contain cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => router.push('/projects')}
               title="Back to Projects"
             />
-            <div className="border-l border-border pl-3">
-              <h1 className="font-semibold">{projectName}</h1>
+            <div className="border-l border-border/40 pl-2.5">
+              <h1 className="text-sm font-semibold">{projectName}</h1>
             </div>
           </div>
 
-          {/* Center - Mode Toggle with Icons */}
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 bg-muted rounded-lg p-1">
+          {/* Center - Mode Toggle with Icons - More Compact */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-muted/50 rounded-md p-0.5">
             <Button
               variant={generationType === 'image' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => handleGenerationTypeChange('image')}
-              className="h-8 w-8 p-0"
+              className="h-7 w-7 p-0"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -237,12 +237,12 @@ export default function ProjectPage() {
               variant={generationType === 'video' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => handleGenerationTypeChange('video')}
-              className="h-8 w-8 p-0"
+              className="h-7 w-7 p-0"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -256,35 +256,37 @@ export default function ProjectPage() {
             </Button>
           </div>
 
-          {/* Right side */}
-          <div className="flex items-center gap-2 flex-1 justify-end">
-            <Button 
-              variant="ghost" 
-              size="icon"
+          {/* Right side - More Compact Icons */}
+          <div className="flex items-center gap-1 flex-1 justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => router.push('/bookmarks')}
               title="Bookmarks"
+              className="h-7 w-7 p-0"
             >
-              <Bookmark className="h-4 w-4" />
+              <Bookmark className="h-3.5 w-3.5" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={toggleTheme}
-              className="transition-transform hover:rotate-12"
+              className="h-7 w-7 p-0 transition-transform hover:rotate-12"
             >
               {theme === 'light' ? (
-                <Moon className="h-4 w-4" />
+                <Moon className="h-3.5 w-3.5" />
               ) : (
-                <Sun className="h-4 w-4" />
+                <Sun className="h-3.5 w-3.5" />
               )}
             </Button>
             <Link href="/settings">
-              <Button 
-                variant="ghost" 
-                size="icon"
+              <Button
+                variant="ghost"
+                size="sm"
                 title="Settings"
+                className="h-7 w-7 p-0"
               >
-                <Settings className="h-4 w-4" />
+                <Settings className="h-3.5 w-3.5" />
               </Button>
             </Link>
           </div>

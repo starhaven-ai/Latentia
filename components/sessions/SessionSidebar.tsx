@@ -179,21 +179,19 @@ export function SessionSidebar({
   }
 
   return (
-    <div className="w-72 border-r border-border/50 bg-muted/20 flex flex-col p-3 gap-3">
-      {/* New Session Card */}
-      <div className="bg-card border border-border rounded-lg p-3 shadow-sm">
-        <Button
-          size="sm"
-          className="w-full h-9 text-sm font-medium rounded-lg"
-          onClick={() => onSessionCreate(generationType)}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          New Session
-        </Button>
-      </div>
+    <div className="w-64 border-r border-border/30 bg-muted/10 flex flex-col p-2.5 gap-2">
+      {/* New Session Button - More Compact */}
+      <Button
+        size="sm"
+        className="w-full h-8 text-sm font-medium"
+        onClick={() => onSessionCreate(generationType)}
+      >
+        <Plus className="mr-1.5 h-3.5 w-3.5" />
+        New Session
+      </Button>
 
-      {/* Sessions List with Card Styling */}
-      <div className="flex-1 overflow-y-auto space-y-2">
+      {/* Sessions List with Tighter Spacing */}
+      <div className="flex-1 overflow-y-auto space-y-1.5">
         {filteredSessions.length === 0 ? (
           <div className="bg-card/50 border border-dashed border-border rounded-lg p-6 text-center">
             <p className="text-sm text-muted-foreground">No {generationType} sessions yet</p>
@@ -202,10 +200,10 @@ export function SessionSidebar({
           filteredSessions.map((session) => (
             <div
               key={session.id}
-              className={`w-full text-left rounded-lg transition-all group ${
+              className={`w-full text-left rounded-md transition-all group ${
                 activeSession?.id === session.id
-                  ? 'bg-primary text-primary-foreground shadow-md scale-[1.02]'
-                  : 'bg-card border border-border hover:border-primary/50 hover:shadow-md'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-card/50 border border-border/40 hover:border-primary/40 hover:bg-card'
               }`}
             >
               {renamingSessionId === session.id ? (
@@ -248,28 +246,28 @@ export function SessionSidebar({
                   onMouseEnter={() => handlePrefetch(session)}
                   className="w-full text-left cursor-pointer"
                 >
-                  <div className="p-3">
-                    <div className="flex items-start gap-2">
+                  <div className="p-2.5">
+                    <div className="flex items-start gap-1.5">
                       {session.type === 'image' ? (
-                        <Image className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <Image className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 opacity-70" />
                       ) : (
-                        <Video className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <Video className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 opacity-70" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start justify-between gap-1.5">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{session.name}</p>
-                            <p className={`text-xs mt-1 ${
-                              activeSession?.id === session.id 
-                                ? 'text-primary-foreground/80' 
-                                : 'text-muted-foreground'
+                            <p className="text-xs font-medium truncate leading-tight">{session.name}</p>
+                            <p className={`text-[10px] mt-0.5 leading-tight ${
+                              activeSession?.id === session.id
+                                ? 'text-primary-foreground/70'
+                                : 'text-muted-foreground/80'
                             }`}>
-                              {new Date(session.updatedAt).toLocaleDateString()}
+                              {new Date(session.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                             </p>
                             {session.creator?.displayName && (
-                              <p className={`text-xs ${
-                                activeSession?.id === session.id 
-                                  ? 'text-primary-foreground/60' 
+                              <p className={`text-[10px] leading-tight ${
+                                activeSession?.id === session.id
+                                  ? 'text-primary-foreground/60'
                                   : 'text-muted-foreground/70'
                               }`}>
                                 {session.creator.displayName}
@@ -277,18 +275,18 @@ export function SessionSidebar({
                             )}
                           </div>
                           {/* Top Right: Menu and Privacy Toggle */}
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             {/* Three Dots Menu */}
                             {isOwner && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <button
                                     onClick={(e) => e.stopPropagation()}
-                                    className={`p-1 rounded hover:bg-white/10 ${
+                                    className={`p-0.5 rounded hover:bg-white/10 ${
                                       activeSession?.id === session.id ? 'text-primary-foreground' : 'text-muted-foreground'
                                     }`}
                                   >
-                                    <MoreVertical className="h-3.5 w-3.5" />
+                                    <MoreVertical className="h-3 w-3" />
                                   </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>

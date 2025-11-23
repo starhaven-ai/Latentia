@@ -353,8 +353,8 @@ export function GenerationInterface({
             </div>
           </div>
         ) : (
-          <div className="p-6 flex justify-center">
-            <div className="w-full max-w-7xl">
+          <div className="p-4 flex justify-center">
+            <div className="w-full max-w-6xl">
               <GenerationGallery
                 generations={generations.filter(g => g.status !== 'processing' && g.status !== 'cancelled')}
                 sessionId={session?.id || null}
@@ -367,14 +367,14 @@ export function GenerationInterface({
                 currentGenerationType={generationType}
                 currentUser={currentUser}
               />
-              
-              <div ref={loadMoreRef} className="h-6 w-full" />
+
+              <div ref={loadMoreRef} className="h-4 w-full" />
               {hasNextPage && (
-                <div className="flex justify-center mt-4 mb-4">
+                <div className="flex justify-center mt-3 mb-3">
                   <button
                     onClick={() => fetchNextPage()}
                     disabled={isFetchingNextPage}
-                    className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isFetchingNextPage ? 'Loading...' : 'Load More'}
                   </button>
@@ -385,10 +385,10 @@ export function GenerationInterface({
         )}
       </div>
 
-      {/* Chat Input - Floating Card at Bottom */}
-      <div className="border-t border-border/50 bg-muted/20 p-6">
+      {/* Chat Input - Tighter Spacing */}
+      <div className="border-t border-border/30 bg-muted/10 p-4">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-card border border-border rounded-xl shadow-lg p-4">
+          <div className="bg-card border border-border/40 rounded-lg shadow-sm p-3">
             {generationType === 'video' ? (
               <VideoInput
                 prompt={prompt}

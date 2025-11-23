@@ -353,8 +353,8 @@ export function GenerationInterface({
             </div>
           </div>
         ) : (
-          <div className="p-3 flex justify-center">
-            <div className="w-full max-w-6xl">
+          <div className="p-6 flex justify-center">
+            <div className="w-full max-w-7xl">
               <GenerationGallery
                 generations={generations.filter(g => g.status !== 'processing' && g.status !== 'cancelled')}
                 sessionId={session?.id || null}
@@ -386,8 +386,8 @@ export function GenerationInterface({
       </div>
 
       {/* Chat Input - Tighter Spacing */}
-      <div className="px-3 py-2">
-        <div className="max-w-4xl mx-auto">
+      <div className="px-6 py-3">
+        <div className="max-w-5xl mx-auto">
           <div className="bg-card border border-border/40 rounded-lg shadow-sm p-3">
             {generationType === 'video' ? (
               <VideoInput

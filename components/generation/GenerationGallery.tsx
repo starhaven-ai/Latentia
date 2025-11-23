@@ -231,7 +231,7 @@ export function GenerationGallery({
 
   return (
     <>
-      <div className="space-y-6 pb-4">
+      <div className="space-y-8 pb-6">
         {/* Show cancelled generations (without progress) */}
         {(cancelledGenerations || []).map((generation) => {
           return (
@@ -268,7 +268,7 @@ export function GenerationGallery({
               </div>
 
               {/* Right Side: Empty/Cancelled State */}
-              <div className="flex-1 max-w-6xl flex items-center justify-center">
+              <div className="flex-1 max-w-7xl flex items-center justify-center">
                 <div className="bg-muted/20 rounded-xl p-8 border border-destructive/30 text-center">
                   <p className="text-sm text-muted-foreground">Generation was cancelled</p>
                 </div>
@@ -315,7 +315,7 @@ export function GenerationGallery({
                 </div>
 
                 {/* Right Side: Error Message */}
-                <div className="flex-1 max-w-6xl">
+                <div className="flex-1 max-w-7xl">
                   <div className="bg-destructive/10 rounded-xl p-6 border border-destructive/50">
                     <h3 className="text-lg font-semibold text-destructive mb-2">Generation Failed</h3>
                     <p className="text-sm text-foreground/80 mb-4">{errorMessage}</p>
@@ -361,7 +361,7 @@ export function GenerationGallery({
                 </div>
 
                 {/* Right Side: Single video container */}
-                <div className="flex-1 grid grid-cols-1 gap-3 max-w-6xl">
+                <div className="flex-1 grid grid-cols-1 gap-4 max-w-7xl">
                   {(generation.outputs || []).map((output) => {
                     const aspectRatio = (generation.parameters as any)?.aspectRatio || '16:9'
                     return (
@@ -491,7 +491,7 @@ export function GenerationGallery({
               </div>
 
             {/* Right Side: Outputs in 2-Column Grid - Smaller Images */}
-            <div className="flex-1 grid grid-cols-2 gap-3 max-w-6xl">
+            <div className="flex-1 grid grid-cols-2 gap-4 max-w-7xl">
               {(generation.outputs || []).map((output) => {
                 const aspectRatio = (generation.parameters as any)?.aspectRatio || '1:1'
                 return (
@@ -682,7 +682,7 @@ export function GenerationGallery({
 
               {/* Right Side: Progress placeholders or stuck message */}
               {isStuck ? (
-                <div className="flex-1 max-w-6xl">
+                <div className="flex-1 max-w-7xl">
                   <div className="bg-destructive/10 rounded-xl p-6 border border-destructive/50">
                     <h3 className="text-lg font-semibold text-destructive mb-2">Generation Stuck</h3>
                     <p className="text-sm text-foreground/80 mb-4">
@@ -699,7 +699,7 @@ export function GenerationGallery({
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 grid grid-cols-2 gap-3 max-w-6xl">
+                <div className="flex-1 grid grid-cols-2 gap-4 max-w-7xl">
                   {Array.from({ length: numOutputs }).map((_, idx) => (
                     <GenerationProgress 
                       key={`${procGen.id}-${idx}`}

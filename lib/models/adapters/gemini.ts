@@ -251,23 +251,36 @@ export class GeminiAdapter extends BaseModelAdapter {
       try {
         console.log(`[Veo 3.1] Uploading reference image to Google Files API (${contentType}, ${imageBytes.length} bytes)`)
         
-        // Create FormData for the multipart upload
-        const formData = new FormData()
-        
-        // Create a Blob from the image bytes (convert Buffer to Uint8Array for compatibility)
-        const blob = new Blob([new Uint8Array(imageBytes)], { type: contentType })
+        // Generate a boundary for multipart data
+        const boundary = `----boundary${Date.now()}`
         const fileExtension = contentType.includes('png') ? 'png' : 'jpg'
+        const filename = `reference.${fileExtension}`
         
-        // Add the file to FormData
-        formData.append('file', blob, `reference.${fileExtension}`)
+        // Build multipart/form-data body manually for Node.js compatibility
+        const parts: Buffer[] = []
+        
+        // Add boundary and headers for the file part
+        parts.push(Buffer.from(`--${boundary}\r\n`))
+        parts.push(Buffer.from(`Content-Disposition: form-data; name="file"; filename="${filename}"\r\n`))
+        parts.push(Buffer.from(`Content-Type: ${contentType}\r\n\r\n`))
+        
+        // Add the file content
+        parts.push(imageBytes)
+        
+        // Add closing boundary
+        parts.push(Buffer.from(`\r\n--${boundary}--\r\n`))
+        
+        // Combine all parts
+        const multipartBody = Buffer.concat(parts)
         
         // Upload to Google Files API
         const uploadResponse = await fetch(`${this.baseUrl}/files`, {
           method: 'POST',
           headers: {
             'x-goog-api-key': this.apiKey,
+            'Content-Type': `multipart/form-data; boundary=${boundary}`,
           },
-          body: formData,
+          body: multipartBody,
         })
         
         if (!uploadResponse.ok) {

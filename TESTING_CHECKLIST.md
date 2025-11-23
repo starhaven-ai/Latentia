@@ -9,6 +9,7 @@ Use this checklist to verify all performance improvements are working correctly.
 - [ ] Supabase Realtime enabled for `generations` and `outputs` tables
 - [ ] Storage buckets exist: `generated-images` and `generated-videos`
 - [ ] Deployed to Vercel successfully
+- [ ] Run `npm run test:e2e` locally (Playwright)
 
 ---
 

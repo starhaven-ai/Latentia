@@ -43,6 +43,17 @@ GEMINI_API_KEY=your-google-api-key
 REPLICATE_API_TOKEN=your-replicate-api-token
 ```
 
+### 4. Background Queue Controls
+
+```
+GENERATION_QUEUE_ENABLED=true
+GENERATION_QUEUE_BATCH_SIZE=5
+GENERATION_QUEUE_LOCK_TIMEOUT_MS=60000
+GENERATION_QUEUE_RETRY_DELAY_MS=30000
+```
+
+Set `GENERATION_QUEUE_ENABLED=false` locally if you prefer the legacy fire-and-forget HTTP trigger.
+
 ### 4. Application URL
 
 ```

@@ -324,9 +324,15 @@ export class GeminiAdapter extends BaseModelAdapter {
         }
         console.log(`[Veo 3.1] Reference image uploaded`, uploadedReferenceMeta)
         
-        // VEO 3.1 uses direct file URI - not fileData structure
-        // Use 'referenceImage' field instead of 'image' based on VEO API patterns
-        instance.referenceImage = fileResourceName
+        // VEO 3.1 uses 'image' field - try both full resource name and just the ID
+        // Extract file ID from "files/abc123" format if needed
+        const fileId = fileResourceName.startsWith('files/') 
+          ? fileResourceName.replace('files/', '') 
+          : fileResourceName
+        
+        // Try using just the file ID (without "files/" prefix)
+        instance.image = fileId
+        console.log(`[Veo 3.1] Using file ID for image: ${fileId}`)
       } catch (error: any) {
         console.error('[Veo 3.1] Error uploading reference image:', error)
         console.error('[Veo 3.1] Error details:', {
@@ -339,7 +345,7 @@ export class GeminiAdapter extends BaseModelAdapter {
       console.log(`[Veo 3.1] No reference image provided, generating text-to-video`)
     }
     
-    if (imageBytes && !instance.referenceImage) {
+    if (imageBytes && !instance.image) {
       throw new Error('[Veo 3.1] Reference image upload failed - no file resource returned')
     }
     

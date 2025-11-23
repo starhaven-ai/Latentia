@@ -356,14 +356,34 @@ export class GeminiAdapter extends BaseModelAdapter {
     const cleanInstance: any = {
       prompt: instance.prompt,
     }
-    
+
     // Only add image field if we actually have an uploaded image
+    // For image-to-video, use the file URI format based on Files API response
     if (instance.image) {
-      cleanInstance.image = instance.image
+      // Try using URI object format (consistent with video extension pattern)
+      // Based on forum discussions and video extension patterns
+      cleanInstance.image = {
+        uri: instance.image
+      }
+      console.log(`[Veo 3.1] Using image URI in request: ${instance.image}`)
     }
-    
-    const payload = {
+
+    // Alternative: If Files API approach fails, we could try base64 encoding directly
+    // This would require modifying the code to include:
+    // cleanInstance.image = {
+    //   bytesBase64Encoded: base64String,
+    //   mimeType: contentType
+    // }
+
+    // Build payload with parameters section (required by Gemini API)
+    const payload: any = {
       instances: [cleanInstance],
+      parameters: {
+        sampleCount: 1,
+        aspectRatio: aspectRatio,
+        resolution: `${resolution}p`, // e.g., "720p" or "1080p"
+        durationSeconds: duration, // 4, 6, or 8 seconds
+      }
     }
     
     console.log(`[Veo 3.1] Calling API with ${duration}s video, ${width}x${height}, ${aspectRatio}`)
@@ -415,14 +435,22 @@ export class GeminiAdapter extends BaseModelAdapter {
         
         const status = await statusResponse.json()
         operationComplete = status.done
-        
+
         if (operationComplete) {
-          const generatedVideo = status.response?.generateVideoResponse?.generatedSamples?.[0]
+          // Try multiple response formats (Gemini API vs Vertex AI)
+          let generatedVideo = status.response?.generateVideoResponse?.generatedSamples?.[0]
+
+          // Alternative format from Python SDK: generated_videos
           if (!generatedVideo) {
-            throw new Error('No video in response')
+            generatedVideo = status.response?.generated_videos?.[0]
           }
-          
-          const videoUri = generatedVideo.video.uri
+
+          if (!generatedVideo) {
+            console.error('[Veo 3.1] Unexpected response structure:', JSON.stringify(status, null, 2))
+            throw new Error('No video in response. Check logs for response structure.')
+          }
+
+          const videoUri = generatedVideo.video?.uri || generatedVideo.uri
           console.log('[Veo 3.1] Video ready', {
             videoUri,
             operation: operationName,

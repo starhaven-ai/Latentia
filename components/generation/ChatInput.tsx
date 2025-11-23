@@ -27,6 +27,9 @@ interface ChatInputProps {
   selectedModel: string
   onModelSelect: (modelId: string) => void
   isGenerating?: boolean
+  referenceImageUrl?: string | null
+  onClearReferenceImage?: () => void
+  onSetReferenceImageUrl?: (url: string) => void
 }
 
 export function ChatInput({
@@ -39,6 +42,9 @@ export function ChatInput({
   selectedModel,
   onModelSelect,
   isGenerating = false,
+  referenceImageUrl,
+  onClearReferenceImage,
+  onSetReferenceImageUrl,
 }: ChatInputProps) {
   const params = useParams()
   const [referenceImage, setReferenceImage] = useState<File | null>(null)
@@ -90,6 +96,38 @@ export function ChatInput({
       }
     }
   }, [modelConfig, selectedModel])
+
+  // Sync controlled referenceImageUrl from parent
+  useEffect(() => {
+    if (referenceImageUrl) {
+      // If parent provides a reference image URL, convert it to local state
+      const loadReferenceImage = async () => {
+        try {
+          const response = await fetch(referenceImageUrl)
+          const blob = await response.blob()
+          const file = new File([blob], 'reference.png', { type: blob.type })
+
+          // Clean up old preview URL
+          if (imagePreviewUrl && !imagePreviewUrl.startsWith('http')) {
+            URL.revokeObjectURL(imagePreviewUrl)
+          }
+
+          setImagePreviewUrl(referenceImageUrl)
+          setReferenceImage(file)
+        } catch (error) {
+          console.error('Error loading reference image from URL:', error)
+        }
+      }
+      loadReferenceImage()
+    } else if (referenceImageUrl === null && imagePreviewUrl) {
+      // Parent cleared the reference image
+      if (!imagePreviewUrl.startsWith('http')) {
+        URL.revokeObjectURL(imagePreviewUrl)
+      }
+      setImagePreviewUrl(null)
+      setReferenceImage(null)
+    }
+  }, [referenceImageUrl])
 
   const handleSubmit = async () => {
     if (!prompt.trim()) return

@@ -67,11 +67,7 @@ export function GenerationGallery({
   const handleCopyPrompt = async (prompt: string) => {
     try {
       await navigator.clipboard.writeText(prompt)
-      toast({
-        title: "Copied",
-        description: "Prompt copied to clipboard",
-        variant: "default",
-      })
+      // Toast removed per user request
     } catch (error) {
       console.error('Failed to copy:', error)
       toast({
@@ -114,12 +110,8 @@ export function GenerationGallery({
         sessionId,
         isApproved: !currentApproved,
       })
-      
-      toast({
-        title: currentApproved ? "Approval removed" : "Approved",
-        description: currentApproved ? "Image unapproved" : "Image approved for review",
-        variant: "default",
-      })
+
+      // Toast removed per user request
     } catch (error) {
       console.error('Error toggling approval:', error)
       toast({
@@ -140,13 +132,9 @@ export function GenerationGallery({
       })
 
       if (!response.ok) throw new Error('Failed to cancel generation')
-      
-      toast({
-        title: "Generation cancelled",
-        description: "The generation has been stopped",
-        variant: "default",
-      })
-      
+
+      // Toast removed per user request
+
       // Invalidate queries to refetch
       queryClient.invalidateQueries({ queryKey: ['generations', sessionId] })
     } catch (error) {
@@ -172,12 +160,8 @@ export function GenerationGallery({
       })
 
       if (!response.ok) throw new Error('Failed to toggle bookmark')
-      
-      toast({
-        title: isBookmarked ? "Bookmark removed" : "Bookmarked",
-        description: isBookmarked ? "Removed from bookmarks" : "Added to bookmarks",
-        variant: "default",
-      })
+
+      // Toast removed per user request
 
       // Invalidate generations query to refetch with updated bookmark status
       queryClient.invalidateQueries({ queryKey: ['generations', sessionId] })

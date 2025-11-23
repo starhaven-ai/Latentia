@@ -255,10 +255,10 @@ export function GenerationInterface({
   const handleReuseParameters = (generation: GenerationWithOutputs) => {
     // Set prompt
     setPrompt(generation.prompt)
-    
+
     // Set model
     setSelectedModel(generation.modelId)
-    
+
     // Set parameters
     const genParams = generation.parameters as any
     setParameters({
@@ -267,13 +267,22 @@ export function GenerationInterface({
       numOutputs: genParams.numOutputs || 1,
       ...(genParams.duration && { duration: genParams.duration }),
     })
-    
-    // Show toast to confirm
-    toast({
-      title: "Parameters reused",
-      description: "Prompt and settings have been loaded. You can now modify and regenerate.",
-      variant: "default",
-    })
+
+    // Reuse reference image if it exists
+    if (genParams.referenceImage) {
+      // The referenceImage is stored as a data URL, set it directly
+      setReferenceImageUrl(genParams.referenceImage)
+    } else if (genParams.referenceImageId) {
+      // If there's a reference image ID, try to find the corresponding output URL
+      // This would be from a previous generation's output
+      const referenceOutput = generation.outputs?.find(o => o.id === genParams.referenceImageId)
+      if (referenceOutput) {
+        setReferenceImageUrl(referenceOutput.fileUrl)
+      }
+    } else {
+      // Clear any existing reference image
+      setReferenceImageUrl(null)
+    }
   }
 
   const handleConvertToVideo = async (generation: GenerationWithOutputs, videoSessionId: string, imageUrl?: string) => {
@@ -303,11 +312,7 @@ export function GenerationInterface({
       numOutputs: 1, // Videos typically generate one at a time
     })
 
-    toast({
-      title: "Converted to video",
-      description: "Reference image sent. Write a video prompt or use the wand to enhance.",
-      variant: "success",
-    })
+    // Toast removed per user request
   }
 
   // Get video sessions
@@ -413,6 +418,9 @@ export function GenerationInterface({
                 selectedModel={selectedModel}
                 onModelSelect={setSelectedModel}
                 isGenerating={false}
+                referenceImageUrl={referenceImageUrl}
+                onClearReferenceImage={() => setReferenceImageUrl(null)}
+                onSetReferenceImageUrl={setReferenceImageUrl}
               />
             )}
           </div>

@@ -237,7 +237,7 @@ export function GenerationGallery({
           return (
             <div key={generation.id} className="flex gap-6 items-start">
               {/* Left Side: Prompt Display with Cancelled State */}
-              <div className="w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-destructive/50 flex flex-col relative">
+              <div className="w-72 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-destructive/50 flex flex-col relative">
                 <div className="absolute top-2 left-2 px-2 py-1 bg-destructive/20 text-destructive text-xs font-medium rounded z-10">
                   Cancelled
                 </div>
@@ -268,7 +268,7 @@ export function GenerationGallery({
               </div>
 
               {/* Right Side: Empty/Cancelled State */}
-              <div className="flex-1 max-w-2xl flex items-center justify-center">
+              <div className="flex-1 max-w-5xl flex items-center justify-center">
                 <div className="bg-muted/20 rounded-xl p-8 border border-destructive/30 text-center">
                   <p className="text-sm text-muted-foreground">Generation was cancelled</p>
                 </div>
@@ -287,7 +287,7 @@ export function GenerationGallery({
             return (
               <div key={generation.id} className="flex gap-6 items-start">
                 {/* Left Side: Prompt Display with Error State */}
-                <div className="w-96 h-64 flex-shrink-0 bg-destructive/10 rounded-xl p-6 border border-destructive/50 flex flex-col">
+                <div className="w-72 h-64 flex-shrink-0 bg-destructive/10 rounded-xl p-6 border border-destructive/50 flex flex-col">
                   <div className="flex-1 overflow-hidden hover:overflow-y-auto transition-all group relative">
                     <p 
                       className="text-base font-normal leading-relaxed text-foreground/90 cursor-pointer hover:text-primary transition-colors"
@@ -315,7 +315,7 @@ export function GenerationGallery({
                 </div>
 
                 {/* Right Side: Error Message */}
-                <div className="flex-1 max-w-2xl">
+                <div className="flex-1 max-w-5xl">
                   <div className="bg-destructive/10 rounded-xl p-6 border border-destructive/50">
                     <h3 className="text-lg font-semibold text-destructive mb-2">Generation Failed</h3>
                     <p className="text-sm text-foreground/80 mb-4">{errorMessage}</p>
@@ -337,7 +337,7 @@ export function GenerationGallery({
             return (
               <div key={generation.id} className="flex gap-6 items-start">
                 {/* Left Side: Prompt Display - same styling as images */}
-                <div className="w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 flex flex-col">
+                <div className="w-72 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 flex flex-col">
                   <div className="flex-1 overflow-hidden hover:overflow-y-auto transition-all group relative">
                     <p 
                       className="text-base font-normal leading-relaxed text-foreground/90 cursor-pointer hover:text-primary transition-colors"
@@ -361,7 +361,7 @@ export function GenerationGallery({
                 </div>
 
                 {/* Right Side: Single video container */}
-                <div className="flex-1 grid grid-cols-1 gap-3 max-w-4xl">
+                <div className="flex-1 grid grid-cols-1 gap-3 max-w-5xl">
                   {(generation.outputs || []).map((output) => {
                     const aspectRatio = (generation.parameters as any)?.aspectRatio || '16:9'
                     return (
@@ -446,7 +446,7 @@ export function GenerationGallery({
           return (
             <div key={generation.id} className="flex gap-6 items-start">
               {/* Left Side: Prompt Display - Fixed Height with Scroll on Hover */}
-              <div className="w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 flex flex-col">
+              <div className="w-72 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border border-border/50 flex flex-col">
                 <div className="flex-1 overflow-hidden hover:overflow-y-auto transition-all group relative">
                   <p 
                     className="text-base font-normal leading-relaxed text-foreground/90 cursor-pointer hover:text-primary transition-colors"
@@ -491,7 +491,7 @@ export function GenerationGallery({
               </div>
 
             {/* Right Side: Outputs in 2-Column Grid - Smaller Images */}
-            <div className="flex-1 grid grid-cols-2 gap-3 max-w-4xl">
+            <div className="flex-1 grid grid-cols-2 gap-3 max-w-5xl">
               {(generation.outputs || []).map((output) => {
                 const aspectRatio = (generation.parameters as any)?.aspectRatio || '1:1'
                 return (
@@ -611,7 +611,7 @@ export function GenerationGallery({
           return (
             <div key={procGen.id} className="flex gap-6 items-start mb-6">
               {/* Left Side: Prompt and metadata */}
-              <div className={`w-96 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border flex flex-col relative group ${
+              <div className={`w-72 h-64 flex-shrink-0 bg-muted/30 rounded-xl p-6 border flex flex-col relative group ${
                 procGen.status === 'cancelled' 
                   ? 'border-destructive/50' 
                   : isStuck
@@ -682,7 +682,7 @@ export function GenerationGallery({
 
               {/* Right Side: Progress placeholders or stuck message */}
               {isStuck ? (
-                <div className="flex-1 max-w-2xl">
+                <div className="flex-1 max-w-5xl">
                   <div className="bg-destructive/10 rounded-xl p-6 border border-destructive/50">
                     <h3 className="text-lg font-semibold text-destructive mb-2">Generation Stuck</h3>
                     <p className="text-sm text-foreground/80 mb-4">
@@ -699,7 +699,7 @@ export function GenerationGallery({
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 grid grid-cols-2 gap-3 max-w-2xl">
+                <div className="flex-1 grid grid-cols-2 gap-3 max-w-5xl">
                   {Array.from({ length: numOutputs }).map((_, idx) => (
                     <GenerationProgress 
                       key={`${procGen.id}-${idx}`}

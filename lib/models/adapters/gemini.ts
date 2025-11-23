@@ -404,7 +404,11 @@ export class GeminiAdapter extends BaseModelAdapter {
         attempts++
         await new Promise(resolve => setTimeout(resolve, 10000)) // Wait 10s
         
-        const statusResponse = await fetch(`${this.baseUrl}/${operationName}?key=${this.apiKey}`)
+        const statusResponse = await fetch(`${this.baseUrl}/${operationName}`, {
+          headers: {
+            'x-goog-api-key': this.apiKey,
+          },
+        })
         if (!statusResponse.ok) {
           throw new Error('Failed to check operation status')
         }

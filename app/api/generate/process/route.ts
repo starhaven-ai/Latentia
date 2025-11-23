@@ -329,9 +329,11 @@ async function processGenerationById(
       }
     }
 
+    // Handle unexpected status (like 'processing') as failed
     return {
       id: generation.id,
-      status: result.status,
+      status: 'failed',
+      error: `Unexpected generation status: ${result.status}`,
     }
   } catch (error: any) {
     console.error('Background generation error:', error)

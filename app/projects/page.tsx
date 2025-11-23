@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Plus, LogOut, Settings, Sun, Moon, Bookmark } from 'lucide-react'
 import { ProjectGrid } from '@/components/projects/ProjectGrid'
+import { ProjectGridSkeleton } from '@/components/projects/ProjectSkeleton'
 import { NewProjectDialog } from '@/components/projects/NewProjectDialog'
 import type { Project } from '@/types/project'
 
@@ -249,9 +250,7 @@ export default function ProjectsPage() {
         {activeTab === 'projects' && (
           <>
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <p className="text-muted-foreground">Loading projects...</p>
-              </div>
+              <ProjectGridSkeleton />
             ) : projects.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 space-y-4">
                 <div className="text-center">

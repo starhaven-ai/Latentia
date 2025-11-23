@@ -273,8 +273,11 @@ export class GeminiAdapter extends BaseModelAdapter {
         // Combine all parts
         const multipartBody = Buffer.concat(parts)
         
-        // Upload to Google Files API
-        const uploadResponse = await fetch(`${this.baseUrl}/files`, {
+        // Upload to Google Files API - note the /upload/ path prefix for file uploads
+        const uploadUrl = this.baseUrl.replace('/v1beta', '/upload/v1beta') + '/files'
+        console.log(`[Veo 3.1] Uploading to: ${uploadUrl}`)
+        
+        const uploadResponse = await fetch(uploadUrl, {
           method: 'POST',
           headers: {
             'x-goog-api-key': this.apiKey,
@@ -283,13 +286,26 @@ export class GeminiAdapter extends BaseModelAdapter {
           body: multipartBody,
         })
         
+        console.log(`[Veo 3.1] Files API response status: ${uploadResponse.status} ${uploadResponse.statusText}`)
+        
+        // Get response text first to debug
+        const responseText = await uploadResponse.text()
+        console.log(`[Veo 3.1] Files API raw response:`, responseText)
+        
         if (!uploadResponse.ok) {
-          const errorText = await uploadResponse.text()
-          console.error(`[Veo 3.1] Files API upload failed (${uploadResponse.status}):`, errorText)
-          throw new Error(`Files API upload failed: ${uploadResponse.status} ${errorText}`)
+          console.error(`[Veo 3.1] Files API upload failed (${uploadResponse.status}):`, responseText)
+          throw new Error(`Files API upload failed: ${uploadResponse.status} ${responseText}`)
         }
         
-        const fileData = await uploadResponse.json()
+        // Parse JSON response
+        let fileData
+        try {
+          fileData = JSON.parse(responseText)
+        } catch (e) {
+          console.error(`[Veo 3.1] Failed to parse Files API response as JSON:`, responseText)
+          throw new Error(`Invalid JSON response from Files API: ${responseText}`)
+        }
+        
         console.log(`[Veo 3.1] Files API upload response:`, JSON.stringify(fileData, null, 2))
         
         // Extract file resource name - format should be "files/abc123"

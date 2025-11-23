@@ -311,6 +311,7 @@ export class GeminiAdapter extends BaseModelAdapter {
         // Extract file resource name - format should be "files/abc123"
         // According to Gemini API docs, the response has a `file` object with a `name` field
         const fileResourceName = fileData.file?.name || fileData.name
+        const fileUri = fileData.file?.uri
         
         if (!fileResourceName) {
           console.error(`[Veo 3.1] Unexpected Files API response structure:`, fileData)
@@ -324,15 +325,16 @@ export class GeminiAdapter extends BaseModelAdapter {
         }
         console.log(`[Veo 3.1] Reference image uploaded`, uploadedReferenceMeta)
         
-        // VEO 3.1 uses 'image' field - try both full resource name and just the ID
-        // Extract file ID from "files/abc123" format if needed
-        const fileId = fileResourceName.startsWith('files/') 
-          ? fileResourceName.replace('files/', '') 
-          : fileResourceName
-        
-        // Try using just the file ID (without "files/" prefix)
-        instance.image = fileId
-        console.log(`[Veo 3.1] Using file ID for image: ${fileId}`)
+        // Try different formats - VEO 3.1 API format is unclear from docs
+        // Option 1: Use full resource name "files/abc123"
+        // Option 2: Use just file ID "abc123"  
+        // Option 3: Use full URI
+        // Let's try the full resource name first (most common in Gemini API)
+        instance.image = fileResourceName
+        console.log(`[Veo 3.1] Using file resource name for image: ${fileResourceName}`)
+        if (fileUri) {
+          console.log(`[Veo 3.1] File URI also available: ${fileUri}`)
+        }
       } catch (error: any) {
         console.error('[Veo 3.1] Error uploading reference image:', error)
         console.error('[Veo 3.1] Error details:', {
@@ -349,18 +351,31 @@ export class GeminiAdapter extends BaseModelAdapter {
       throw new Error('[Veo 3.1] Reference image upload failed - no file resource returned')
     }
     
+    // Build clean instance object - only include prompt and image if provided
+    // According to docs: https://ai.google.dev/gemini-api/docs/video
+    const cleanInstance: any = {
+      prompt: instance.prompt,
+    }
+    
+    // Only add image field if we actually have an uploaded image
+    if (instance.image) {
+      cleanInstance.image = instance.image
+    }
+    
     const payload = {
-      instances: [instance],
+      instances: [cleanInstance],
     }
     
     console.log(`[Veo 3.1] Calling API with ${duration}s video, ${width}x${height}, ${aspectRatio}`)
-    console.log(`[Veo 3.1] Payload:`, JSON.stringify({ instances: [instance] }, null, 2))
+    console.log(`[Veo 3.1] Payload:`, JSON.stringify(payload, null, 2))
     
     try {
       // Initiate video generation
-      const response = await fetch(`${endpoint}?key=${this.apiKey}`, {
+      // According to docs, API key should be in header, not query string
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
+          'x-goog-api-key': this.apiKey,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),

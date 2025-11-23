@@ -254,8 +254,8 @@ export class GeminiAdapter extends BaseModelAdapter {
         // Create FormData for the multipart upload
         const formData = new FormData()
         
-        // Create a Blob from the image bytes
-        const blob = new Blob([imageBytes], { type: contentType })
+        // Create a Blob from the image bytes (convert Buffer to Uint8Array for compatibility)
+        const blob = new Blob([new Uint8Array(imageBytes)], { type: contentType })
         const fileExtension = contentType.includes('png') ? 'png' : 'jpg'
         
         // Add the file to FormData

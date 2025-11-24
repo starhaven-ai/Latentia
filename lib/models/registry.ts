@@ -8,6 +8,7 @@ import {
   ReplicateAdapter,
   SEEDREAM_4_CONFIG,
   REVE_CONFIG,
+  VEO_3_1_REPLICATE_CONFIG,
 } from './adapters/replicate'
 
 /**
@@ -27,10 +28,11 @@ class ModelRegistry {
     // Register Google Gemini models
     this.register(NANO_BANANA_CONFIG, GeminiAdapter)
     this.register(VEO_3_1_CONFIG, GeminiAdapter)
-    
+
     // Register Replicate models
     this.register(SEEDREAM_4_CONFIG, ReplicateAdapter)
     this.register(REVE_CONFIG, ReplicateAdapter)
+    this.register(VEO_3_1_REPLICATE_CONFIG, ReplicateAdapter)
   }
 
   /**

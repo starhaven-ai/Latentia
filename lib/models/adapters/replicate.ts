@@ -102,6 +102,82 @@ export const REVE_CONFIG: ModelConfig = {
 }
 
 /**
+ * VEO 3.1 Model Configuration
+ * Video generation model from Google via Replicate
+ * Documentation: https://replicate.com/google/veo-3.1
+ */
+export const VEO_3_1_REPLICATE_CONFIG: ModelConfig = {
+  id: 'replicate-veo-3.1',
+  name: 'Veo 3.1 (Replicate)',
+  provider: 'Google (Replicate)',
+  type: 'video',
+  description: 'State-of-the-art video generation with native audio support via Replicate',
+  defaultAspectRatio: '16:9',
+  supportedAspectRatios: ['16:9', '9:16'],
+  maxResolution: 1080,
+  pricing: {
+    perSecond: 0.40, // With audio
+    currency: 'USD',
+  },
+  parameters: [
+    {
+      name: 'resolution',
+      type: 'select',
+      label: 'Resolution',
+      options: [
+        { label: '720p', value: '720p' },
+        { label: '1080p', value: '1080p' },
+      ],
+      default: '1080p',
+    },
+    {
+      name: 'duration',
+      type: 'select',
+      label: 'Duration',
+      options: [
+        { label: '4 seconds', value: '4' },
+        { label: '6 seconds', value: '6' },
+        { label: '8 seconds', value: '8' },
+      ],
+      default: '8',
+    },
+    {
+      name: 'aspectRatio',
+      type: 'select',
+      label: 'Aspect Ratio',
+      options: [
+        { label: '16:9 (Landscape)', value: '16:9' },
+        { label: '9:16 (Portrait)', value: '9:16' },
+      ],
+      default: '16:9',
+    },
+    {
+      name: 'generateAudio',
+      type: 'boolean',
+      label: 'Generate Audio',
+      default: true,
+    },
+    {
+      name: 'negativePrompt',
+      type: 'text',
+      label: 'Negative Prompt (Optional)',
+      default: '',
+    },
+    {
+      name: 'numOutputs',
+      type: 'number',
+      label: 'Number of outputs',
+      min: 1,
+      max: 1,
+      default: 1,
+      options: [
+        { label: '1', value: 1 },
+      ],
+    },
+  ],
+}
+
+/**
  * Replicate API Adapter
  * Handles image generation via Replicate.com
  * Documentation: https://replicate.com/docs
@@ -325,7 +401,184 @@ export class ReplicateAdapter extends BaseModelAdapter {
   }
 
   private async generateVideo(request: GenerationRequest): Promise<GenerationResponse> {
-    throw new Error('Video generation not yet implemented for Replicate')
+    if (!this.apiKey) {
+      throw new Error('REPLICATE_API_TOKEN is not configured. Please add your Replicate API token to .env.local and restart the dev server. Get your token from: https://replicate.com/account/api-tokens')
+    }
+
+    const {
+      prompt,
+      parameters = {},
+      referenceImage,
+      referenceImages = [],
+    } = request
+
+    // Get parameters with safe fallbacks
+    const aspectRatio = parameters?.aspectRatio || request.aspectRatio || '16:9'
+    const duration = parseInt(parameters?.duration?.toString() || request.duration?.toString() || '8')
+    const resolution = parameters?.resolution || request.resolution || '1080p'
+    const generateAudio = parameters?.generateAudio !== undefined ? parameters.generateAudio : true
+    const negativePrompt = parameters?.negativePrompt || ''
+
+    try {
+      // Determine which Replicate model to use
+      let modelPath: string
+      if (this.config.id === 'replicate-veo-3.1') {
+        modelPath = 'google/veo-3.1'
+      } else {
+        throw new Error(`Unknown Replicate video model: ${this.config.id}`)
+      }
+
+      // Prepare input for VEO 3.1
+      const input: any = {
+        prompt,
+        aspect_ratio: aspectRatio,
+        duration,
+        resolution,
+        generate_audio: generateAudio,
+      }
+
+      // Add negative prompt if provided
+      if (negativePrompt) {
+        input.negative_prompt = negativePrompt
+      }
+
+      // Add reference image(s) if provided
+      // VEO 3.1 supports single image or reference_images array (1-3 images)
+      if (referenceImages.length > 0) {
+        // Multiple reference images for character consistency
+        input.reference_images = referenceImages.slice(0, 3) // Max 3 images
+      } else if (referenceImage) {
+        // Single reference image for image-to-video
+        input.image = referenceImage
+      }
+
+      console.log('Submitting video to Replicate:', input)
+
+      // First, fetch the latest version for the model
+      const modelResponse = await fetch(`${this.baseUrl}/models/${modelPath}`, {
+        headers: {
+          'Authorization': `Token ${this.apiKey}`,
+        },
+      })
+
+      if (!modelResponse.ok) {
+        const errorText = await modelResponse.text()
+        console.error('Failed to fetch model info:', errorText)
+        throw new Error(`Failed to fetch model info: ${errorText}`)
+      }
+
+      const modelData = await modelResponse.json()
+      const versionHash = modelData.latest_version?.id
+
+      if (!versionHash) {
+        throw new Error('Could not determine latest version for the model')
+      }
+
+      console.log('Using version:', versionHash)
+
+      // Submit prediction to Replicate
+      const response = await fetch(`${this.baseUrl}/predictions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          version: versionHash,
+          input,
+        }),
+      })
+
+      if (!response.ok) {
+        let errorMessage = 'Replicate API request failed'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.detail || errorData.error || JSON.stringify(errorData)
+        } catch {
+          const errorText = await response.text()
+          errorMessage = errorText || `HTTP ${response.status}: ${response.statusText}`
+        }
+        console.error('Replicate API error:', errorMessage)
+        throw new Error(errorMessage)
+      }
+
+      const data = await response.json()
+      const predictionId = data.id
+
+      console.log('Replicate prediction started:', predictionId)
+
+      // Poll for results (video generation takes longer)
+      let attempts = 0
+      const maxAttempts = 120 // 10 minutes max
+
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 5000)) // Wait 5 seconds
+
+        const statusResponse = await fetch(`${this.baseUrl}/predictions/${predictionId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Token ${this.apiKey}`,
+          },
+        })
+
+        if (!statusResponse.ok) {
+          let errorMessage = `Failed to check prediction status (${statusResponse.status})`
+          try {
+            const errorData = await statusResponse.json()
+            errorMessage = errorData.detail || errorData.error || errorMessage
+          } catch {
+            errorMessage = `${statusResponse.status}: ${statusResponse.statusText}`
+          }
+          throw new Error(errorMessage)
+        }
+
+        const statusData = await statusResponse.json()
+        console.log(`Replicate video status: ${statusData.status} (attempt ${attempts + 1})`)
+
+        if (statusData.status === 'succeeded') {
+          // VEO 3.1 returns a single video URL
+          let videoUrl: string | null = null
+
+          if (statusData.output) {
+            if (typeof statusData.output === 'string') {
+              videoUrl = statusData.output
+            } else if (statusData.output.url) {
+              videoUrl = statusData.output.url
+            }
+          }
+
+          if (!videoUrl) {
+            throw new Error('No video generated - unexpected output format')
+          }
+
+          return {
+            id: `replicate-${Date.now()}`,
+            status: 'completed',
+            outputs: [{
+              url: videoUrl,
+              type: 'video',
+            }],
+            metadata: {
+              seed: statusData.metrics?.seed,
+              model: request.modelId,
+              duration,
+              resolution,
+              aspectRatio,
+              generateAudio,
+            },
+          }
+        } else if (statusData.status === 'failed' || statusData.status === 'canceled') {
+          throw new Error(`Video generation failed: ${statusData.error || 'Unknown error'}`)
+        }
+
+        attempts++
+      }
+
+      throw new Error('Video generation timeout - request took too long')
+    } catch (error: any) {
+      console.error('Replicate video generation error:', error)
+      throw new Error(error.message || 'Failed to generate video with Replicate')
+    }
   }
 }
 

@@ -9,6 +9,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { GenerationProgress } from './GenerationProgress'
 import { ImageLightbox } from './ImageLightbox'
 import { VideoSessionSelector } from './VideoSessionSelector'
+import { NoteDialog } from './NoteDialog'
 import { getAllModels } from '@/lib/models/registry'
 
 // Safe date formatter
@@ -57,6 +58,12 @@ export function GenerationGallery({
   const [videoSelectorOpen, setVideoSelectorOpen] = useState(false)
   const [selectedGeneration, setSelectedGeneration] = useState<GenerationWithOutputs | null>(null)
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null)
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false)
+  const [noteDialogContext, setNoteDialogContext] = useState<{
+    type: 'bookmark' | 'approval',
+    outputId: string,
+    currentState: boolean
+  } | null>(null)
 
   // Convert aspect ratio string to CSS aspect-ratio value
   const getAspectRatioStyle = (aspectRatio?: string) => {
@@ -103,7 +110,19 @@ export function GenerationGallery({
 
   const handleToggleApproval = async (outputId: string, currentApproved: boolean) => {
     if (!sessionId) return
-    
+
+    // If approving (not unapproving), show note dialog
+    if (!currentApproved) {
+      setNoteDialogContext({
+        type: 'approval',
+        outputId,
+        currentState: currentApproved,
+      })
+      setNoteDialogOpen(true)
+      return
+    }
+
+    // If unapproving, just toggle directly
     try {
       await updateOutputMutation.mutateAsync({
         outputId,
@@ -149,10 +168,22 @@ export function GenerationGallery({
 
   const handleToggleBookmark = async (outputId: string, isBookmarked: boolean) => {
     if (!sessionId) return
-    
+
+    // If bookmarking (not unbookmarking), show note dialog
+    if (!isBookmarked) {
+      setNoteDialogContext({
+        type: 'bookmark',
+        outputId,
+        currentState: isBookmarked,
+      })
+      setNoteDialogOpen(true)
+      return
+    }
+
+    // If unbookmarking, just toggle directly
     try {
       const method = isBookmarked ? 'DELETE' : 'POST'
-      
+
       const response = await fetch('/api/bookmarks', {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -193,6 +224,60 @@ export function GenerationGallery({
       if (newSession && onConvertToVideo) {
         onConvertToVideo(selectedGeneration, newSession.id, selectedImageUrl || undefined)
       }
+    }
+  }
+
+  const handleSaveNote = async (note: string) => {
+    if (!noteDialogContext || !sessionId) return
+
+    const { type, outputId, currentState } = noteDialogContext
+
+    try {
+      // Save the note if provided
+      if (note.trim()) {
+        const noteResponse = await fetch('/api/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            outputId,
+            text: note,
+            context: type
+          }),
+        })
+
+        if (!noteResponse.ok) throw new Error('Failed to save note')
+      }
+
+      // Perform the original action (bookmark or approval)
+      if (type === 'bookmark') {
+        const response = await fetch('/api/bookmarks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ outputId }),
+        })
+
+        if (!response.ok) throw new Error('Failed to create bookmark')
+      } else if (type === 'approval') {
+        await updateOutputMutation.mutateAsync({
+          outputId,
+          sessionId,
+          isApproved: !currentState,
+        })
+      }
+
+      // Invalidate queries to refetch
+      queryClient.invalidateQueries({ queryKey: ['generations', sessionId] })
+    } catch (error) {
+      console.error(`Error saving note and ${type}:`, error)
+      toast({
+        title: "Error",
+        description: `Failed to ${type === 'bookmark' ? 'bookmark' : 'approve'} with note`,
+        variant: "destructive",
+      })
+    } finally {
+      // Reset state
+      setNoteDialogOpen(false)
+      setNoteDialogContext(null)
     }
   }
 
@@ -727,6 +812,22 @@ export function GenerationGallery({
         videoSessions={videoSessions}
         onSelectSession={handleSelectVideoSession}
         onCreateNewSession={handleCreateVideoSession}
+      />
+
+      {/* Note Dialog */}
+      <NoteDialog
+        isOpen={noteDialogOpen}
+        onClose={() => {
+          setNoteDialogOpen(false)
+          setNoteDialogContext(null)
+        }}
+        onSave={handleSaveNote}
+        title={noteDialogContext?.type === 'bookmark' ? 'Add Bookmark Note' : 'Add Approval Note'}
+        description={
+          noteDialogContext?.type === 'bookmark'
+            ? 'Add an optional note to explain why you bookmarked this.'
+            : 'Add an optional note to explain why you approved this for review.'
+        }
       />
     </>
   )

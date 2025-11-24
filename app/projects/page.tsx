@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -12,7 +12,21 @@ import type { Project } from '@/types/project'
 
 type TabType = 'briefings' | 'projects' | 'review'
 
-export default function ProjectsPage() {
+// Component that handles search params - must be wrapped in Suspense
+function TabHandler({ onTabChange }: { onTabChange: (tab: TabType) => void }) {
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as TabType | null
+    if (tabParam && (tabParam === 'briefings' || tabParam === 'projects' || tabParam === 'review')) {
+      onTabChange(tabParam)
+    }
+  }, [searchParams, onTabChange])
+
+  return null
+}
+
+function ProjectsPageContent() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [showNewProject, setShowNewProject] = useState(false)
@@ -22,16 +36,7 @@ export default function ProjectsPage() {
   const [approvedItems, setApprovedItems] = useState<any[]>([])
   const [loadingApproved, setLoadingApproved] = useState(false)
   const router = useRouter()
-  const searchParams = useSearchParams()
   const supabase = createClient()
-
-  // Handle tab query parameter
-  useEffect(() => {
-    const tabParam = searchParams.get('tab') as TabType | null
-    if (tabParam && (tabParam === 'briefings' || tabParam === 'projects' || tabParam === 'review')) {
-      setActiveTab(tabParam)
-    }
-  }, [searchParams])
 
   // Initialize theme from localStorage
   useEffect(() => {
@@ -160,6 +165,11 @@ export default function ProjectsPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Tab Handler - wrapped in Suspense */}
+      <Suspense fallback={null}>
+        <TabHandler onTabChange={setActiveTab} />
+      </Suspense>
+
       {/* Header */}
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -436,5 +446,10 @@ export default function ProjectsPage() {
 
     </div>
   )
+}
+
+// Default export wrapped properly
+export default function ProjectsPage() {
+  return <ProjectsPageContent />
 }
 

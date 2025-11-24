@@ -3,6 +3,9 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // GET /api/generations?sessionId=xxx&cursor=xxx - Get generations for a session with cursor pagination
 export async function GET(request: NextRequest) {
   try {

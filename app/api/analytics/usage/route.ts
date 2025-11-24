@@ -4,6 +4,9 @@ import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { modelRegistry } from '@/lib/models/registry'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const supabase = createRouteHandlerClient({ cookies })

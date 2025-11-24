@@ -3,6 +3,9 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // GET /api/projects - List all projects for the current user
 export async function GET() {
   try {

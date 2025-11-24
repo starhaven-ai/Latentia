@@ -3,10 +3,13 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 /**
  * Optimized endpoint to fetch projects with thumbnails
  * Uses a single query with joins instead of N+1 pattern
- * 
+ *
  * Returns projects with:
  * - Owner profile (displayName, username)
  * - Latest generation thumbnail for each project

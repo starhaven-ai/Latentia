@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Bookmark as BookmarkIcon } from 'lucide-react'
+import { Bookmark as BookmarkIcon, LogOut, Settings, Sun, Moon } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
+import Link from 'next/link'
 
 interface BookmarkedItem {
   id: string
@@ -31,6 +33,7 @@ interface BookmarkedItem {
 
 export default function BookmarksPage() {
   const router = useRouter()
+  const supabase = createClient()
   const { toast } = useToast()
   const [bookmarks, setBookmarks] = useState<BookmarkedItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -41,8 +44,21 @@ export default function BookmarksPage() {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
     if (savedTheme) {
       setTheme(savedTheme)
+      document.documentElement.classList.toggle('dark', savedTheme === 'dark')
     }
   }, [])
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light'
+    setTheme(newTheme)
+    localStorage.setItem('theme', newTheme)
+    document.documentElement.classList.toggle('dark', newTheme === 'dark')
+  }
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   useEffect(() => {
     fetchBookmarks()
@@ -108,21 +124,54 @@ export default function BookmarksPage() {
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img 
+            <img
               src={theme === 'light' ? "/images/Loop Vesper (Black).svg" : "/images/Loop Vesper (White).svg"}
-              alt="Loop Vesper Logo" 
+              alt="Loop Vesper Logo"
               className="h-8 object-contain cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => router.push('/projects')}
               title="Back to Projects"
             />
             <div className="border-l border-border pl-3">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Bookmarks
               </h1>
-              <p className="text-sm text-muted-foreground">
-                {bookmarks.length} {bookmarks.length === 1 ? 'item' : 'items'}
-              </p>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push('/bookmarks')}
+              title="Bookmarks"
+              className="bg-primary/10"
+            >
+              <BookmarkIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="transition-transform hover:rotate-12"
+              title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+            >
+              {theme === 'light' ? (
+                <Moon className="h-4 w-4" />
+              ) : (
+                <Sun className="h-4 w-4" />
+              )}
+            </Button>
+            <Link href="/settings">
+              <Button
+                variant="ghost"
+                size="icon"
+                title="Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign out">
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </header>

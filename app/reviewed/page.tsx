@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Check, Sun, Moon } from 'lucide-react'
+import { Check, Sun, Moon, LogOut, Settings, Bookmark } from 'lucide-react'
 
 export default function ReviewedPage() {
   const [approvedItems, setApprovedItems] = useState<any[]>([])
@@ -27,6 +28,11 @@ export default function ReviewedPage() {
     setTheme(newTheme)
     localStorage.setItem('theme', newTheme)
     document.documentElement.classList.toggle('dark', newTheme === 'dark')
+  }
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
   }
 
   useEffect(() => {
@@ -82,25 +88,31 @@ export default function ReviewedPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.push('/projects?tab=review')}
-                title="Back to projects"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold">All Reviewed Items</h1>
-                <p className="text-sm text-muted-foreground">
-                  {approvedItems.length} {approvedItems.length === 1 ? 'item' : 'items'} approved
-                </p>
-              </div>
+      <header className="border-b border-border">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img
+              src={theme === 'light' ? "/images/Loop Vesper (Black).svg" : "/images/Loop Vesper (White).svg"}
+              alt="Loop Vesper Logo"
+              className="h-8 object-contain cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => router.push('/projects?tab=review')}
+              title="Back to Projects"
+            />
+            <div className="border-l border-border pl-3">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Reviewed
+              </h1>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push('/bookmarks')}
+              title="Bookmarks"
+            >
+              <Bookmark className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -113,6 +125,18 @@ export default function ReviewedPage() {
               ) : (
                 <Sun className="h-4 w-4" />
               )}
+            </Button>
+            <Link href="/settings">
+              <Button
+                variant="ghost"
+                size="icon"
+                title="Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign out">
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -150,7 +174,7 @@ export default function ReviewedPage() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {approvedItems.map((item) => (
                 <div
                   key={item.id}

@@ -257,7 +257,7 @@ export default function BookmarksPage() {
                           Note
                         </p>
                         <p className="text-sm text-foreground/90 leading-relaxed line-clamp-3 italic">
-                          "{note.text}"
+                          &ldquo;{note.text}&rdquo;
                         </p>
                       </div>
                     )}

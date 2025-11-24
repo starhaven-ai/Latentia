@@ -186,20 +186,18 @@ function ProjectsPageContent() {
               New Project
             </Button>
             <Button
-              variant="ghost"
               size="icon"
               onClick={() => router.push('/reviewed')}
               title="Reviewed"
-              className="text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/20"
+              className="bg-green-600 hover:bg-green-700 text-white"
             >
               <Check className="h-4 w-4" />
             </Button>
             <Button
-              variant="ghost"
               size="icon"
               onClick={() => router.push('/bookmarks')}
               title="Bookmarks"
-              className="text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/20"
+              className="bg-green-600 hover:bg-green-700 text-white"
             >
               <Bookmark className="h-4 w-4" />
             </Button>

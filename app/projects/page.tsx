@@ -9,6 +9,7 @@ import { Plus, LogOut, Settings, Sun, Moon, Bookmark } from 'lucide-react'
 import { ProjectGrid } from '@/components/projects/ProjectGrid'
 import { ProjectGridSkeleton } from '@/components/projects/ProjectSkeleton'
 import { NewProjectDialog } from '@/components/projects/NewProjectDialog'
+import { ReviewPreview } from '@/components/review/ReviewPreview'
 import type { Project } from '@/types/project'
 
 type TabType = 'briefings' | 'projects' | 'review'
@@ -276,32 +277,8 @@ export default function ProjectsPage() {
 
         {/* Review Tab */}
         {activeTab === 'review' && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="text-center space-y-4 max-w-md">
-              <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="32"
-                  height="32"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-green-600"
-                >
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold">Review</h2>
-              <p className="text-muted-foreground">
-                Review and approve content submitted by your team. Approved items will appear here.
-              </p>
-                  </div>
-                </div>
-              )}
+          <ReviewPreview />
+        )}
               </div>
             </main>
 

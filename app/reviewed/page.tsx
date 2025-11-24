@@ -19,6 +19,10 @@ interface ApprovedItem {
   generation: {
     id: string
     prompt: string
+    user: {
+      displayName: string | null
+      username: string | null
+    }
     session: {
       id: string
       name: string
@@ -253,8 +257,12 @@ export default function ReviewedPage() {
                     <p className="text-sm font-medium line-clamp-2">
                       {item.generation.prompt}
                     </p>
+                    <p className="text-xs text-muted-foreground">
+                      by {item.generation.user.displayName || item.generation.user.username || 'Unknown'}
+                    </p>
                     {item.notes && item.notes.length > 0 && (
                       <div className="pt-2 border-t border-border/50">
+                        <p className="text-xs font-semibold text-primary mb-1">Note:</p>
                         <p className="text-xs text-muted-foreground italic leading-relaxed">
                           &ldquo;{item.notes[0].text}&rdquo;
                         </p>

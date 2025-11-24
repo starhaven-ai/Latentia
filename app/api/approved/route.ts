@@ -27,6 +27,12 @@ export async function GET() {
       include: {
         generation: {
           include: {
+            user: {
+              select: {
+                displayName: true,
+                username: true,
+              },
+            },
             session: {
               include: {
                 project: true,

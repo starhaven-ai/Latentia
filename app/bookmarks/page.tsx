@@ -24,6 +24,10 @@ interface BookmarkedItem {
       id: string
       prompt: string
       modelId: string
+      user: {
+        displayName: string | null
+        username: string | null
+      }
       session: {
         id: string
         name: string
@@ -253,8 +257,12 @@ export default function BookmarksPage() {
                   <p className="text-sm font-medium line-clamp-2">
                     {bookmark.output.generation.prompt}
                   </p>
+                  <p className="text-xs text-muted-foreground">
+                    by {bookmark.output.generation.user.displayName || bookmark.output.generation.user.username || 'Unknown'}
+                  </p>
                   {bookmark.output.notes && bookmark.output.notes.length > 0 && (
                     <div className="pt-2 border-t border-border/50">
+                      <p className="text-xs font-semibold text-primary mb-1">Note:</p>
                       <p className="text-xs text-muted-foreground italic leading-relaxed">
                         &ldquo;{bookmark.output.notes[0].text}&rdquo;
                       </p>

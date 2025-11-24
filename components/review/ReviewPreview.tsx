@@ -10,13 +10,26 @@ interface ApprovedItem {
   fileUrl: string
   fileType: string
   generation: {
+    prompt: string
+    user: {
+      id: string
+      username: string | null
+      displayName: string | null
+      avatarUrl: string | null
+    }
     session: {
       id: string
       project: {
         id: string
+        name: string
       }
     }
   }
+  notes: Array<{
+    id: string
+    text: string
+    context: string
+  }>
 }
 
 export function ReviewPreview() {
@@ -95,43 +108,104 @@ export function ReviewPreview() {
       </div>
 
       {/* Grid of preview items */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="group relative aspect-square rounded-lg overflow-hidden border-2 border-green-500/30 cursor-pointer hover:border-green-500/60 transition-all duration-300 hover:shadow-lg"
-            onClick={() =>
-              handleOpenSession(
-                item.generation.session.project.id,
-                item.generation.session.id
-              )
-            }
-          >
-            {item.fileType === 'image' ? (
-              <img
-                src={item.fileUrl}
-                alt="Approved content"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-              />
-            ) : (
-              <video
-                src={item.fileUrl}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-              />
-            )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {items.map((item) => {
+          const author = item.generation.user
+          const authorName = author.displayName || author.username || 'Unknown'
+          const approvalNote = item.notes.find(n => n.context === 'approval')
 
-            {/* Approved badge */}
-            <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-0.5 rounded-full flex items-center gap-1 text-xs font-medium">
-              <CheckCircle2 className="h-3 w-3" />
-              Approved
-            </div>
+          return (
+            <div
+              key={item.id}
+              className="group bg-card border-2 border-green-500/30 rounded-xl overflow-hidden hover:shadow-xl hover:border-green-500/50 transition-all duration-300"
+            >
+              {/* Image */}
+              <div
+                className="relative aspect-square cursor-pointer overflow-hidden"
+                onClick={() =>
+                  handleOpenSession(
+                    item.generation.session.project.id,
+                    item.generation.session.id
+                  )
+                }
+              >
+                {item.fileType === 'image' ? (
+                  <img
+                    src={item.fileUrl}
+                    alt="Approved content"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <video
+                    src={item.fileUrl}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                )}
 
-            {/* Hover overlay */}
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-              <p className="text-white text-sm font-medium">View in session</p>
+                {/* Approved badge */}
+                <div className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full flex items-center gap-1.5 text-xs font-medium">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Approved
+                </div>
+
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
+                  <p className="text-white text-sm font-medium px-4 text-center">
+                    Open in session
+                  </p>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-4 space-y-3">
+                {/* Author */}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold text-sm overflow-hidden flex-shrink-0">
+                    {author.avatarUrl ? (
+                      <img
+                        src={author.avatarUrl}
+                        alt={authorName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      authorName.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {authorName}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {item.generation.session.project.name}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Prompt */}
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Prompt
+                  </p>
+                  <p className="text-sm text-foreground leading-relaxed line-clamp-2">
+                    {item.generation.prompt}
+                  </p>
+                </div>
+
+                {/* Approval Note */}
+                {approvalNote && (
+                  <div className="space-y-1 pt-2 border-t border-border/50">
+                    <p className="text-xs font-medium uppercase tracking-wide text-green-600 dark:text-green-500">
+                      Review Note
+                    </p>
+                    <p className="text-sm leading-relaxed line-clamp-2 italic text-green-700 dark:text-green-400">
+                      &ldquo;{approvalNote.text}&rdquo;
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

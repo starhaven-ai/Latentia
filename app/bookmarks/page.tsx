@@ -141,12 +141,22 @@ export default function BookmarksPage() {
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => router.push('/reviewed')}
+              title="Reviewed"
+              className="text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/20"
+            >
+              <Check className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => router.push('/bookmarks')}
               title="Bookmarks"
-              className="bg-primary/10"
+              className="text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/20 bg-green-100 dark:bg-green-900/20"
             >
               <BookmarkIcon className="h-4 w-4" />
             </Button>
+            <div className="h-6 w-px bg-border mx-1" />
             <Button
               variant="ghost"
               size="icon"

@@ -185,16 +185,27 @@ function ProjectsPageContent() {
               <Plus className="mr-2 h-4 w-4" />
               New Project
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push('/reviewed')}
+              title="Reviewed"
+              className="text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/20"
+            >
+              <Check className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
               size="icon"
               onClick={() => router.push('/bookmarks')}
               title="Bookmarks"
+              className="text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/20"
             >
               <Bookmark className="h-4 w-4" />
             </Button>
-            <Button 
-              variant="ghost" 
+            <div className="h-6 w-px bg-border mx-1" />
+            <Button
+              variant="ghost"
               size="icon"
               onClick={toggleTheme}
               className="transition-transform hover:rotate-12"
@@ -207,8 +218,8 @@ function ProjectsPageContent() {
               )}
             </Button>
             <Link href="/settings">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="icon"
                 title="Settings"
               >

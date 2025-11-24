@@ -159,7 +159,7 @@ export const VEO_3_1_REPLICATE_CONFIG: ModelConfig = {
     },
     {
       name: 'negativePrompt',
-      type: 'text',
+      type: 'string',
       label: 'Negative Prompt (Optional)',
       default: '',
     },

@@ -106,20 +106,20 @@ export default function ReviewedPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              size="icon"
+              size="sm"
               onClick={() => router.push('/reviewed')}
               title="Reviewed"
-              className="bg-green-700 hover:bg-green-800 text-white"
+              className="h-8 w-8 p-0 bg-primary/80 hover:bg-primary"
             >
-              <Check className="h-4 w-4" />
+              <Check className="h-3.5 w-3.5" />
             </Button>
             <Button
-              size="icon"
+              size="sm"
               onClick={() => router.push('/bookmarks')}
               title="Bookmarks"
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="h-8 w-8 p-0 bg-primary hover:bg-primary/90"
             >
-              <Bookmark className="h-4 w-4" />
+              <Bookmark className="h-3.5 w-3.5" />
             </Button>
             <div className="h-6 w-px bg-border mx-1" />
             <Button

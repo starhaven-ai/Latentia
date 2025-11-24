@@ -43,7 +43,7 @@ export function ReviewPreview() {
 
   const fetchPreviewItems = async () => {
     try {
-      const response = await fetch('/api/review?limit=5')
+      const response = await fetch('/api/review?limit=10')
       if (response.ok) {
         const data = await response.json()
         setItems(data)
@@ -108,7 +108,7 @@ export function ReviewPreview() {
       </div>
 
       {/* Grid of preview items */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {items.map((item) => {
           const author = item.generation.user
           const authorName = author.displayName || author.username || 'Unknown'
@@ -117,7 +117,7 @@ export function ReviewPreview() {
           return (
             <div
               key={item.id}
-              className="group bg-card border-2 border-green-500/30 rounded-xl overflow-hidden hover:shadow-xl hover:border-green-500/50 transition-all duration-300"
+              className="group bg-card border-2 border-green-500/30 rounded-lg overflow-hidden hover:shadow-lg hover:border-green-500/50 transition-all duration-300"
             >
               {/* Image */}
               <div
@@ -143,24 +143,24 @@ export function ReviewPreview() {
                 )}
 
                 {/* Approved badge */}
-                <div className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full flex items-center gap-1.5 text-xs font-medium">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
+                <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-0.5 rounded-full flex items-center gap-1 text-xs font-medium">
+                  <CheckCircle2 className="h-3 w-3" />
                   Approved
                 </div>
 
                 {/* Hover overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
-                  <p className="text-white text-sm font-medium px-4 text-center">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
+                  <p className="text-white text-xs font-medium px-3 text-center">
                     Open in session
                   </p>
                 </div>
               </div>
 
               {/* Content */}
-              <div className="p-4 space-y-3">
+              <div className="p-3 space-y-2">
                 {/* Author */}
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold text-sm overflow-hidden flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold text-xs overflow-hidden flex-shrink-0">
                     {author.avatarUrl ? (
                       <img
                         src={author.avatarUrl}
@@ -172,32 +172,32 @@ export function ReviewPreview() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">
+                    <p className="text-xs font-semibold text-foreground truncate">
                       {authorName}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-[10px] text-muted-foreground truncate">
                       {item.generation.session.project.name}
                     </p>
                   </div>
                 </div>
 
                 {/* Prompt */}
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
                     Prompt
                   </p>
-                  <p className="text-sm text-foreground leading-relaxed line-clamp-2">
+                  <p className="text-xs text-foreground leading-snug line-clamp-2">
                     {item.generation.prompt}
                   </p>
                 </div>
 
                 {/* Approval Note */}
                 {approvalNote && (
-                  <div className="space-y-1 pt-2 border-t border-border/50">
-                    <p className="text-xs font-medium uppercase tracking-wide text-green-600 dark:text-green-500">
+                  <div className="space-y-0.5 pt-1.5 border-t border-border/50">
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-green-600 dark:text-green-500">
                       Review Note
                     </p>
-                    <p className="text-sm leading-relaxed line-clamp-2 italic text-green-700 dark:text-green-400">
+                    <p className="text-xs leading-snug line-clamp-2 italic text-green-700 dark:text-green-400">
                       &ldquo;{approvalNote.text}&rdquo;
                     </p>
                   </div>

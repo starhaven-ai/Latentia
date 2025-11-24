@@ -296,14 +296,15 @@ export default function BookmarksPage() {
                     {/* Note */}
                     {note && (
                       <div className="space-y-1.5 pt-3 border-t border-border/50">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        <p className="text-xs font-medium uppercase tracking-wide text-[#766294] dark:text-[hsl(131,100%,85%)]">
                           Note
                         </p>
-                        <p className="text-sm text-foreground/90 leading-relaxed line-clamp-3 italic">
+                        <p className="text-sm leading-relaxed line-clamp-3 italic text-[#766294] dark:text-[hsl(131,100%,85%)]">
                           &ldquo;{note.text}&rdquo;
                         </p>
                       </div>
                     )}
+
                   </div>
                 </div>
               )

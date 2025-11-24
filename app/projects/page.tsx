@@ -363,8 +363,36 @@ function ProjectsPageContent() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {approvedItems.map((item) => (
+              <>
+                {/* Header with "See All Reviewed" button */}
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold">Approved Items</h2>
+                  <Button
+                    onClick={() => router.push('/reviewed')}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    See All Reviewed
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M5 12h14" />
+                      <path d="m12 5 7 7-7 7" />
+                    </svg>
+                  </Button>
+                </div>
+
+                {/* Grid of approved items */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {approvedItems.map((item) => (
                   <div
                     key={item.id}
                     className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all"
@@ -428,9 +456,10 @@ function ProjectsPageContent() {
                         </Button>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </>
         )}

@@ -551,12 +551,26 @@ export class ReplicateAdapter extends BaseModelAdapter {
             throw new Error('No video generated - unexpected output format')
           }
 
+          // Determine width and height based on resolution and aspect ratio
+          let width = 1920
+          let height = 1080
+
+          if (resolution === '720p') {
+            width = aspectRatio === '9:16' ? 720 : 1280
+            height = aspectRatio === '9:16' ? 1280 : 720
+          } else if (resolution === '1080p') {
+            width = aspectRatio === '9:16' ? 1080 : 1920
+            height = aspectRatio === '9:16' ? 1920 : 1080
+          }
+
           return {
             id: `replicate-${Date.now()}`,
             status: 'completed',
             outputs: [{
               url: videoUrl,
-              type: 'video',
+              width,
+              height,
+              duration,
             }],
             metadata: {
               seed: statusData.metrics?.seed,

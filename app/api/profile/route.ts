@@ -34,7 +34,11 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    return NextResponse.json(profile)
+    return NextResponse.json(profile, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=300, stale-while-revalidate=600',
+      }
+    })
   } catch (error) {
     console.error('Error fetching profile:', error)
     return NextResponse.json(

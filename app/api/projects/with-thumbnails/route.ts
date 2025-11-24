@@ -155,7 +155,11 @@ export async function GET() {
       sessionCount: sessionCountMap.get(project.id) || 0,
     }))
 
-    return NextResponse.json(projectsWithThumbnails)
+    return NextResponse.json(projectsWithThumbnails, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=60',
+      }
+    })
   } catch (error) {
     console.error('Error fetching projects with thumbnails:', error)
     return NextResponse.json(

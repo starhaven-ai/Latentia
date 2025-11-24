@@ -79,7 +79,11 @@ export async function GET(request: Request) {
       creator: ownerProfile,
     }))
 
-    return NextResponse.json(sessionsWithCreator)
+    return NextResponse.json(sessionsWithCreator, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=60',
+      }
+    })
   } catch (error) {
     console.error('Error fetching sessions:', error)
     return NextResponse.json(

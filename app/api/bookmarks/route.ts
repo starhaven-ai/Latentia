@@ -115,7 +115,11 @@ export async function GET() {
       },
     })
 
-    return NextResponse.json(bookmarks)
+    return NextResponse.json(bookmarks, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=120',
+      }
+    })
   } catch (error) {
     console.error('Error fetching bookmarks:', error)
     return NextResponse.json({ error: 'Failed to fetch bookmarks' }, { status: 500 })

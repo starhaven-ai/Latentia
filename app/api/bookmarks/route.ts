@@ -64,17 +64,17 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'outputId is required' }, { status: 400 })
     }
 
-    // Delete bookmark
-    await prisma.bookmark.delete({
+    // Delete bookmark (using deleteMany to handle non-existent records gracefully)
+    const result = await prisma.bookmark.deleteMany({
       where: {
-        userId_outputId: {
-          userId: user.id,
-          outputId: outputId,
-        },
+        userId: user.id,
+        outputId: outputId,
       },
     })
 
-    return NextResponse.json({ success: true })
+    // Return success regardless of whether a record was deleted
+    // This makes the operation idempotent and handles race conditions
+    return NextResponse.json({ success: true, deleted: result.count > 0 })
   } catch (error) {
     console.error('Error deleting bookmark:', error)
     return NextResponse.json({ error: 'Failed to delete bookmark' }, { status: 500 })

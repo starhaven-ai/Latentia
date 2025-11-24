@@ -415,7 +415,18 @@ export class ReplicateAdapter extends BaseModelAdapter {
     // Get parameters with safe fallbacks
     const aspectRatio = parameters?.aspectRatio || request.aspectRatio || '16:9'
     const duration = parseInt(parameters?.duration?.toString() || request.duration?.toString() || '8')
-    const resolution = parameters?.resolution || request.resolution || '1080p'
+
+    // Normalize resolution to string format (e.g., "1080p" or "720p")
+    let resolution = parameters?.resolution || request.resolution || '1080p'
+    // If resolution is a number, convert to string format
+    if (typeof resolution === 'number') {
+      resolution = `${resolution}p`
+    }
+    // Ensure it has the 'p' suffix
+    if (!resolution.toString().endsWith('p')) {
+      resolution = `${resolution}p`
+    }
+
     const generateAudio = parameters?.generateAudio !== undefined ? parameters.generateAudio : true
     const negativePrompt = parameters?.negativePrompt || ''
 

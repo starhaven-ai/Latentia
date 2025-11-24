@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -22,7 +22,16 @@ export default function ProjectsPage() {
   const [approvedItems, setApprovedItems] = useState<any[]>([])
   const [loadingApproved, setLoadingApproved] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+
+  // Handle tab query parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as TabType | null
+    if (tabParam && (tabParam === 'briefings' || tabParam === 'projects' || tabParam === 'review')) {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams])
 
   // Initialize theme from localStorage
   useEffect(() => {

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Settings, Sun, Moon, Bookmark } from 'lucide-react'
+import { Settings, Sun, Moon, Bookmark, Check } from 'lucide-react'
 import { SessionSidebar } from '@/components/sessions/SessionSidebar'
 import { GenerationInterface } from '@/components/generation/GenerationInterface'
 import { useSessions } from '@/hooks/useSessions'
@@ -211,8 +211,18 @@ export default function ProjectPage() {
 
           {/* Right side */}
           <div className="flex items-center gap-2 flex-1 justify-end">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/projects?tab=review')}
+              title="See all reviews"
+              className="gap-2"
+            >
+              <Check className="h-4 w-4" />
+              <span className="hidden sm:inline">Reviews</span>
+            </Button>
+            <Button
+              variant="ghost"
               size="icon"
               onClick={() => router.push('/bookmarks')}
               title="Bookmarks"

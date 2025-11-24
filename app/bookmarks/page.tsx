@@ -223,7 +223,7 @@ export default function BookmarksPage() {
               >
                 {/* Image */}
                 <div
-                  className="aspect-square cursor-pointer"
+                  className="aspect-square cursor-pointer relative"
                   onClick={() =>
                     handleOpenSession(
                       bookmark.output.generation.session.project.id,

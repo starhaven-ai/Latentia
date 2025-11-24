@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Bookmark as BookmarkIcon, LogOut, Settings, Sun, Moon } from 'lucide-react'
+import { Bookmark as BookmarkIcon, LogOut, Settings, Sun, Moon, Check } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import Link from 'next/link'
 

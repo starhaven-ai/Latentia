@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Check, Sun, Moon, LogOut, Settings, Bookmark } from 'lucide-react'
+import { Check, Sun, Moon, LogOut, Settings, Bookmark, User } from 'lucide-react'
 
 interface ApprovedItem {
   id: string
@@ -254,11 +254,14 @@ export default function ReviewedPage() {
 
                   {/* Info */}
                   <div className="p-4 space-y-2">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                      <User className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="font-medium">
+                        {item.generation.user.displayName || item.generation.user.username || 'Unknown'}
+                      </span>
+                    </div>
                     <p className="text-sm font-medium line-clamp-2">
                       {item.generation.prompt}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      by {item.generation.user.displayName || item.generation.user.username || 'Unknown'}
                     </p>
                     {item.notes && item.notes.length > 0 && (
                       <div className="pt-2 border-t border-border/50">

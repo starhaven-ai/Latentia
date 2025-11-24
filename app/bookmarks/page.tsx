@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Bookmark as BookmarkIcon, LogOut, Settings, Sun, Moon, Check } from 'lucide-react'
+import { Bookmark as BookmarkIcon, LogOut, Settings, Sun, Moon, Check, User } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import Link from 'next/link'
 
@@ -254,11 +254,14 @@ export default function BookmarksPage() {
 
                 {/* Info */}
                 <div className="p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                    <User className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span className="font-medium">
+                      {bookmark.output.generation.user.displayName || bookmark.output.generation.user.username || 'Unknown'}
+                    </span>
+                  </div>
                   <p className="text-sm font-medium line-clamp-2">
                     {bookmark.output.generation.prompt}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    by {bookmark.output.generation.user.displayName || bookmark.output.generation.user.username || 'Unknown'}
                   </p>
                   {bookmark.output.notes && bookmark.output.notes.length > 0 && (
                     <div className="pt-2 border-t border-border/50">

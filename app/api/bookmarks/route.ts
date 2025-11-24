@@ -100,12 +100,29 @@ export async function GET() {
           include: {
             generation: {
               include: {
+                user: {
+                  select: {
+                    id: true,
+                    username: true,
+                    displayName: true,
+                    avatarUrl: true,
+                  },
+                },
                 session: {
                   include: {
                     project: true,
                   },
                 },
               },
+            },
+            notes: {
+              where: {
+                userId: user.id,
+              },
+              orderBy: {
+                createdAt: 'desc',
+              },
+              take: 1,
             },
           },
         },

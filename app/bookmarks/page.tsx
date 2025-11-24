@@ -17,6 +17,12 @@ interface BookmarkedItem {
       id: string
       prompt: string
       modelId: string
+      user: {
+        id: string
+        username: string | null
+        displayName: string | null
+        avatarUrl: string | null
+      }
       session: {
         id: string
         name: string
@@ -26,6 +32,12 @@ interface BookmarkedItem {
         }
       }
     }
+    notes: Array<{
+      id: string
+      text: string
+      context: string | null
+      createdAt: string
+    }>
   }
 }
 
@@ -149,67 +161,110 @@ export default function BookmarksPage() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {bookmarks.map((bookmark) => (
-              <div
-                key={bookmark.id}
-                className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all"
-              >
-                {/* Image */}
-                <div
-                  className="aspect-square cursor-pointer"
-                  onClick={() =>
-                    handleOpenSession(
-                      bookmark.output.generation.session.project.id,
-                      bookmark.output.generation.session.id
-                    )
-                  }
-                >
-                  {bookmark.output.fileType === 'image' ? (
-                    <img
-                      src={bookmark.output.fileUrl}
-                      alt="Bookmarked content"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <video
-                      src={bookmark.output.fileUrl}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                  
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <p className="text-white text-sm font-medium px-4 text-center">
-                      Open in {bookmark.output.generation.session.name}
-                    </p>
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {bookmarks.map((bookmark) => {
+              const author = bookmark.output.generation.user
+              const authorName = author.displayName || author.username || 'Unknown'
+              const note = bookmark.output.notes[0]
 
-                {/* Info */}
-                <div className="p-4 space-y-2">
-                  <p className="text-sm font-medium line-clamp-2">
-                    {bookmark.output.generation.prompt}
-                  </p>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="truncate">
-                      {bookmark.output.generation.session.project.name}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+              return (
+                <div
+                  key={bookmark.id}
+                  className="group bg-card border border-border rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300"
+                >
+                  {/* Image */}
+                  <div
+                    className="relative aspect-square cursor-pointer overflow-hidden"
+                    onClick={() =>
+                      handleOpenSession(
+                        bookmark.output.generation.session.project.id,
+                        bookmark.output.generation.session.id
+                      )
+                    }
+                  >
+                    {bookmark.output.fileType === 'image' ? (
+                      <img
+                        src={bookmark.output.fileUrl}
+                        alt="Bookmarked content"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <video
+                        src={bookmark.output.fileUrl}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    )}
+
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
+                      <p className="text-white text-sm font-medium px-4 text-center">
+                        Open in session
+                      </p>
+                    </div>
+
+                    {/* Bookmark button overlay */}
+                    <button
                       onClick={(e) => {
                         e.stopPropagation()
                         handleRemoveBookmark(bookmark.output.id)
                       }}
-                      className="h-7 px-2"
+                      className="absolute top-3 right-3 w-9 h-9 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200"
+                      title="Remove bookmark"
                     >
-                      <BookmarkIcon className="h-3.5 w-3.5 fill-current" />
-                    </Button>
+                      <BookmarkIcon className="h-4 w-4 text-white fill-white" />
+                    </button>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-5 space-y-4">
+                    {/* Author */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold text-sm overflow-hidden flex-shrink-0">
+                        {author.avatarUrl ? (
+                          <img
+                            src={author.avatarUrl}
+                            alt={authorName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          authorName.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {authorName}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {bookmark.output.generation.session.project.name}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Prompt */}
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Prompt
+                      </p>
+                      <p className="text-sm text-foreground leading-relaxed line-clamp-3">
+                        {bookmark.output.generation.prompt}
+                      </p>
+                    </div>
+
+                    {/* Note */}
+                    {note && (
+                      <div className="space-y-1.5 pt-3 border-t border-border/50">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Note
+                        </p>
+                        <p className="text-sm text-foreground/90 leading-relaxed line-clamp-3 italic">
+                          "{note.text}"
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </main>

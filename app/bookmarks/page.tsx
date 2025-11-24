@@ -256,7 +256,7 @@ export default function BookmarksPage() {
                   {bookmark.output.notes && bookmark.output.notes.length > 0 && (
                     <div className="pt-2 border-t border-border/50">
                       <p className="text-xs text-muted-foreground italic leading-relaxed">
-                        "{bookmark.output.notes[0].text}"
+                        &ldquo;{bookmark.output.notes[0].text}&rdquo;
                       </p>
                     </div>
                   )}

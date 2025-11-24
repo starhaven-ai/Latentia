@@ -256,7 +256,7 @@ export default function ReviewedPage() {
                     {item.notes && item.notes.length > 0 && (
                       <div className="pt-2 border-t border-border/50">
                         <p className="text-xs text-muted-foreground italic leading-relaxed">
-                          "{item.notes[0].text}"
+                          &ldquo;{item.notes[0].text}&rdquo;
                         </p>
                       </div>
                     )}

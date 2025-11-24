@@ -110,6 +110,16 @@ export async function GET() {
                 },
               },
             },
+            notes: {
+              where: {
+                userId: user.id,
+                context: 'bookmark',
+              },
+              orderBy: {
+                createdAt: 'desc',
+              },
+              take: 1,
+            },
           },
         },
       },

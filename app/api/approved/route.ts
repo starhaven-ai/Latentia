@@ -34,6 +34,16 @@ export async function GET() {
             },
           },
         },
+        notes: {
+          where: {
+            userId: user.id,
+            context: 'approval',
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+        },
       },
       orderBy: {
         createdAt: 'desc',

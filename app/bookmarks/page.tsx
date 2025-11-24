@@ -15,6 +15,11 @@ interface BookmarkedItem {
     id: string
     fileUrl: string
     fileType: string
+    notes?: Array<{
+      id: string
+      text: string
+      createdAt: string
+    }>
     generation: {
       id: string
       prompt: string
@@ -248,6 +253,13 @@ export default function BookmarksPage() {
                   <p className="text-sm font-medium line-clamp-2">
                     {bookmark.output.generation.prompt}
                   </p>
+                  {bookmark.output.notes && bookmark.output.notes.length > 0 && (
+                    <div className="pt-2 border-t border-border/50">
+                      <p className="text-xs text-muted-foreground italic leading-relaxed">
+                        "{bookmark.output.notes[0].text}"
+                      </p>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span className="truncate">
                       {bookmark.output.generation.session.project.name}

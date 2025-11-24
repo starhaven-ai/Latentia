@@ -7,8 +7,31 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Check, Sun, Moon, LogOut, Settings, Bookmark } from 'lucide-react'
 
+interface ApprovedItem {
+  id: string
+  fileUrl: string
+  fileType: string
+  notes?: Array<{
+    id: string
+    text: string
+    createdAt: string
+  }>
+  generation: {
+    id: string
+    prompt: string
+    session: {
+      id: string
+      name: string
+      project: {
+        id: string
+        name: string
+      }
+    }
+  }
+}
+
 export default function ReviewedPage() {
-  const [approvedItems, setApprovedItems] = useState<any[]>([])
+  const [approvedItems, setApprovedItems] = useState<ApprovedItem[]>([])
   const [loading, setLoading] = useState(true)
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const router = useRouter()
@@ -230,6 +253,13 @@ export default function ReviewedPage() {
                     <p className="text-sm font-medium line-clamp-2">
                       {item.generation.prompt}
                     </p>
+                    {item.notes && item.notes.length > 0 && (
+                      <div className="pt-2 border-t border-border/50">
+                        <p className="text-xs text-muted-foreground italic leading-relaxed">
+                          "{item.notes[0].text}"
+                        </p>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span className="truncate">
                         {item.generation.session.project.name}

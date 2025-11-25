@@ -30,6 +30,7 @@ model Profile {
   modelPins      UserModelPin[]
   workflows      Workflow[]
   bookmarks      Bookmark[]
+  notes          Note[]
 
   @@map("profiles")
 }
@@ -135,6 +136,7 @@ model Output {
 
   generation Generation @relation(fields: [generationId], references: [id], onDelete: Cascade)
   bookmarks  Bookmark[]
+  notes      Note[]
 
   @@index([generationId])
   @@map("outputs")
@@ -196,6 +198,23 @@ model Bookmark {
   @@index([userId])
   @@index([outputId])
   @@map("bookmarks")
+}
+
+model Note {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  outputId  String   @map("output_id") @db.Uuid
+  text      String   @db.Text
+  context   String?  // 'bookmark' or 'approval' - tracks what action triggered the note
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user   Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  output Output  @relation(fields: [outputId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([outputId])
+  @@map("notes")
 }
 
 model PromptEnhancementPrompt {

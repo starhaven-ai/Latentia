@@ -118,11 +118,21 @@ export default function ProjectsPage() {
               <Plus className="mr-2 h-4 w-4" />
               New Project
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push('/reviewed')}
+              title="Reviewed"
+              className="text-green-600 dark:text-green-400"
+            >
+              <Check className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
               size="icon"
               onClick={() => router.push('/bookmarks')}
               title="Bookmarks"
+              className="text-green-600 dark:text-green-400"
             >
               <Bookmark className="h-4 w-4" />
             </Button>

@@ -211,11 +211,21 @@ export default function ProjectPage() {
 
           {/* Right side */}
           <div className="flex items-center gap-2 flex-1 justify-end">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push('/reviewed')}
+              title="Reviewed"
+              className="text-green-600 dark:text-green-400"
+            >
+              <Check className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
               size="icon"
               onClick={() => router.push('/bookmarks')}
               title="Bookmarks"
+              className="text-green-600 dark:text-green-400"
             >
               <Bookmark className="h-4 w-4" />
             </Button>

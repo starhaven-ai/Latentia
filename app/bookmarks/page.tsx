@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Bookmark as BookmarkIcon } from 'lucide-react'
+import { Bookmark as BookmarkIcon, LogOut, Settings, Sun, Moon, Check, User } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
+import Link from 'next/link'
 
 interface BookmarkedItem {
   id: string
@@ -13,10 +15,19 @@ interface BookmarkedItem {
     id: string
     fileUrl: string
     fileType: string
+    notes?: Array<{
+      id: string
+      text: string
+      createdAt: string
+    }>
     generation: {
       id: string
       prompt: string
       modelId: string
+      user: {
+        displayName: string | null
+        username: string | null
+      }
       session: {
         id: string
         name: string
@@ -31,6 +42,7 @@ interface BookmarkedItem {
 
 export default function BookmarksPage() {
   const router = useRouter()
+  const supabase = createClient()
   const { toast } = useToast()
   const [bookmarks, setBookmarks] = useState<BookmarkedItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -41,8 +53,21 @@ export default function BookmarksPage() {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
     if (savedTheme) {
       setTheme(savedTheme)
+      document.documentElement.classList.toggle('dark', savedTheme === 'dark')
     }
   }, [])
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light'
+    setTheme(newTheme)
+    localStorage.setItem('theme', newTheme)
+    document.documentElement.classList.toggle('dark', newTheme === 'dark')
+  }
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   useEffect(() => {
     fetchBookmarks()
@@ -108,21 +133,62 @@ export default function BookmarksPage() {
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img 
+            <img
               src={theme === 'light' ? "/images/Loop Vesper (Black).svg" : "/images/Loop Vesper (White).svg"}
-              alt="Loop Vesper Logo" 
+              alt="Loop Vesper Logo"
               className="h-8 object-contain cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => router.push('/projects')}
               title="Back to Projects"
             />
             <div className="border-l border-border pl-3">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Bookmarks
               </h1>
-              <p className="text-sm text-muted-foreground">
-                {bookmarks.length} {bookmarks.length === 1 ? 'item' : 'items'}
-              </p>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => router.push('/reviewed')}
+              title="Reviewed"
+              className="h-8 w-8 p-0 bg-primary hover:bg-primary/90"
+            >
+              <Check className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => router.push('/bookmarks')}
+              title="Bookmarks"
+              className="h-8 w-8 p-0 bg-primary/80 hover:bg-primary"
+            >
+              <BookmarkIcon className="h-3.5 w-3.5" />
+            </Button>
+            <div className="h-6 w-px bg-border mx-1" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="transition-transform hover:rotate-12"
+              title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+            >
+              {theme === 'light' ? (
+                <Moon className="h-4 w-4" />
+              ) : (
+                <Sun className="h-4 w-4" />
+              )}
+            </Button>
+            <Link href="/settings">
+              <Button
+                variant="ghost"
+                size="icon"
+                title="Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign out">
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </header>
@@ -157,7 +223,7 @@ export default function BookmarksPage() {
               >
                 {/* Image */}
                 <div
-                  className="aspect-square cursor-pointer"
+                  className="aspect-square cursor-pointer relative"
                   onClick={() =>
                     handleOpenSession(
                       bookmark.output.generation.session.project.id,
@@ -188,9 +254,23 @@ export default function BookmarksPage() {
 
                 {/* Info */}
                 <div className="p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                    <User className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span className="font-medium">
+                      {bookmark.output.generation.user.displayName || bookmark.output.generation.user.username || 'Unknown'}
+                    </span>
+                  </div>
                   <p className="text-sm font-medium line-clamp-2">
                     {bookmark.output.generation.prompt}
                   </p>
+                  {bookmark.output.notes && bookmark.output.notes.length > 0 && (
+                    <div className="pt-2 border-t border-border/50">
+                      <p className="text-xs font-semibold text-primary mb-1">Note:</p>
+                      <p className="text-xs text-muted-foreground italic leading-relaxed">
+                        &ldquo;{bookmark.output.notes[0].text}&rdquo;
+                      </p>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span className="truncate">
                       {bookmark.output.generation.session.project.name}

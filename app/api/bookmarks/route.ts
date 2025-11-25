@@ -105,6 +105,12 @@ export async function GET() {
                     project: true,
                   },
                 },
+                user: true,
+              },
+            },
+            notes: {
+              orderBy: {
+                createdAt: 'desc',
               },
             },
           },
